@@ -133,7 +133,7 @@ const FornecedoresPage = () => {
             }}
           >
             <TextField
-              label="Pesquisar produto"
+              label="Pesquisar fornecedor"
               variant="outlined"
               size="small"
               value={search}
