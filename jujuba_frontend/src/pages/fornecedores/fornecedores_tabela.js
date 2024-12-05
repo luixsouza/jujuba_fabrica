@@ -43,14 +43,30 @@ const FornecedoresPage = () => {
     fetchFornecedores();
   }, []);
 
-  const handleDeleteFornecedor = async (id) => {
+  const deleteFornecedora = async (id, values) => {
     try {
-      await axios.delete(`${BASE_URL}?id=${id}`);
-      setFornecedores((prev) => prev.filter((fornecedor) => fornecedor.id !== id));
+        const formData = new FormData();
+        formData.append("fornecedora", JSON.stringify({
+            id,
+            nome: values.nome,
+            contato: values.contato,
+            endereco: values.endereco,
+            chavePix: values.chavePix,
+        }));
+        const response = await axios.delete(`${BASE_URL}/delete`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+        console.log('Fornecedor deletado com sucesso:', response.data);
+        setFornecedores((prev) => prev.filter((fornecedora) => fornecedora.id !== id));
+        alert('Fornecedor deletado com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir fornecedor:', error.message);
+        console.error("Erro ao deletar fornecedor:", error);
+        alert('Erro ao deletar fornecedor.');
     }
-  };
+};
+
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
@@ -191,7 +207,7 @@ const FornecedoresPage = () => {
                           <EditIcon />
                         </IconButton>
                         <IconButton
-                          onClick={() => handleDeleteFornecedor(fornecedora.id)}
+                          onClick={() => deleteFornecedora(fornecedora.id)}
                           sx={{ color: '#00509E' }}
                         >
                           <DeleteIcon />

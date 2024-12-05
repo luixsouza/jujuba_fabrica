@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Divider, Typography, Grid, CircularProgress, Link } from '@mui/material';
+import { Box, Card, CardContent, Typography, Grid, CircularProgress } from '@mui/material';
 import Sidebar from '../../components/sidebar';
 import { useRouter } from 'next/router';
 import axios from 'axios';
@@ -10,12 +10,13 @@ export default function SupplierDetails() {
     const [newValues, setNewValues] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
-    const { id } = router.query; // ID da fornecedora obtido pela URL
+    const { id: fornecedoraid } = router.query; // Extrai o parâmetro 'id' da URL
+
     useEffect(() => {
-        const fetchFornecedor = async () => {
+        const fetchFornecedoraData = async () => {
             if (id) {
                 try {
-                    const response = await axios.get(`${BASE_URL}/${id}`); // Busca fornecedora pelo ID
+                    const response = await axios.get(`${BASE_URL}/${fornecedoraid}`); 
                     setNewValues(response.data);
                 } catch (error) {
                     console.error('Erro ao buscar fornecedor:', error.message);
@@ -25,8 +26,8 @@ export default function SupplierDetails() {
             }
         };
 
-        fetchFornecedor();
-    }, [id]);
+        fetchFornecedoraData();
+    }, [fornecedoraid]);
 
     if (isLoading) {
         return (
@@ -98,9 +99,28 @@ export default function SupplierDetails() {
                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                                     Contrato
                                 </Typography>
-                                <Link href={newValues.contratoUrl} target="_blank" rel="noopener">
-                                    Visualizar Contrato
-                                </Link>
+                                {newValues.contratoUrl ? (
+                                    newValues.contratoUrl.endsWith('.pdf') ? (
+                                        <Box sx={{ mt: 2 }}>
+                                            <iframe
+                                                src={newValues.contratoUrl}
+                                                width="100%"
+                                                height="500px"
+                                                style={{ border: 'none' }}
+                                            />
+                                        </Box>
+                                    ) : (
+                                        <Box sx={{ mt: 2 }}>
+                                            <img
+                                                src={newValues.contrato}
+                                                alt="Contrato"
+                                                style={{ maxWidth: '100%', height: 'auto' }}
+                                            />
+                                        </Box>
+                                    )
+                                ) : (
+                                    <Typography variant="body2">Contrato não disponível</Typography>
+                                )}
                             </Grid>
                         </Grid>
                     </CardContent>
