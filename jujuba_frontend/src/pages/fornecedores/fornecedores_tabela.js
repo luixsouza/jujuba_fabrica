@@ -42,7 +42,7 @@ const FornecedoresPage = () => {
     };
     fetchFornecedores();
   }, []);
-
+   ///// aqui zé, ele pega todos os dados da  fornecedora, que é o formadate, e envia pro back, junto com a requesição de delete tbm. 
   const deleteFornecedora = async (id, values) => {
     try {
         const formData = new FormData();
