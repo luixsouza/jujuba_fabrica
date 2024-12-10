@@ -13,7 +13,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Desativa proteção CSRF usando o novo padrão
+            .csrf(csrf -> csrf.disable()) // Desativa proteção CSRF
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll() // Permite todas as requisições sem autenticação
             );

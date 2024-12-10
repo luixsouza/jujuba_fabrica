@@ -11,7 +11,6 @@ export default function FornecedoresCadastro() {
         contato: '',
         endereco: '',
         chavePix: '',
-        contratoUrl: '',
     });
 
     const [loading, setLoading] = useState(false);
@@ -27,7 +26,7 @@ export default function FornecedoresCadastro() {
         try {
             const formData = new FormData();
     
-            // Serializa o objeto fornecedora como JSON
+            // Serializa o objeto fornecedora como JSON e adiciona ao FormData
             formData.append("fornecedora", JSON.stringify({
                 nome: values.nome,
                 contato: values.contato,
@@ -35,8 +34,7 @@ export default function FornecedoresCadastro() {
                 chavePix: values.chavePix,
             }));
     
-            // Adiciona o contrato ao FormData
-            // Aqui, você precisa capturar o arquivo no frontend
+            // Adiciona o arquivo do contrato ao FormData
             const contrato = document.querySelector('input[name="contrato"]')?.files[0];
             if (contrato) {
                 formData.append("contrato", contrato);
@@ -57,7 +55,6 @@ export default function FornecedoresCadastro() {
             throw error;
         }
     };
-    
 
     // Envia os dados para a API
     const handleSubmit = async (event) => {
@@ -72,7 +69,6 @@ export default function FornecedoresCadastro() {
                 contato: '',
                 endereco: '',
                 chavePix: '',
-                contratoUrl: '',
             });
         } catch (error) {
             console.error('Erro ao criar fornecedor:', error);
@@ -157,14 +153,13 @@ export default function FornecedoresCadastro() {
                                 </Grid>
                                 <Grid item md={6} xs={12}>
                                     <TextField
-                                         fullWidth
+                                        fullWidth
                                         type="file"
                                         inputProps={{ accept: ".pdf,.doc,.docx" }}
                                         name="contrato"
                                         variant="outlined"
-                                 />
+                                    />
                                 </Grid>
-
                             </Grid>
                         </CardContent>
 
