@@ -11,7 +11,7 @@ export default function FornecedoresCadastro() {
         contato: '',
         endereco: '',
         chavePix: '',
-        contrato: '',
+        contratoUrl: '',
     });
 
     const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ export default function FornecedoresCadastro() {
         try {
             const formData = new FormData();
     
-            // serializa o objeto fornecedora como JSON
+            // Serializa o objeto fornecedora como JSON
             formData.append("fornecedora", JSON.stringify({
                 nome: values.nome,
                 contato: values.contato,
@@ -35,8 +35,8 @@ export default function FornecedoresCadastro() {
                 chavePix: values.chavePix,
             }));
     
-            // adiciona o contrato ao FormData
-          
+            // Adiciona o contrato ao FormData
+            // Aqui, você precisa capturar o arquivo no frontend
             const contrato = document.querySelector('input[name="contrato"]')?.files[0];
             if (contrato) {
                 formData.append("contrato", contrato);
@@ -57,8 +57,9 @@ export default function FornecedoresCadastro() {
             throw error;
         }
     };
+    
 
-    // envia os dados para a API
+    // Envia os dados para a API
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
@@ -71,7 +72,6 @@ export default function FornecedoresCadastro() {
                 contato: '',
                 endereco: '',
                 chavePix: '',
-                contratoUrl: '',
             });
         } catch (error) {
             console.error('Erro ao criar fornecedor:', error);
@@ -194,34 +194,16 @@ export default function FornecedoresCadastro() {
                                     />
                                 </Grid>
                                 <Grid item md={6} xs={12}>
-                                <input
-                                type="file"
-                                name="contrato"
-                                accept=".pdf,.doc,.docx"
-                                style={{ display: 'none' }}
-                               id="upload-contrato"
-                               onChange={handleChange}
-                                   />
-           <label htmlFor="upload-contrato" style={{ display: 'flex', alignItems: 'center' }}>
-                  <IconButton
-                     component="span"
-                     sx={{
-                      borderRadius: '50%',
-                      padding: '10px',
-                      color: 'black',
-                      '&:hover': {
-                     backgroundColor: 'white',
-                       },
-                      }}
-                       >
-                     <AttachFileIcon sx={{ fontSize: 30 }} />
-                     </IconButton>
-            <Typography variant="h6" sx={{ ml: 2, fontWeight: 'bold', fontSize: '18px', color: '#333', }}>
-                Adicionar Contrato
-           </Typography>
-               </label>
-                </Grid>
-                  </Grid>
+                                    <TextField
+                                         fullWidth
+                                        type="file"
+                                        inputProps={{ accept: ".pdf,.doc,.docx" }}
+                                        name="contrato"
+                                        variant="outlined"
+                                 />
+                                </Grid>
+
+                            </Grid>
                         </CardContent>
 
                         <Box

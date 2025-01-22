@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Typography, Grid, CircularProgress } from '@mui/material';
+import { Box, Card, CardContent, Typography, Grid, CircularProgress, TextField, Button } from '@mui/material';
 import Sidebar from '../../components/sidebar';
 import { useRouter } from 'next/router';
 import axios from 'axios';
@@ -81,28 +81,48 @@ export default function SupplierDetails() {
                     <CardContent>
                         <Grid container spacing={3}>
                             <Grid item md={6} xs={12}>
-                                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                    Nome do Fornecedor
-                                </Typography>
-                                <Typography variant="body2">{newValues.nome}</Typography>
+                                <TextField
+                                    label="Nome do Fornecedor"
+                                    variant="outlined"
+                                    fullWidth
+                                    value={newValues.nome}
+                                    InputProps={{
+                                        readOnly: true, // Desabilita a edição
+                                    }}
+                                />
                             </Grid>
                             <Grid item md={6} xs={12}>
-                                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                    Contato
-                                </Typography>
-                                <Typography variant="body2">{newValues.contato}</Typography>
+                                <TextField
+                                    label="Contato"
+                                    variant="outlined"
+                                    fullWidth
+                                    value={newValues.contato}
+                                    InputProps={{
+                                        readOnly: true, // Desabilita a edição
+                                    }}
+                                />
                             </Grid>
                             <Grid item md={6} xs={12}>
-                                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                    Endereço
-                                </Typography>
-                                <Typography variant="body2">{newValues.endereco}</Typography>
+                                <TextField
+                                    label="Endereço"
+                                    variant="outlined"
+                                    fullWidth
+                                    value={newValues.endereco}
+                                    InputProps={{
+                                        readOnly: true, // Desabilita a edição
+                                    }}
+                                />
                             </Grid>
                             <Grid item md={6} xs={12}>
-                                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                    Chave Pix
-                                </Typography>
-                                <Typography variant="body2">{newValues.chavePix}</Typography>
+                                <TextField
+                                    label="Chave Pix"
+                                    variant="outlined"
+                                    fullWidth
+                                    value={newValues.chavePix}
+                                    InputProps={{
+                                        readOnly: true, // Desabilita a edição
+                                    }}
+                                />
                             </Grid>
                             <Grid item md={6} xs={12}>
                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
@@ -121,7 +141,7 @@ export default function SupplierDetails() {
                                     ) : (
                                         <Box sx={{ mt: 2 }}>
                                             <img
-                                                src={newValues.contrato}
+                                                src={newValues.contratoUrl}
                                                 alt="Contrato"
                                                 style={{ maxWidth: '100%', height: 'auto' }}
                                             />

@@ -1,0 +1,4 @@
+# Ignorar modulos
+.vscode/
+jujuba_frontend/.next/
+jujuba_frontend/node_modules/

@@ -60,10 +60,14 @@ export default function FornecedoresEdit() {
             // envia a requisição PUT para o backend
             const response = await axios.put(`${BASE_URL}/${fornecedoraid}`, formData, {
                 headers: {
+                    'Content-Type': 'multipart/form-data',
                     'Content-Type': 'multipart/form-data', 
                 },
             });
             console.log('Fornecedor atualizado:', response.data);
+            
+            // Exibe a mensagem de sucesso
+            alert('Fornecedor atualizado com sucesso!');
         } catch (error) {
             console.error('Erro ao atualizar fornecedor:', error);
             setError('Erro ao atualizar fornecedor');

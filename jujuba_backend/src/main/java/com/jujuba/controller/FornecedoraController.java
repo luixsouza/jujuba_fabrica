@@ -48,7 +48,7 @@ public class FornecedoraController {
                 fornecedora.setContratoUrl(caminhoContrato);
             }
 
-            // Salvar a fornecedora no banco de dados
+            // Salva a fornecedora no banco de dados
             service.salvar(fornecedora);
 
             return ResponseEntity.status(HttpStatus.CREATED).body("Fornecedora cadastrada com sucesso!");
@@ -62,7 +62,7 @@ public class FornecedoraController {
     public ResponseEntity<String> atualizarFornecedora(
             @PathVariable Long id,
             @RequestParam("fornecedora") String fornecedoraJson,  // Dados da fornecedora em formato JSON
-            @RequestParam(value = "contrato", required = false) MultipartFile contrato) {  // Arquivo de contrato opcional
+            @RequestParam(value = "contrato", required = false) MultipartFile contrato) {  // Contrato
     
         try {
             // Converter o JSON recebido em um objeto Fornecedora
