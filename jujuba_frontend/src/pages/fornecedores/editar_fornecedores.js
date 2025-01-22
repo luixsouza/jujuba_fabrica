@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { Box, Button, Card, CardContent, TextField, Typography, Grid } from '@mui/material';
 import Sidebar from '../../components/sidebar';
 import axios from 'axios';
-import { useRouter } from 'next/router'; // Importa o useRouter
+import { useRouter } from 'next/router'; 
 
 const BASE_URL = 'http://localhost:8080/api/fornecedoras'; 
 
 export default function FornecedoresEdit() {
-    const router = useRouter(); // Usa o useRouter para acessar os parâmetros da URL
-    const { id: fornecedoraid } = router.query; // Extrai o parâmetro 'id' da URL
+    const router = useRouter(); // usa o useRouter para acessar os parâmetros da URL
+    const { id: fornecedoraid } = router.query; 
 
     const [newValues, setNewValues] = useState({});
     const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ export default function FornecedoresEdit() {
         fetchFornecedorData();
     }, [fornecedoraid]);
 
-    // Atualiza o estado quando os campos são alterados
+    // atualiza o estado quando os campos são alterados
     const handleChange = (event) => {
         const { name, value } = event.target;
         setNewValues((prev) => ({ ...prev, [name]: value }));
@@ -47,20 +47,20 @@ export default function FornecedoresEdit() {
 
         const formData = new FormData();
 
-        // Adiciona os dados da fornecedora como string JSON
+        // adiciona os dados da fornecedora como string JSON
         formData.append('fornecedora', JSON.stringify(newValues));
 
-        // Adiciona o arquivo do contrato se houver
+        // adiciona o arquivo do contrato se houver
         const contratoFile = document.querySelector('input[name="contrato"]').files[0];
         if (contratoFile) {
             formData.append('contrato', contratoFile);
         }
 
         try {
-            // Envia a requisição PUT para o backend
+            // envia a requisição PUT para o backend
             const response = await axios.put(`${BASE_URL}/${fornecedoraid}`, formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data', // Essencial para envio de arquivos
+                    'Content-Type': 'multipart/form-data', 
                 },
             });
             console.log('Fornecedor atualizado:', response.data);

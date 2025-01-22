@@ -10,11 +10,11 @@ export default function SupplierDetails() {
     const [newValues, setNewValues] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
-    const { id: fornecedoraid } = router.query; // Extrai o parâmetro 'id' da URL
+    const { id: fornecedoraid } = router.query; 
 
     useEffect(() => {
         const fetchFornecedoraData = async () => {
-            if (id) {
+            if (fornecedoraid) { 
                 try {
                     const response = await axios.get(`${BASE_URL}/${fornecedoraid}`); 
                     setNewValues(response.data);
@@ -25,9 +25,9 @@ export default function SupplierDetails() {
                 }
             }
         };
-
+    
         fetchFornecedoraData();
-    }, [fornecedoraid]);
+    }, [fornecedoraid]); 
 
     if (isLoading) {
         return (
@@ -46,10 +46,19 @@ export default function SupplierDetails() {
     }
 
     return (
-        <Box sx={{ display: 'flex' }}>
+        <Box sx={{ display: 'flex',   backgroundColor: '#F0E1D2', minHeight: '100vh' }}>
             <Box sx={{ width: '250px' }}>
                 <Sidebar />
             </Box>
+
+            <Box 
+        sx={{ 
+            flex: 1, 
+            p: 3, 
+            backgroundColor: '#F5F5DC' 
+        }}
+    >
+         </Box>
 
             <Box sx={{ flex: 1, p: 3 }}>
                 <Box sx={{ mb: 4, textAlign: 'left', mt: 8 }}>
