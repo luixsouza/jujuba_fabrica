@@ -83,13 +83,13 @@ export default function FornecedoresCadastro() {
 
     
     return (
-        <Box sx={{ display: 'flex', backgroundColor: '#F0E1D2', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', backgroundColor: '#ADD8E6', minHeight: '100vh' }}>
             <Box sx={{ width: '250px' }}>
                 <Sidebar />
             </Box>
 
             <Box sx={{ flex: 1, p: 3 }}>
-                <Box sx={{ mb: 4, textAlign: 'center', mt: 8, marginRight:'800px' }}>
+                <Box sx={{ mb: 4, textAlign: 'center', mt: 8, marginRight:'800px', }}>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
                         Cadastrar Fornecedor
                     </Typography>
@@ -100,18 +100,18 @@ export default function FornecedoresCadastro() {
                     <Card
                         sx={{
                             borderRadius: 4,
-                            
+                            backgroundColor:'#FADADD',
                             p: 3,
                             maxWidth: '100%',
                             mx: 'auto',
                             mt: 8,
                             height: 'auto',
-                            backgroundColor: 'white',
+                           
                             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
                         }}
                     >
                         <CardContent>
-                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2, }}>
                             </Typography>
                             <Grid container spacing={3}>
                                 <Grid item md={6} xs={12}>
@@ -193,8 +193,9 @@ export default function FornecedoresCadastro() {
                                         }}
                                     />
                                 </Grid>
-                                <Grid item md={6} xs={12}>
+                                <Grid item md={6} xs={12}   sx={{ backgroundColor: '#FADADD' }}>
                                     <TextField
+                                  
                                          fullWidth
                                         type="file"
                                         inputProps={{ accept: ".pdf,.doc,.docx" }}

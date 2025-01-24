@@ -9,16 +9,16 @@ export default function ProdutosEdit({ produtoId }) {
     const [produto, setProduto] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [imagemPreview, setImagemPreview] = useState(null); // Estado para o preview da imagem
+    const [imagemPreview, setImagemPreview] = useState(null); 
     const [imagem, setImagem] = useState(null);
 
-    // Carregar os dados do produto
+ 
     useEffect(() => {
         async function fetchProdutoData() {
             try {
                 const response = await axios.get(`${BASE_URL}/${produtoId}`);
                 setProduto(response.data);
-                setImagemPreview(response.data.imagem); // Define a imagem atual do produto
+                setImagemPreview(response.data.imagem); 
                 setLoading(false);
             } catch (error) {
                 console.error('Erro ao carregar produto:', error);
@@ -29,27 +29,27 @@ export default function ProdutosEdit({ produtoId }) {
         fetchProdutoData();
     }, [produtoId]);
 
-    // Atualiza o estado quando os campos são alterados
+   
     const handleChange = (event) => {
         const { name, value } = event.target;
         setProduto((prev) => ({ ...prev, [name]: value }));
     };
 
-    // Atualiza o estado da imagem quando um novo arquivo é selecionado
+   
     const handleImageChange = (event) => {
         const file = event.target.files[0];
         if (file) {
             setProduto((prev) => ({ ...prev, imagem: file }));
-            setImagemPreview(URL.createObjectURL(file)); // Exibe o preview da imagem
+            setImagemPreview(URL.createObjectURL(file)); 
         }
     };
 
-    // Submeter o formulário para atualizar o produto
+   
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError(null); 
 
-        // FormData para enviar a imagem junto com outros dados
+      
         const formData = new FormData();
         formData.append('nome', produto.nome);
         formData.append('quantidade', produto.quantidade);

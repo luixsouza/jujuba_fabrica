@@ -124,13 +124,13 @@ const FornecedoresPage = () => {
  
     const sheetData = [headers, ...dataForExport.map(item => Object.values(item))];
   
-    // Criar a planilha a partir de um Array of Arrays (aoa)
+   
     const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
   
-    // Criar o workbook
+    
     const workbook = XLSX.utils.book_new();
   
-    // Adicionar a planilha ao livro
+    
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Fornecedores');
   
   
@@ -141,7 +141,7 @@ const FornecedoresPage = () => {
   });
 
   return (
-    <Box sx={{ display: 'flex', backgroundColor: '#blue', minHeight: '100vh',backgroundColor: '#F0E1D2'  }}>
+    <Box sx={{ display: 'flex', backgroundColor: '#blue', minHeight: '100vh',backgroundColor: '#ADD8E6'  }}>
       <Sidebar />
       <Box
         sx={{
@@ -149,7 +149,7 @@ const FornecedoresPage = () => {
           marginLeft: '290px',
           maxHeight: '1000px',
           overflow: 'auto',
-          backgroundColor: '#F0E1D2',
+          backgroundColor: '#ADD8E6',
           paddingTop: '3rem',
         }}
       >
@@ -241,17 +241,17 @@ const FornecedoresPage = () => {
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
-              <SearchOutlinedIcon sx={{ color: '#00509E' }} /> {/* Novo ícone de pesquisa */}
+              <SearchOutlinedIcon sx={{ color: '#00509E' }} /> 
             </InputAdornment>
           ),
         }}
       />
           <Button
             sx={{
-              backgroundColor: '#50abe4',
-              color: 'white',
+              backgroundColor: '#FADADD',
+              color: 'black',
               boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-              border: '2px solid #50abe4',
+              border: '2px solid #FADADD',
               fontWeight: 'tine',
               fontSize: '15px',
               borderRadius: '60px',
@@ -269,7 +269,7 @@ const FornecedoresPage = () => {
         <Card
           sx={{
             padding: '20px',
-            bgcolor: 'white',
+            bgcolor: '#FADADD',
             boxShadow: 3,
             borderRadius: '25px',
             width: '80%',

@@ -14,27 +14,7 @@ export default function FornecedoresEdit() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Verifica se fornecedoraid está sendo passado corretamente
-    useEffect(() => {
-        if (!fornecedoraid) {
-            setError('ID do fornecedor não foi fornecido');
-            setLoading(false);
-            return;
-        }
-        console.log(fornecedoraid); // Verifica se o ID está correto
-        async function fetchFornecedorData() {
-            try {
-                const response = await axios.get(`${BASE_URL}/${fornecedoraid}`);
-                setNewValues(response.data);
-                setLoading(false);
-            } catch (error) {
-                console.error('Erro ao carregar fornecedor:', error);
-                setError('Erro ao carregar os dados do fornecedor');
-                setLoading(false);
-            }
-        }
-        fetchFornecedorData();
-    }, [fornecedoraid]);
+   
 
     // atualiza o estado quando os campos são alterados
     const handleChange = (event) => {
@@ -47,7 +27,7 @@ export default function FornecedoresEdit() {
 
         const formData = new FormData();
 
-        // adiciona os dados da fornecedora como string JSON
+       
         formData.append('fornecedora', JSON.stringify(newValues));
 
         // adiciona o arquivo do contrato se houver
@@ -83,22 +63,22 @@ export default function FornecedoresEdit() {
     }
 
     return (
-        <Box sx={{ display: 'flex' }}>
-            <Box sx={{ width: '250px' }}>
+        <Box sx={{ display: 'flex',backgroundColor: '#ADD8E6', }}>
+            <Box sx={{ width: '250px',backgroundColor: '#ADD8E6', }}>
                 <Sidebar />
             </Box>
 
-            <Box sx={{ flex: 1, p: 3 }}>
-                <Box sx={{ mb: 4, textAlign: 'left', mt: 8 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
+            <Box sx={{ flex: 1, p: 3,backgroundColor: '#ADD8E6', }}>
+                <Box sx={{ mb: 4, textAlign: 'left', mt: 8,backgroundColor: '#ADD8E6', }}>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2,color:'black' }}>
                         Editar Fornecedor
                     </Typography>
                 </Box>
 
                 <form autoComplete="off" onSubmit={handleSubmit}>
-                    <Card sx={{ borderRadius: 4, boxShadow: 3, p: 3, maxWidth: '100%', mx: 'auto', mt: 8, height: 'auto' }}>
+                    <Card sx={{ borderRadius: 4, boxShadow: 3, p: 3, maxWidth: '100%', mx: 'auto', mt: 8, height: 'auto', backgroundColor:'#FADADD', }}>
                         <CardContent>
-                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2,color:"black" }}>
                                 Informações Gerais
                             </Typography>
                             <Grid container spacing={3}>
@@ -161,18 +141,30 @@ export default function FornecedoresEdit() {
                             </Grid>
                         </CardContent>
 
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: 2,
+                                mt: 2,
+                            }}
+                        >
                             <Button
                                 type="submit"
+                                disabled={loading}
                                 sx={{
-                                    mt: 2,
-                                    color: '#00509E',
-                                    backgroundColor: 'transparent',
+                                    color: 'white',
+                                    backgroundColor: '#50abe4',
                                     textTransform: 'none',
-                                    fontSize: '18px',
+                                    fontSize: '15px',
+                                    borderRadius: '50px',
+                                    padding: '10px 30px',
                                     '&:hover': {
-                                        color: '#003B6F',
-                                        backgroundColor: 'transparent',
+                                        backgroundColor: '#003B6F',
+                                    },
+                                    '&:disabled': {
+                                        backgroundColor: '#cccccc',
+                                        color: '#666666',
                                     },
                                 }}
                             >

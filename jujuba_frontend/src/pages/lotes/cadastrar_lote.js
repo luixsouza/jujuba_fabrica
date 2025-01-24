@@ -82,7 +82,7 @@ export default function ProdutosCadastro() {
             <Box sx={{ flex: 1, p: 3,  backgroundColor: '#ADD8E6', }}>
                 <Box sx={{ mb: 4, textAlign: 'left', mt: 8,  backgroundColor: '#ADD8E6', }}>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2,  backgroundColor: '#ADD8E6', }}>
-                        Cadastrar Produto
+                        Cadastrar Lote
                     </Typography>
                 </Box>
 
@@ -101,36 +101,12 @@ export default function ProdutosCadastro() {
                     >
                         <CardContent>
                         <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-                                Informações do Produto
+                                Informações do Lote
                             </Typography>
 
                          
                             <Grid item md={12} xs={12} sx={{ display: 'flex', justifyContent: 'center',borderRadius: '25px' }}>
-                            <Button
-        variant="outlined"
-        component="label"
-        sx={{
-            display: 'flex',            
-            justifyContent: 'center',   
-            alignItems: 'center',       
-            color: '#00509E',             
-            backgroundColor: 'white',   
-            mb: 2,                      
-            width: 'auto',               
-            borderRadius: '25px',        
-            padding: '10px 20px',        
-            fontWeight: 'bold',          
-        }}
-    >
-        <CloudUpload sx={{ marginRight: 2 }} />  
-        Upload de Imagem
-        <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={handleImageChange}
-        />
-    </Button>
+                            
                                 {imagem && (
                                     <Typography variant="body2" sx={{ mt: 1, color: '#00509E', backgroundColor: 'white',}}>
                                         Imagem selecionada: {imagem.name}
@@ -143,7 +119,7 @@ export default function ProdutosCadastro() {
                                     <TextField
                                     sx={{  backgroundColor: 'white',}}
                                         fullWidth
-                                        label="Nome do Produto"
+                                        label="Código "
                                         name="nome"
                                         onChange={handleChange}
                                         required
@@ -155,8 +131,22 @@ export default function ProdutosCadastro() {
                                     <TextField
                                     sx={{  backgroundColor: 'white',}}
                                         fullWidth
-                                        label="Quantidade"
-                                        name="quantidade"
+                                        label="Valor Total "
+                                        name="Valor Total "
+                                     
+                                        onChange={handleChange}
+                                        required
+                                      
+                                        value={newValues?.valorTotal || ''}
+                                        variant="outlined"
+                                    />
+                                </Grid>
+                                <Grid item md={6} xs={12}>
+                                    <TextField
+                                    sx={{  backgroundColor: 'white',}}
+                                        fullWidth
+                                        label="Descrição"
+                                        name="Descrição"
                                         onChange={handleChange}
                                         required
                                         value={newValues?.quantidade || ''}
@@ -167,8 +157,8 @@ export default function ProdutosCadastro() {
                                     <TextField
                                     sx={{  backgroundColor: 'white',}}
                                         fullWidth
-                                        label="Preço/Unidade"
-                                        name="precoUnidade"
+                                        label="Tamanho"
+                                        name="Tamanho"
                                         onChange={handleChange}
                                         required
                                         value={newValues?.precoUnidade || ''}
@@ -179,48 +169,42 @@ export default function ProdutosCadastro() {
                                     <TextField
                                     sx={{  backgroundColor: 'white',}}
                                         fullWidth
-                                        label="Valor Total"
-                                        name="valorTotal"
+                                        label="Marca"
+                                        name="Marca"
                                         onChange={handleChange}
                                         required
                                         value={newValues?.valorTotal || ''}
                                         variant="outlined"
                                     />
                                 </Grid>
-                                {/* Campos de Data */}
+                             
                                 <Grid item md={6} xs={12}>
                                     <TextField
                                     sx={{  backgroundColor: 'white',}}
                                         fullWidth
-                                        label="Data de Entrada"
-                                        name="dataEntrada"
-                                        type="date"
+                                        label="% Brechó"
+                                        name="% Brechó"
                                         onChange={handleChange}
                                         required
-                                        value={newValues?.dataEntrada || ''}
+                                         value={newValues?.valorTotal || ''}
                                         variant="outlined"
-                                        InputLabelProps={{
-                                            shrink: true,
-                                        }}
                                     />
                                 </Grid>
                                 <Grid item md={6} xs={12}>
                                     <TextField
                                     sx={{  backgroundColor: 'white',}}
                                         fullWidth
-                                        label="Data de Saída"
-                                        name="dataSaida"
-                                        type="date"
+                                        label="%Fornecedor"
+                                        name="%Fornecedor"
                                         onChange={handleChange}
                                         required
-                                        value={newValues?.dataSaida || ''}
+                                         value={newValues?.valorTotal || ''}
                                         variant="outlined"
-                                        InputLabelProps={{
-                                            shrink: true,
-                                        }}
                                     />
                                 </Grid>
+                               
                             </Grid>
+                            
                         </CardContent>
 
                         <Box
@@ -255,7 +239,7 @@ export default function ProdutosCadastro() {
                                 {loading ? (
                                     <CircularProgress size={24} sx={{  backgroundColor: '#ADD8E6', color: '#FFFFFF', marginRight: 2, boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', }} />
                                 ) : (
-                                    'Salvar Produto'
+                                    'Salvar Lote'
                                 )}
                             </Button>
                         </Box>

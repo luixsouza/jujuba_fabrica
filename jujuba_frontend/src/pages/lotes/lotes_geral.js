@@ -74,7 +74,7 @@ const EstoquePage = () => {
 
   const handleNavigateToRegister = () => {
     if (router) {
-      router.push('./cadastro_produto');
+      router.push('./cadastrar_lote');
     }
   };
   useEffect(() => {
@@ -108,57 +108,29 @@ const EstoquePage = () => {
       >
         <Box sx={{ marginBottom: '20px', }}>
           <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-            Controle de Estoque
+            Controle de Lotes
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
           <Card
             sx={{
-              flex: 1,
-              backgroundColor: '#FADADD',
-              height: '180px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px',
-              borderRadius: '10px',
-              boxShadow: 3,
-              textAlign: 'center',
+             
             }}
           >
-            <Typography variant="h6" sx={{ marginBottom: '10px' }}>
-              Quantidade no Estoque
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-              {quantidadeExibida} unidades
-            </Typography>
+           
+          
           </Card>
 
           <Card
             sx={{
-              flex: 1,
-              height: '180px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px',
-              borderRadius: '10px',
-              boxShadow: 3,
-              textAlign: 'center',
-              backgroundColor: '#FADADD',
+             
 
               
             }}
           >
-            <Typography variant="h6" sx={{ marginBottom: '10px' }}>
-              Valor Total do Estoque
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-              R$ {valorExibido.toFixed(2)}
-            </Typography>
+          
+           
           </Card>
           
         </Box>
@@ -169,7 +141,7 @@ const EstoquePage = () => {
   <TableRow>
     <TableCell colSpan={6} align="left">
       <TextField
-        label="Pesquisar produto"
+        label="Pesquisar lote "
         variant="outlined"
         size="medium"
         value={search}
@@ -243,56 +215,21 @@ const EstoquePage = () => {
   </TableRow>
  
   <TableRow>
-    <TableCell colSpan={6} align="left">
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: '10px' }}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={isMaisVendidos}
-              onChange={(e) => setIsMaisVendidos(e.target.checked)}
-              sx={{ color: ' #50abe4', '&.Mui-checked': { color: ' #50abe4' } }}
-            />
-          }
-          label="Mais Vendidos"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={isMaisBemAvaliados}
-              onChange={(e) => setIsMaisBemAvaliados(e.target.checked)}
-              sx={{ color: ' #50abe4', '&.Mui-checked': { color: ' #50abe4' } }}
-            />
-          }
-          label="Mais Bem Avaliados"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={isCNPJ}
-              onChange={(e) => setIsCNPJ(e.target.checked)}
-              sx={{ color: ' #50abe4', '&.Mui-checked': { color: ' #50abe4' } }}
-            />
-          }
-          label="Cadastrados recentemente"
-        />
-      </Box>
-    </TableCell>
+    
   </TableRow>
   <TableRow>
     <TableCell>
-      <strong>Imagem</strong>
+      <strong>Código</strong>
     </TableCell>
     <TableCell>
-      <strong>Nome</strong>
+      <strong>Descrição</strong>
+    </TableCell>
+    
+    <TableCell>
+      <strong>Gênero</strong>
     </TableCell>
     <TableCell>
-      <strong>Quantidade</strong>
-    </TableCell>
-    <TableCell>
-      <strong>Preço/Unidade</strong>
-    </TableCell>
-    <TableCell>
-      <strong>Valor Total</strong>
+      <strong>Tamanho</strong>
     </TableCell>
     <TableCell>
       <strong>Ações</strong>

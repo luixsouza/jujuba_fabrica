@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'; 
-import { Box, Card, CardContent, Typography, Grid, CircularProgress, TextField, Button } from '@mui/material';
+import { Box, Card, CardContent, Typography, Grid, CircularProgress, TextField, Button,FormControlLabel,Checkbox } from '@mui/material';
 import Sidebar from '../../components/sidebar';
 import { useRouter } from 'next/router';
 import axios from 'axios';
@@ -38,7 +38,7 @@ export default function ProdutoDetails() {
             <Box sx={{ flex: 1, p: 3,   backgroundColor: '#ADD8E6', }}>
                 <Box sx={{ mb: 4, textAlign: 'left', mt: 8 }}>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
-                        Visualizar Produto
+                        Visualizar Lote
                     </Typography>
                 </Box>
 
@@ -58,7 +58,7 @@ export default function ProdutoDetails() {
                         <Grid container spacing={3}>
                             <Grid item md={6} xs={12}>
                                 <TextField
-                                    label="Nome do Produto"
+                                    label="Código"
                                     variant="outlined"
                                     fullWidth
                                     InputProps={{
@@ -69,7 +69,7 @@ export default function ProdutoDetails() {
                             </Grid>
                             <Grid item md={6} xs={12}>
                                 <TextField
-                                    label="Quantidade"
+                                    label="Descrição"
                                     variant="outlined"
                                     fullWidth
                                     InputProps={{
@@ -80,7 +80,7 @@ export default function ProdutoDetails() {
                             </Grid>
                             <Grid item md={6} xs={12}>
                                 <TextField
-                                    label="Preço/Unidade"
+                                    label="Gênero"
                                     variant="outlined"
                                     fullWidth
                                     InputProps={{
@@ -91,7 +91,7 @@ export default function ProdutoDetails() {
                             </Grid>
                             <Grid item md={6} xs={12}>
                                 <TextField
-                                    label="Valor Total"
+                                    label="Tamanho"
                                     variant="outlined"
                                     fullWidth
                                     value={newValues?.valorTotal || ''}
@@ -102,9 +102,12 @@ export default function ProdutoDetails() {
                                 />
                             </Grid>
 
+                           
+
+
                             <Grid item md={6} xs={12}>
                                 <TextField
-                                    label="Id lote"
+                                    label="% Fornecedor"
                                     variant="outlined"
                                     fullWidth
                                     value={newValues?.valorTotal || ''}
@@ -114,12 +117,44 @@ export default function ProdutoDetails() {
                                     sx={{ backgroundColor: 'white' }}
                                 />
                             </Grid>
-
+                            
                             <Grid item md={6} xs={12}>
-                                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                    Imagem
-                                </Typography>
+                                <TextField
+                                    label="% Brechó"
+                                    variant="outlined"
+                                    fullWidth
+                                    value={newValues?.valorTotal || ''}
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
+                                    sx={{ backgroundColor: 'white' }}
+                                />
                             </Grid>
+                            <Grid item md={6} xs={12}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        
+                                      
+                                        name="vendido"
+                                        sx={{
+                                            color: 'blue', 
+                                            '&.Mui-checked': {
+                                                color: 'blue', 
+                                            },
+                                        }}
+                                    />
+                                }
+                                label="Vendido"
+                                sx={{
+                                      fontSize:'30px',
+                                    '& .MuiFormControlLabel-label': {
+                                        color: 'black',
+                                        fontWeight:'Bold',
+                                    },
+                                }}
+                            />
+                        </Grid>
                         </Grid>
                     </CardContent>
                 </Card>

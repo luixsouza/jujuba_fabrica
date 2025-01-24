@@ -87,7 +87,7 @@ export default function SupplierDetails() {
                                     fullWidth
                                     value={newValues.nome}
                                     InputProps={{
-                                        readOnly: true, // Desabilita a edição
+                                        readOnly: true,
                                     }}
                                 />
                             </Grid>
@@ -98,7 +98,7 @@ export default function SupplierDetails() {
                                     fullWidth
                                     value={newValues.contato}
                                     InputProps={{
-                                        readOnly: true, // Desabilita a edição
+                                        readOnly: true, 
                                     }}
                                 />
                             </Grid>
@@ -109,7 +109,7 @@ export default function SupplierDetails() {
                                     fullWidth
                                     value={newValues.endereco}
                                     InputProps={{
-                                        readOnly: true, // Desabilita a edição
+                                        readOnly: true, 
                                     }}
                                 />
                             </Grid>
