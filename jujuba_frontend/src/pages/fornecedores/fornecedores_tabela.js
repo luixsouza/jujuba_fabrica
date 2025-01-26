@@ -117,7 +117,8 @@ const FornecedoresPage = () => {
           Nome: fornecedora.nome || 'N/A',
           Contato: fornecedora.contato || 'N/A',
           Endereço: fornecedora.endereco || 'N/A',
-          'Chave Pix': fornecedora.chavePix || 'N/A',
+          ChavePix: fornecedora.chavePix || 'N/A',
+
         }))
       : [{ Nome: 'N/A', Contato: 'N/A', Endereço: 'N/A', 'Chave Pix': 'N/A' }]; 
   
@@ -141,7 +142,7 @@ const FornecedoresPage = () => {
   });
 
   return (
-    <Box sx={{ display: 'flex', backgroundColor: '#blue', minHeight: '100vh',backgroundColor: '#ADD8E6'  }}>
+    <Box sx={{ display: 'flex', backgroundColor: '#50abe4', minHeight: '100vh',backgroundColor: '#ADD8E6'  }}>
       <Sidebar />
       <Box
         sx={{
