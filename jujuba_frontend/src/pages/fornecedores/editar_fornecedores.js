@@ -2,21 +2,36 @@ import { useState, useEffect } from 'react';
 import { Box, Button, Card, CardContent, TextField, Typography, Grid } from '@mui/material';
 import Sidebar from '../../components/sidebar';
 import axios from 'axios';
-import { useRouter } from 'next/router'; 
+import { useRouter } from 'next/router';
 
-const BASE_URL = 'http://localhost:8080/api/fornecedoras'; 
+const BASE_URL = 'http://localhost:8080/api/fornecedoras';
 
 export default function FornecedoresEdit() {
-    const router = useRouter(); // usa o useRouter para acessar os parâmetros da URL
-    const { id: fornecedoraid } = router.query; 
+    const router = useRouter();
+    const { id: fornecedoraid } = router.query;
 
     const [newValues, setNewValues] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-   
+    // busca os dados do fornecedor 
+    useEffect(() => {
+        if (fornecedoraid) {
+            const fetchData = async () => {
+                try {
+                    const response = await axios.get(`${BASE_URL}/${fornecedoraid}`);
+                    setNewValues(response.data);
+                    setLoading(false);
+                } catch (err) {
+                    setError('Erro ao carregar dados do fornecedor');
+                    setLoading(false);
+                }
+            };
+            fetchData();
+        }
+    }, [fornecedoraid]);
 
-    // atualiza o estado quando os campos são alterados
+    // atualiza o estado dos dados quando os campos são alterados
     const handleChange = (event) => {
         const { name, value } = event.target;
         setNewValues((prev) => ({ ...prev, [name]: value }));
@@ -26,14 +41,12 @@ export default function FornecedoresEdit() {
         event.preventDefault();
 
         const formData = new FormData();
-
-       
         formData.append('fornecedora', JSON.stringify(newValues));
 
-        // adiciona o arquivo do contrato se houver
+        // adiciona o arquivo do contrato 
         const contratoFile = document.querySelector('input[name="contrato"]').files[0];
         if (contratoFile) {
-            formData.append('contrato', contratoFile);
+            formData.append('contratoUrl', contratoFile); 
         }
 
         try {
@@ -41,13 +54,10 @@ export default function FornecedoresEdit() {
             const response = await axios.put(`${BASE_URL}/${fornecedoraid}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'Content-Type': 'multipart/form-data', 
                 },
             });
-            console.log('Fornecedor atualizado:', response.data);
-            
-            // Exibe a mensagem de sucesso
             alert('Fornecedor atualizado com sucesso!');
+            console.log('Fornecedor atualizado:', response.data);
         } catch (error) {
             console.error('Erro ao atualizar fornecedor:', error);
             setError('Erro ao atualizar fornecedor');
@@ -63,22 +73,22 @@ export default function FornecedoresEdit() {
     }
 
     return (
-        <Box sx={{ display: 'flex',backgroundColor: '#ADD8E6', }}>
-            <Box sx={{ width: '250px',backgroundColor: '#ADD8E6', }}>
+        <Box sx={{ display: 'flex', backgroundColor: '#ADD8E6' }}>
+            <Box sx={{ width: '250px', backgroundColor: '#ADD8E6' }}>
                 <Sidebar />
             </Box>
 
-            <Box sx={{ flex: 1, p: 3,backgroundColor: '#ADD8E6', }}>
-                <Box sx={{ mb: 4, textAlign: 'left', mt: 8,backgroundColor: '#ADD8E6', }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2,color:'black' }}>
+            <Box sx={{ flex: 1, p: 3, backgroundColor: '#ADD8E6' }}>
+                <Box sx={{ mb: 4, textAlign: 'left', mt: 8 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
                         Editar Fornecedor
                     </Typography>
                 </Box>
 
                 <form autoComplete="off" onSubmit={handleSubmit}>
-                    <Card sx={{ borderRadius: 4, boxShadow: 3, p: 3, maxWidth: '100%', mx: 'auto', mt: 8, height: 'auto', backgroundColor:'#FADADD', }}>
+                    <Card sx={{ borderRadius: 4, boxShadow: 3, p: 3, maxWidth: '100%', mx: 'auto', mt: 8, height: 'auto', backgroundColor: '#FADADD' }}>
                         <CardContent>
-                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2,color:"black" }}>
+                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
                                 Informações Gerais
                             </Typography>
                             <Grid container spacing={3}>
@@ -132,7 +142,7 @@ export default function FornecedoresEdit() {
                                     <input
                                         type="file"
                                         id="contrato"
-                                        name="contrato"
+                                        name="contrato.Url"
                                         accept=".pdf,.doc,.docx"
                                         onChange={handleChange}
                                         style={{ marginTop: '8px' }}
