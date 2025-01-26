@@ -21,25 +21,31 @@ export default function FornecedoresCadastro() {
         const { name, value } = event.target;
         setNewValues((prev) => ({ ...prev, [name]: value }));
     };
-
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
+        setNewValues((prev) => ({
+            ...prev,
+            contratoUrl: file || '', // armazenando o arquivo completo, não apenas o nome
+        }));
+    };
     // função para criar um fornecedor na API
     const createFornecedora = async (values) => {
         try {
             const formData = new FormData();
-    
-            // Serializa o objeto fornecedora como JSON
+
+            // serializa o objeto fornecedora como JSON
             formData.append("fornecedora", JSON.stringify({
-                nome: values.nome,
-                contato: values.contato,
-                endereco: values.endereco,
-                chavePix: values.chavePix,
+                nome: values.nome || "N/A",
+                contato: values.contato || "N/A",
+                endereco: values.endereco || "N/A",
+                chavePix: values.chavePix || "N/A",
+                contratoUrl: values.contratoUrl || null, // agora usando contratoUrl
             }));
-    
-            // Adiciona o contrato ao FormData
-            // Aqui, você precisa capturar o arquivo no frontend
+
+            // adiciona o contrato ao FormData
             const contrato = document.querySelector('input[name="contrato"]')?.files[0];
             if (contrato) {
-                formData.append("contrato", contrato);
+                formData.append("contratoUrl", contrato);
             } else {
                 throw new Error("O arquivo do contrato é obrigatório!");
             }
@@ -47,10 +53,10 @@ export default function FornecedoresCadastro() {
             // faz a requisição para o backend
             const response = await axios.post(BASE_URL, formData, {
                 headers: {
-                    "Content-Type": "multipart/form-data",
+                    "Content-Type": "multipart/form-data", 
                 },
             });
-    
+
             return response.data;
         } catch (error) {
             console.error("Erro ao criar fornecedor:", error);
@@ -59,7 +65,7 @@ export default function FornecedoresCadastro() {
     };
     
 
-    // Envia os dados para a API
+    // envia os dados para a API
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
@@ -72,6 +78,7 @@ export default function FornecedoresCadastro() {
                 contato: '',
                 endereco: '',
                 chavePix: '',
+                contratoUrl: '', // resetando também o contratoUrl
             });
         } catch (error) {
             console.error('Erro ao criar fornecedor:', error);
@@ -193,17 +200,24 @@ export default function FornecedoresCadastro() {
                                         }}
                                     />
                                 </Grid>
-                                <Grid item md={6} xs={12}   sx={{ backgroundColor: '#FADADD' }}>
-                                    <TextField
-                                  
-                                         fullWidth
+                                <Grid item md={6} xs={12}>
+                                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                        Upload do Contrato:
+                                    </Typography>
+                                    <input
                                         type="file"
-                                        inputProps={{ accept: ".pdf,.doc,.docx" }}
-                                        name="contrato"
-                                        variant="outlined"
-                                 />
+                                        id="contratoUrl"
+                                        name="contratoUrl"
+                                        accept=".pdf,.doc,.docx"
+                                        onChange={handleFileChange}
+                                        style={{ display: 'none' }}
+                                    />
+                                    <label htmlFor="contratoUrl">
+                                    <IconButton component="span" sx={{ color: 'black', fontSize: '30px' }}>
+                                            <AttachFileIcon />
+                                        </IconButton>
+                                    </label>
                                 </Grid>
-
                             </Grid>
                         </CardContent>
 
