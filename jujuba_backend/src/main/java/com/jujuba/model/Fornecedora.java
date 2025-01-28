@@ -1,44 +1,69 @@
 package com.jujuba.model;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import java.io.Serializable;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter @Setter @NoArgsConstructor
 @Entity
-public class Fornecedora {
+@Table(name = "fornecedora")
+public class Fornecedora implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @NotBlank(message = "O nome é obrigatório")
+    @Column(name = "nome", nullable = false, length = 200)
     private String nome;
 
-    @NotBlank(message = "O contato é obrigatório")
+    @Column(name = "contato", nullable = false, length = 15)
     private String contato;
 
-    @NotBlank(message = "O endereço é obrigatório")
+    @Column(name = "endereco", nullable = false, length = 200)
     private String endereco;
 
-    @NotBlank(message = "A chave PIX é obrigatória")
+    @Column(name = "chavePix", nullable = false, length = 100)
     private String chavePix;
 
-    private String contratoUrl; // URL para o arquivo do contrato
+    @Column(name = "contratoUrl")
+    private String contratoUrl;
 
-    // Getters e Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        return result;
+    }
 
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Fornecedora other = (Fornecedora) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        return true;
+    }
 
-    public String getContato() { return contato; }
-    public void setContato(String contato) { this.contato = contato; }
-
-    public String getEndereco() { return endereco; }
-    public void setEndereco(String endereco) { this.endereco = endereco; }
-
-    public String getChavePix() { return chavePix; }
-    public void setChavePix(String chavePix) { this.chavePix = chavePix; }
-
-    public String getContratoUrl() { return contratoUrl; }
-    public void setContratoUrl(String contratoUrl) { this.contratoUrl = contratoUrl; }
+    @Override
+    public String toString() {
+        return "Fornecedora [id=" + id + "]";
+    }
 }
