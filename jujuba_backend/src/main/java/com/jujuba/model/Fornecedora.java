@@ -31,10 +31,10 @@ public class Fornecedora implements Serializable {
     @Column(name = "endereco", nullable = false, length = 200)
     private String endereco;
 
-    @Column(name = "chavePix", nullable = false, length = 100)
+    @Column(name = "chave_pix", nullable = false, length = 100)
     private String chavePix;
 
-    @Column(name = "contratoUrl")
+    @Column(name = "contrato_url")
     private String contratoUrl;
 
     @Override

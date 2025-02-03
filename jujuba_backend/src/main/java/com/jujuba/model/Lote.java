@@ -35,6 +35,10 @@ public class Lote {
     @JoinColumn(name = "fornecedora_id", nullable = false)
     private Fornecedora fornecedora;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "produto_id", nullable = false)
+    private Produto produto;
+
     @Override
     public int hashCode() {
         final int prime = 31;
