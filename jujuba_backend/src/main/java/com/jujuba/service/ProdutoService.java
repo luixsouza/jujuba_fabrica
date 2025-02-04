@@ -28,9 +28,9 @@ public class ProdutoService {
     public Produto atualizar(Long id, Produto produtoAtualizado) {
         Produto produtoExistente = buscarPorId(id);
         if (produtoExistente != null) {
-            produtoExistente.setNome(produtoAtualizado.getNome());
+            //produtoExistente.setNome(produtoAtualizado.getNome());
             produtoExistente.setDescricao(produtoAtualizado.getDescricao());
-            produtoExistente.setCodigo(produtoAtualizado.getCodigo());
+            //produtoExistente.setCodigo(produtoAtualizado.getCodigo());
             produtoExistente.setPreco(produtoAtualizado.getPreco());
             return repository.save(produtoExistente);
         }
