@@ -7,7 +7,7 @@ import com.jujuba.mapper.FornecedoraMapper;
 import com.jujuba.model.Fornecedora;
 import com.jujuba.service.ArquivoService;
 import com.jujuba.service.FornecedoraService;
-import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("api/fornecedoras")
+@RequiredArgsConstructor
 public class FornecedoraController {
-    
-    private FornecedoraService fornecedoraService;
-    private ArquivoService arquivoService;
-    private ObjectMapper objectMapper;
+
+    private final ObjectMapper objectMapper;
+    private final FornecedoraService fornecedoraService;
+    private final ArquivoService arquivoService;
 
     @PostMapping
     public ResponseEntity<FornecedoraResponseDTO> cadastrarFornecedora(
@@ -70,13 +70,30 @@ public class FornecedoraController {
     @PutMapping("/{id}")
     public ResponseEntity<FornecedoraResponseDTO> atualizarFornecedora(
             @PathVariable Long id,
-            @Valid @RequestBody FornecedoraCreateDTO dto) {
-        Fornecedora fornecedora = FornecedoraMapper.toFornecedora(dto);
-        Fornecedora fornecedoraAtualizada = fornecedoraService.atualizar(id, fornecedora);
-        return fornecedoraAtualizada != null
-                ? ResponseEntity.ok(FornecedoraMapper.toDTO(fornecedoraAtualizada))
-                : ResponseEntity.notFound().build();
+            @RequestParam("fornecedora") String fornecedoraJson,
+            @RequestParam(value = "contrato", required = false) MultipartFile contrato) {
+        try {
+            FornecedoraCreateDTO dto = objectMapper.readValue(fornecedoraJson, FornecedoraCreateDTO.class);
+            Fornecedora fornecedora = FornecedoraMapper.toFornecedora(dto);
+            Fornecedora fornecedoraAtualizada = fornecedoraService.atualizar(id, fornecedora);
+    
+            if (fornecedoraAtualizada == null) {
+                return ResponseEntity.notFound().build();
+            }
+    
+            if (contrato != null && !contrato.isEmpty()) {
+                String contratoUrl = arquivoService.salvarContrato(contrato);
+                fornecedoraAtualizada.setContratoUrl(contratoUrl);
+                fornecedoraAtualizada = fornecedoraService.salvar(fornecedoraAtualizada);
+            }
+    
+            return ResponseEntity.ok(FornecedoraMapper.toDTO(fornecedoraAtualizada));
+    
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
+    
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluirFornecedora(@PathVariable Long id) {
