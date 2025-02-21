@@ -13,8 +13,6 @@ import {
   TablePagination,
   TextField,
   Button,
-  FormControlLabel,
-  Checkbox
 } from '@mui/material';
 import Sidebar from '../../components/sidebar';
 import EditIcon from '@mui/icons-material/Edit';
@@ -22,8 +20,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
-import InputAdornment from '@mui/icons-material/SearchOutlined';
 
 const EstoquePage = () => {
   const [produtos, setProdutos] = useState([ ]);
@@ -37,10 +33,6 @@ const EstoquePage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [search, setSearch] = useState('');
   const router = useRouter();
-  const [isMaisVendidos, setIsMaisVendidos] = useState(false);
-  const [isMaisBemAvaliados, setIsMaisBemAvaliados] = useState(false);
-  const [isCNPJ, setIsCNPJ] = useState(false);
- 
   
 
   const handleChangePage = (event, newPage) => setPage(newPage);
@@ -60,7 +52,7 @@ const EstoquePage = () => {
     fetchProdutos();
   }, []);
 
-  
+  // função para excluir um produto
   const handleDeleteProduto = async (id) => {
     try {
       await axios.delete(`${BASE_URL}?id=${id}`);
@@ -74,11 +66,12 @@ const EstoquePage = () => {
 
   const handleNavigateToRegister = () => {
     if (router) {
-      router.push('./cadastrar_lote');
+      router.push('./cadastro_produto');
     }
   };
   useEffect(() => {
     if (produtos.length > 0) {
+        // calcula a quantidade total e o valor total  dos produtos
         const quantidade = produtos.reduce((acc, p) => acc + p.quantidade, 0);
         const valor = produtos.reduce((acc, p) => acc + p.quantidade * p.preco, 0);
 
@@ -87,13 +80,13 @@ const EstoquePage = () => {
     }
 }, [produtos]);
 
-  
+  // filtra os  produtos pelo campo de pesquisa
   const produtosFiltrados = produtos.filter((produto) =>
     produto.nome.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <Box sx={{ display: 'flex',backgroundColor: '#ADD8E6', }}>
+    <Box sx={{ display: 'flex',backgroundColor: '#9AE4FF',minHeight: '100vh'  }}>
       <Sidebar />
       <Box
         sx={{
@@ -101,186 +94,224 @@ const EstoquePage = () => {
           marginLeft: '250px',
           padding: '20px',
           height: '100vh',
-          overflow: 'auto',
-          marginTop: '60px',
-          backgroundColor: '#ADD8E6',
+          overflow: 'hidden',
+          marginTop: '50px',
         }}
       >
-        <Box sx={{ marginBottom: '20px', }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-            Controle de Lotes
+        <Box sx={{ marginBottom: '50px' }}>
+          <Typography variant="h4" sx={{  justifyContent: 'center',
+              alignItems: 'center',
+              textAlign: 'center',
+              fontWeight: 'bold',
+              fontSize: '50px', }}>
+            Gerenciamento de  Lotes 
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-          <Card
-            sx={{
-             
-            }}
-          >
-           
+        
           
-          </Card>
-
-          <Card
-            sx={{
-             
-
-              
-            }}
-          >
-          
-           
-          </Card>
-          
-        </Box>
-        <Card sx={{ padding: '10px', bgcolor: 'white', boxShadow: 3, marginTop: '10px',  borderRadius: '25px',backgroundColor: '#FADADD',}}>
-        <TableContainer sx={{ maxHeight: '600px' ,backgroundColor: '#FADADD',}}>
-  <Table Header>
-  <TableHead>
-  <TableRow>
-    <TableCell colSpan={6} align="left">
-      <TextField
-        label="Pesquisar lote "
-        variant="outlined"
-        size="medium"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        sx={{
-          height: '50px',
-          width: '500px',
-          marginRight: '300px',
-          '& .MuiOutlinedInput-root': {
-            borderRadius: '25px',
-            backgroundColor: '#FFFFFF',
-            color: '#000000',
-            '& fieldset': {
-              borderColor: '#CCCCCC',
-            },
-            '&:hover fieldset': {
-              borderColor: '#00509E',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: '#00509E',
-            },
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-          },
-          '& .MuiInputBase-input': {
-            color: '#000000',
-          },
-          '& .MuiInputLabel-root': {
-            color: '#000000',
-          },
-          '& .MuiInputLabel-root.Mui-focused': {
-            color: '#00509E',
-          },
-        }}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <SearchOutlinedIcon sx={{ color: '#00509E' }} />
-            </InputAdornment>
-          ),
-        }}
-      />
-      <Box
-        sx={{
-          flexGrow: 1,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginTop: '-50px',
-          backgroundColor: '#FADADD',
-        }}
-      >
-        <Button
+       
+        <Box
           sx={{
-            backgroundColor: ' #50abe4',
-            color: 'white',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            border: '2px solid  #50abe4',
-            fontWeight: 'tine',
-            fontSize: '15px',
-            borderRadius: '60px',
-            padding: '10px 0',
-            width: '190px',
-            height: '50px',
-            textTransform: 'none',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: '30px',
           }}
-          onClick={handleNavigateToRegister}
         >
-          Adicionar
-        </Button>
-      </Box>
+         <TextField 
+  label="Pesquisar"
+  variant="outlined"
+  size="medium"
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  sx={{
+    height: '80px',
+    width: '1800px',
+    backgroundColor: '#F5F5F5', 
+    marginRight: '10px',
+    marginBottom: '50px',
+    marginTop: '50px',
+    '& .MuiOutlinedInput-root': {
+      backgroundColor: '#F5F5F5', 
+      color: '#000000',
+      height: '160px',
+      '& fieldset': {
+        borderColor: '#CCCCCC',
+      },
+      '&:hover fieldset': {
+        borderColor: '#00509E',
+      },
+      '&.Mui-focused fieldset': {},
+      boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',  // Sombra mais forte
+    },
+    '& .MuiInputBase-input': {
+      color: '#000000',
+    },
+    '& .MuiInputLabel-root': {
+      transform: 'translateY(25px) translateX(50px)', 
+      color: '#000000',
+      fontSize: '20px',  // Aumentando a fonte da label
+    },
+    '& .MuiInputLabel-root.Mui-focused': {
+      color: '#00509E',
+    },
+  }}
+/>
+        </Box>
+
+        <Card
+  sx={{
+    padding: '20px',
+    bgcolor: 'white',
+    marginTop: '20px',
+    backgroundColor: '#F5F5F5', 
+    borderRadius: '20px',
+    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+  }}
+>
+  <Typography
+    variant="h6"
+    sx={{
+      fontWeight: 'bold',
+      textAlign: 'LEFT',
+      marginBottom: '40px',
+      fontSize: '35px',
+      color: '#333',
+      marginTop: '20px',
+    }}
+  >
+   Lotes
+  </Typography>
+
+  <TableContainer sx={{ maxHeight: '600px', borderRadius: '10px', overflow: 'hidden', }}>
+    <Table stickyHeader>
+      <TableHead>
+      <TableRow>
+    <TableCell 
+      sx={{ 
+        fontSize: '18px', 
+        fontWeight: 'normal', 
+        backgroundColor: '#FADADD', 
+        borderRight: '2px solid #F5F5F5',
+        textAlign: 'center',  // Linha branca à direita
+      }}
+    >
+    Lote
+    </TableCell>
+    <TableCell 
+      sx={{ 
+        fontSize: '18px', 
+        backgroundColor: '#FADADD', 
+        fontWeight: 'normal', 
+        borderRight: '2px solid #F5F5F5',
+        textAlign: 'center',  // Linha branca à direita
+      }}
+    >
+     Data 
+    </TableCell>
+    <TableCell 
+      sx={{ 
+        fontSize: '18px', 
+        fontWeight: 'lighter', // Fonte mais fina
+        backgroundColor: '#FADADD', 
+        borderRight: '2px solid #F5F5F5',
+        textAlign: 'center',  // Linha branca à direita
+      }}
+    >
+    Fornecedoras
+    </TableCell>
+    <TableCell 
+      align="center" 
+      sx={{ 
+        fontSize: '18px', 
+        fontWeight: 'normal', 
+        backgroundColor: '#FADADD', 
+        borderRight: '2px solid #F5F5F5',
+        textAlign: 'center',  // Linha branca à direita
+      }}
+    >
+     Ações
     </TableCell>
   </TableRow>
- 
-  <TableRow>
-    
-  </TableRow>
-  <TableRow>
-    <TableCell>
-      <strong>Código</strong>
-    </TableCell>
-    <TableCell>
-      <strong>Descrição</strong>
-    </TableCell>
-    
-    <TableCell>
-      <strong>Gênero</strong>
-    </TableCell>
-    <TableCell>
-      <strong>Tamanho</strong>
-    </TableCell>
-    <TableCell>
-      <strong>Ações</strong>
-    </TableCell>
-  </TableRow>
-</TableHead>
-    <TableBody>
-      {produtosFiltrados
-        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-        .map((produto) => (
-          <TableRow key={produto.id}>
-            <TableCell>
-              <img
-                src={produto.imagem}
-                alt={produto.nome}
-                style={{ width: '50px', height: '50px', borderRadius: '5px' }}
-              />
-            </TableCell>
-            <TableCell>{produto.nome}</TableCell>
-            <TableCell>{produto.quantidade}</TableCell>
-            <TableCell>R$ {produto.preco.toFixed(2)}</TableCell>
-            <TableCell>R$ {(produto.quantidade * produto.preco).toFixed(2)}</TableCell>
-            <TableCell>
-              <IconButton sx={{ marginRight: 1, color: '#00509E' }}>
-                <VisibilityIcon />
-              </IconButton>
-              <IconButton sx={{ marginRight: 1, color: '#00509E' }}>
-                <EditIcon />
-              </IconButton>
-              <IconButton
-                onClick={() => handleDeleteProduto(produto.id)}
-                sx={{ color: '#00509E' }}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </TableCell>
-          </TableRow>
-        ))}
-    </TableBody>
-  </Table>
-</TableContainer>
-          <TablePagination
-            component="div"
-            count={produtosFiltrados.length}
-            page={page}
-            onPageChange={handleChangePage}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25]}
-          />
-        </Card>
+      </TableHead>
+      <TableBody>
+        {produtosFiltrados
+          .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+          .map((produto) => (
+            <TableRow key={produto.id} hover>
+              <TableCell>
+                <img
+                  src={produto.imagem}
+                  alt={produto.nome}
+                  style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '5px',
+                    objectFit: 'cover',
+                  }}
+                />
+              </TableCell>
+              <TableCell>{produto.nome}</TableCell>
+              <TableCell>{produto.quantidade}</TableCell>
+              <TableCell>R$ {produto.preco.toFixed(2)}</TableCell>
+              <TableCell>R$ {(produto.quantidade * produto.preco).toFixed(2)}</TableCell>
+              <TableCell align="center">
+                <IconButton sx={{ marginRight: 1, color: '#00509E' }}>
+                  <VisibilityIcon />
+                </IconButton>
+                <IconButton sx={{ marginRight: 1, color: '#00509E' }}>
+                  <EditIcon />
+                </IconButton>
+                <IconButton
+                  onClick={() => handleDeleteProduto(produto.id)}
+                  sx={{ color: '#00509E' }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </TableCell>
+            </TableRow>
+          ))}
+      </TableBody>
+    </Table>
+  </TableContainer>
+
+  <TablePagination
+    component="div"
+    count={produtosFiltrados.length}
+    page={page}
+    onPageChange={handleChangePage}
+    rowsPerPage={rowsPerPage}
+    onRowsPerPageChange={handleChangeRowsPerPage}
+    rowsPerPageOptions={[5, 10, 25]}
+    sx={{
+      marginTop: '10px',
+      bgcolor: '#F5F5F5',
+      borderRadius: '10px',
+     
+    }}
+  />
+</Card>
+ <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '30px', }}>
+        <Button
+    sx={{
+      backgroundColor: '#FADADD',
+      color: 'black',
+      boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+      border: '2px solid #FADADD',
+      fontWeight: 'bold',
+      fontSize: '20px',
+      borderRadius: '60px',
+      padding: '10px 0',
+      width: '300px', // Aumentado para 300px
+      height: '50px',
+      textTransform: 'none',
+    }}
+    onClick={handleNavigateToRegister}
+  >
+    Cadastrar lote
+  </Button>
+</Box>
       </Box>
     </Box>
   );

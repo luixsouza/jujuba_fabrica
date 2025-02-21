@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Typography, Grid, CircularProgress, TextField, Button } from '@mui/material';
+import { Box, Card, CardContent, Typography, Grid, TextField, } from '@mui/material';
 import Sidebar from '../../components/sidebar';
 import { useRouter } from 'next/router';
 import axios from 'axios';
+import { ArrowBack, Home } from '@mui/icons-material'; 
+
 
 const BASE_URL = 'http://localhost:8080/api/fornecedoras'; //url base da API
 export default function SupplierDetails() {
-    const [newValues, setNewValues] = useState(null); // dados da fornecedora
-    const [isLoading, setIsLoading] = useState(true); // estado de carregamento
+    const [ setIsLoading] = useState(false); // estado de carregamento// mudar pra true quando tiver for clicado 
     const router = useRouter();
     const { id: fornecedoraid } = router.query; // captura a ID da URL
+    const [OldValues, setOldValues] = useState({});
 
     ////  moss, aqui ele faz a requesição pro back do json
     useEffect(() => {
@@ -19,7 +21,7 @@ export default function SupplierDetails() {
                     
                     const response = await axios.get(`${BASE_URL}/${fornecedoraid}`);
     
-                    setNewValues({
+                    setOldValues({
                         Nome: response.data.nome || "N/A",
                         Contato: response.data.contato || "N/A",
                         Endereço: response.data.endereco || "N/A",
@@ -37,131 +39,230 @@ export default function SupplierDetails() {
        
         fetchFornecedoraData();
     }, [fornecedoraid]); 
-    if (isLoading) {
-        return <div>Carregando...</div>;
-    }
-
-    if (!newValues) {
-        return <div>Erro ao carregar os dados da fornecedora.</div>;
-    }
-
+    
    
    
 
     return (
-        <Box sx={{ display: "flex", backgroundColor: "#50abe4", minHeight: "100vh" }}>
-        
-            <Box sx={{ width: "250px", backgroundColor: "#50abe4" }}>
-                <Sidebar />
-            </Box>
-
-           
-            <Box sx={{ flex: 1, p: 3, backgroundColor: "#F5F5DC" }}></Box>
-
-        
-            <Box sx={{ flex: 1, p: 3, backgroundColor: "#F5F5DC"  }}>
-                <Box sx={{ mb: 4, textAlign: "left", mt: 8 }}>
-                    <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-                        Visualizar Fornecedor
-                    </Typography>
-                </Box>
-
-                <Card
-                    sx={{
-                        borderRadius: 4,
-                        boxShadow: 3,
-                        p: 3,
-                        maxWidth: "100%",
-                        mx: "auto",
-                        mt: 8,
-                        height: "auto",
-                    }}
-                >
-                    <CardContent>
-                        <Grid container spacing={3}>
-                            <Grid item md={6} xs={12}>
-                                <TextField
-                                    label="Nome do Fornecedor"
-                                    variant="outlined"
-                                    fullWidth
-                                    value={newValues.nome}
-                                    InputProps={{
-                                        readOnly: true,
-                                    }}
-                                />
-                            </Grid>
-                            <Grid item md={6} xs={12}>
-                                <TextField
-                                    label="Contato"
-                                    variant="outlined"
-                                    fullWidth
-                                    value={newValues.contratoUrl}
-                                    InputProps={{
-                                        readOnly: true,
-                                    }}
-                                />
-                            </Grid>
-                            <Grid item md={6} xs={12}>
-                                <TextField
-                                    label="Endereço"
-                                    variant="outlined"
-                                    fullWidth
-                                    value={newValues.endereco}
-                                    InputProps={{
-                                        readOnly: true,
-                                    }}
-                                />
-                            </Grid>
-                            <Grid item md={6} xs={12}>
-                                <TextField
-                                    label="Chave Pix"
-                                    variant="outlined"
-                                    fullWidth
-                                    value={newValues.chavePix}
-                                    InputProps={{
-                                        readOnly: true,
-                                    }}
-                                />
-                            </Grid>
-                            <Grid item md={6} xs={12}>
-    <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-        Contrato
-    </Typography>
-    {newValues.contratoUrl ? (
-        newValues.contratoUrl.endsWith(".pdf") ? (
-            <Box sx={{ mt: 2 }}>
-                <iframe
-                    src={newValues.contratoUrl}
-                    width="100%"
-                    height="500px"
-                    style={{ border: "none" }}
-                />
-            </Box>
-        ) : newValues.contratoUrl.endsWith(".doc") || newValues.contratoUrl.endsWith(".docx") ? (
-            <Box sx={{ mt: 2 }}>
-                <a href={newValues.contratoUrl} target="_blank" rel="noopener noreferrer">
-                    <Button variant="contained">Abrir Contrato</Button>
-                </a>
-            </Box>
-        ) : newValues.contratoUrl.match(/\.(jpeg|jpg|gif|png)$/i) ? ( 
-            <Box sx={{ mt: 2 }}>
-                <img
-                    src={newValues.contratoUrl}
-                    alt="Contrato"
-                    style={{ maxWidth: "100%", height: "auto" }}
-                />
-            </Box>
-        ) : (
-            <Typography variant="body2">Formato de contrato não suportado</Typography>
-        )
-    ) : (
-        <Typography variant="body2">Contrato não disponível</Typography>
-    )}
-</Grid>
-                        </Grid>
-                    </CardContent>
-                </Card>
-            </Box>
-        </Box>
-    );
-}
+       <Box sx={{ display: 'flex', backgroundColor: '#9AE4FF', minHeight: '100vh' }}>
+                     <Box sx={{ width: '250px' }}>
+                         <Sidebar />
+                     </Box>
+         
+                     <Box sx={{ flex: 1, p: 3 }}>
+                         <Box sx={{ mb: 1, textAlign: 'center', mt: 8,  }}>
+                             <Typography variant="h4" sx={{ fontWeight: 'bold', marginButtom:'20px', fontSize:'40px'}}>
+                                
+                             </Typography>
+                         </Box>
+                 
+         
+                         <form autoComplete="off" >
+                             <Card
+                                 sx={{
+                                     borderRadius: 10,
+                                     backgroundColor:'#FADADD',
+                                     p: 3,
+                                     maxWidth: '150%',
+                                     mx: 'auto',
+                                     mt: 8,
+                                     height: 'auto',
+                                   
+                                    
+                                     boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+                                 }}
+                             >
+                                 <CardContent>
+                                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2, }}>
+                                     </Typography>
+                                     <Grid container spacing={3}>
+             <Grid item xs={12}>
+             <Grid container direction="column" alignItems="center" spacing={1}>
+            
+             <Grid item xs={12} display="flex" justifyContent="flex-start" width="100%" alignItems="center">
+                 <ArrowBack
+                     sx={{
+                         fontSize: '30px',
+                         cursor: 'pointer',
+                         color: 'black', 
+                     }}
+                     onClick={() => {}}
+                 />
+             </Grid>
+         
+         
+             <Grid item xs={12} display="flex" justifyContent="flex-end" width="100%" alignItems="center">
+                 <Home
+                     sx={{
+                         fontSize: '30px',
+                         cursor: 'pointer',
+                         color: 'black',
+                         marginTop: '-40px',
+                     }}
+                     onClick={() => {}}
+                 />
+             </Grid>
+         
+          
+             <Grid item xs={12}>
+                 <Typography
+                     variant="h4"
+                     sx={{
+                         mb: 4,
+                         fontSize: '45px',
+                         fontWeight: 'bold',
+                         textAlign: 'center',
+                     }}
+                 >
+                     Visualizar Fornecedor
+                 </Typography>
+             </Grid>
+         </Grid>
+             </Grid>
+             <Grid item xs={8} sm={7}>
+             <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
+                     Nome
+                 </Typography>
+                 <TextField
+                     fullWidth
+                     label="Nome do Fornecedor"
+                     name="nome"
+                     required
+                     value={OldValues?.nome || ''}
+                     variant="outlined"
+                     disabled
+                     sx={{
+                         '& .MuiOutlinedInput-root': {
+                             backgroundColor: '#FFFFFF',
+                             boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                         },
+                         '& .MuiOutlinedInput-root.Mui-focused': {
+                             backgroundColor: '#FFFFFF',
+                         },
+                     }}
+                 />
+             </Grid>
+             <Grid item xs={8} sm={7}>
+             <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
+                     Contato
+                 </Typography>
+                 <TextField
+                     fullWidth
+                     label="Contato"
+                     name="contato"
+                   
+                     required
+                     value={OldValues?.contato || ''}
+                     disabled
+                     variant="outlined"
+                     sx={{
+                         '& .MuiOutlinedInput-root': {
+                             backgroundColor: '#FFFFFF',
+                             boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                         },
+                         '& .MuiOutlinedInput-root.Mui-focused': {
+                             backgroundColor: '#FFFFFF',
+                         },
+                     }}
+                 />
+             </Grid>
+             <Grid item xs={8} sm={7}>
+             <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
+                     Endereço
+                 </Typography>
+                 <TextField
+                     fullWidth
+                     label="Endereço"
+                     name="endereco"
+                     required
+                     value={OldValues?.endereco || ''}
+                     variant="outlined"
+                     disabled
+                     sx={{
+                         '& .MuiOutlinedInput-root': {
+                             backgroundColor: '#FFFFFF',
+                             boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)', 
+                         },
+                         '& .MuiOutlinedInput-root.Mui-focused': {
+                             backgroundColor: '#FFFFFF',
+                         },
+                     }}
+                 />  
+             </Grid>
+             <Grid item xs={8} sm={7}>
+             <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray' }}>
+                     Contrato
+                 </Typography>
+                 <TextField
+                     fullWidth
+                     label="contrato"
+                     name="contratoFile"
+                     value={OldValues?.contratoFile|| ''}
+                     variant="outlined"
+                     disabled
+                     sx={{
+                         '& .MuiOutlinedInput-root': {
+                             backgroundColor: '#FFFFFF',
+                             boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                         },
+                         '& .MuiOutlinedInput-root.Mui-focused': {
+                             backgroundColor: '#FFFFFF',
+                         },
+                     }}
+                 />
+                
+             </Grid>
+             <Grid item xs={8} sm={7}>
+             <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray' }}>
+                     Chave Pix
+                 </Typography>
+                 <TextField
+                     fullWidth
+                     label="Chave Pix"
+                     name="chavePix"
+                     value={OldValues?.chavePix || ''}
+                     variant="outlined"
+                     sx={{
+                         '& .MuiOutlinedInput-root': {
+                             backgroundColor: '#FFFFFF',
+                             boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                         },
+                         '& .MuiOutlinedInput-root.Mui-focused': {
+                             backgroundColor: '#FFFFFF',
+                         },
+                     }}
+                 />
+                
+             </Grid>
+             <Grid item xs={8} sm={7}>
+             <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
+                     Data de nascimento
+                 </Typography>
+                 <TextField
+                     fullWidth
+                     label="Data de nascimento"
+                     name="Data de nascimento"
+                     required
+                     value={OldValues?.dataDeNascimento || ''}
+                     variant="outlined"
+                     disabled
+                     sx={{
+                         '& .MuiOutlinedInput-root': {
+                             backgroundColor: '#FFFFFF',
+                             boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                         },
+                         '& .MuiOutlinedInput-root.Mui-focused': {
+                             backgroundColor: '#FFFFFF',
+                         },
+                     }}
+                 />
+             </Grid>       
+         </Grid>                 </CardContent>
+         
+                                 
+                             </Card>
+                         </form>
+                     </Box>
+                 </Box>
+             );
+         }

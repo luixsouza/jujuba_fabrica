@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,  useMemo, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -15,16 +15,17 @@ import {
   TablePagination,
   InputAdornment,
 } from '@mui/material';
-import Sidebar from '../../components/sidebar';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import * as XLSX from 'xlsx'; 
-import SearchIcon from '@mui/icons-material/Search';
+import searchInput from '@mui/icons-material/Search';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import { Suspense, lazy } from 'react';
+
+
+
 
 const BASE_URL = 'http://localhost:8080/api/fornecedoras';
 
@@ -35,6 +36,17 @@ const FornecedoresPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [search, setSearch] = useState('');
   const router = useRouter();
+  const Sidebar = lazy(() => import('../../components/sidebar'));
+
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setSearchTerm(searchInput); 
+    }, 300); 
+
+    return () => clearTimeout(timeoutId); 
+  }, [searchInput]);
+
 
   useEffect(() => {
     const fetchFornecedores = async () => {
@@ -48,7 +60,7 @@ const FornecedoresPage = () => {
     fetchFornecedores();
   }, []);
 
-  const deleteFornecedora = async (id, values) => {
+  const deleteFornecedora = useCallback(async (id) => {
     try {
       const formData = new FormData();
       formData.append(
@@ -73,11 +85,10 @@ const FornecedoresPage = () => {
       console.error("Erro ao deletar fornecedor:", error);
       alert('Erro ao deletar fornecedor.');
     }
-  };
+  }, []);
 
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-  };
+
+  
 
   const handleNavigateToRegister = () => {
     if (router) {
@@ -100,57 +111,27 @@ const FornecedoresPage = () => {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
-
- 
-
-  const handleExportToExcel = () => {
-   
-    console.log('Exportando fornecedores:', fornecedores);
-  
-    
-    const headers = ['Nome', 'Contato', 'Endereço', 'Chave Pix'];
-  
-    
-    const dataForExport = fornecedores.length > 0
-      ? fornecedores.map((fornecedora) => ({
-          Nome: fornecedora.nome || 'N/A',
-          Contato: fornecedora.contato || 'N/A',
-          Endereço: fornecedora.endereco || 'N/A',
-          ChavePix: fornecedora.chavePix || 'N/A',
-
-        }))
-      : [{ Nome: 'N/A', Contato: 'N/A', Endereço: 'N/A', 'Chave Pix': 'N/A' }]; 
-  
- 
-    const sheetData = [headers, ...dataForExport.map(item => Object.values(item))];
-  
-   
-    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-  
-    
-    const workbook = XLSX.utils.book_new();
-  
-    
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Fornecedores');
-  
-  
-    XLSX.writeFile(workbook, 'fornecedores.xlsx');
-  };
-  const filteredFornecedores = fornecedores.filter((fornecedora) => {
-    return fornecedora.nome.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  }; 
+  const filteredFornecedores = useMemo(
+    () =>
+      fornecedores.filter((fornecedora) =>
+        fornecedora.nome.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [fornecedores, searchTerm]
+  );
 
   return (
-    <Box sx={{ display: 'flex', backgroundColor: '#50abe4', minHeight: '100vh',backgroundColor: '#ADD8E6'  }}>
+    <Box sx={{ display: 'flex', backgroundColor: '#50abe4', minHeight: '100vh',backgroundColor: '#9AE4FF'  }}>
+      <Suspense fallback={<div>Carregando...</div>}>
       <Sidebar />
+      </Suspense>
       <Box
         sx={{
           flex: 1,
           marginLeft: '290px',
           maxHeight: '1000px',
           overflow: 'auto',
-          backgroundColor: '#ADD8E6',
+          backgroundColor: '#9AE4FF',
           paddingTop: '3rem',
         }}
       >
@@ -158,41 +139,22 @@ const FornecedoresPage = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between', 
-            marginBottom: '50px',
+            justifyContent: 'center', 
+            marginBottom: '80px',
           }}
         >
           <Typography
             variant="h4"
             sx={{
+              justifyContent: 'center',
+              alignItems: 'center',
               textAlign: 'center',
               fontWeight: 'bold',
+              fontSize: '50px',
             }}
           >
             Fornecedores
           </Typography>
-          <Button
-            sx={{
-
-              color: 'black',
-            
-              borderRadius: '25px',
-              padding: '10px 20px',
-              textTransform: 'none',
-              
-              display: 'flex',
-              alignItems: 'center',
-              marginRight: '140px',
-              width:'180px',
-              '&:hover': {
-                backgroundColor: ' #50abe4', 
-              },
-            }}
-            onClick={handleExportToExcel}
-          >
-            <FileDownloadOutlinedIcon sx={{ marginRight: '8px' }} />
-            Exportar Excel
-          </Button>
         </Box>
 
         <Box
@@ -205,19 +167,23 @@ const FornecedoresPage = () => {
         >
           
           <TextField
-        label="Pesquisar fornecedor"
+        label="Pesquisar "
         variant="outlined"
         size="medium"
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+      onChange={(e) => setSearch(e.target.value)}
         sx={{
-          height: '50px',
-          width: '500px',
-          marginRight: '300px',
+          height: '80px',
+          width: '1800px',
+          boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+          marginRight: '10px',
+          backgroundColor: '#F5F5F5', 
+          marginBottom: '50px',
           '& .MuiOutlinedInput-root': {
-            borderRadius: '25px',
-            backgroundColor: '#FFFFFF',
+
+            backgroundColor: '#F5F5F5', 
             color: '#000000',
+             height: '80px',
             '& fieldset': {
               borderColor: '#CCCCCC',
             },
@@ -225,7 +191,7 @@ const FornecedoresPage = () => {
               borderColor: '#00509E',
             },
             '&.Mui-focused fieldset': {
-              borderColor: '#00509E',
+             
             },
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
           },
@@ -233,6 +199,7 @@ const FornecedoresPage = () => {
             color: '#000000',
           },
           '& .MuiInputLabel-root': {
+            transform: 'translateY(25px) translateX(5px)', 
             color: '#000000',
           },
           '& .MuiInputLabel-root.Mui-focused': {
@@ -242,63 +209,76 @@ const FornecedoresPage = () => {
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
-              <SearchOutlinedIcon sx={{ color: '#00509E' }} /> 
+              <SearchOutlinedIcon sx={{ color: 'black',fontSize:'40px' }} /> 
             </InputAdornment>
           ),
         }}
       />
-          <Button
-            sx={{
-              backgroundColor: '#FADADD',
-              color: 'black',
-              boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-              border: '2px solid #FADADD',
-              fontWeight: 'tine',
-              fontSize: '15px',
-              borderRadius: '60px',
-              padding: '10px 0',
-              width: '190px',
-              height: '50px',
-              textTransform: 'none',
-            }}
-            onClick={handleNavigateToRegister}
-          >
-            Cadastrar fornecedor
-          </Button>
         </Box>
 
         <Card
           sx={{
             padding: '20px',
-            bgcolor: '#FADADD',
-            boxShadow: 3,
+            bgcolor: 'white',
+            boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
             borderRadius: '25px',
-            width: '80%',
+            backgroundColor: '#F5F5F5', 
+            width: '100%',
             margin: '0 auto',
             border: "'2px solid #B0B0B0'",
           }}
         >
-          <TableContainer
-            sx={{ maxHeight: '1000px', width: '100%', margin: '0 auto' }}
-          >
+          <TableContainer sx={{ maxHeight: '600px', borderRadius: '10px', overflow: 'hidden',backgroundColor: '#F5F5F5',  }}>
             <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Nome</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Contato</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Endereço</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Chave Pix</strong>
-                  </TableCell>
-                  <TableCell>Ações</TableCell>
-                </TableRow>
-              </TableHead>
+            <TableHead>
+  <TableRow>
+    <TableCell 
+      align="center" 
+      sx={{ 
+        fontSize: '18px', 
+        textAlign: 'center', 
+      }}
+    >
+      Nome
+    </TableCell>
+    <TableCell 
+      align="center" 
+      sx={{ 
+        fontSize: '18px', 
+        textAlign: 'center',
+      }}
+    >
+      Contato
+    </TableCell>
+    <TableCell 
+      align="center" 
+      sx={{ 
+        fontSize: '18px', 
+        textAlign: 'center',
+      }}
+    >
+      Endereço
+    </TableCell>
+    <TableCell 
+      align="center" 
+      sx={{ 
+        fontSize: '18px', 
+        textAlign: 'center',
+      }}
+    >
+      Chave Pix
+    </TableCell>
+    <TableCell 
+      align="center" 
+      sx={{ 
+        fontSize: '18px', 
+        textAlign: 'center',
+      }}
+    >
+      Ações
+    </TableCell>
+  </TableRow>
+</TableHead>
               <TableBody>
                 {filteredFornecedores
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -343,6 +323,26 @@ const FornecedoresPage = () => {
             rowsPerPageOptions={[5, 10, 25]}
           />
         </Card>
+        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '30px', }}>
+        <Button
+    sx={{
+      backgroundColor: '#FADADD',
+      color: 'black',
+      boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+      border: '2px solid #FADADD',
+      fontWeight: 'bold',
+      fontSize: '20px',
+      borderRadius: '60px',
+      padding: '10px 0',
+      width: '300px', 
+      height: '50px',
+      textTransform: 'none',
+    }}
+    onClick={handleNavigateToRegister}
+  >
+    Cadastrar fornecedor
+  </Button>
+</Box>
       </Box>
     </Box>
   );

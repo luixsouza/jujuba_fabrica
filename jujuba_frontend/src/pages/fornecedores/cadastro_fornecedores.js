@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Box, Button, Card, CardContent, TextField, Typography, Grid, CircularProgress, IconButton } from '@mui/material';
+import { Box, Button, Card, CardContent, TextField, Typography, Grid, CircularProgress} from '@mui/material';
 import Sidebar from '../../components/sidebar';
 import axios from 'axios';
-import AttachFileIcon from '@mui/icons-material/AttachFile'; 
-const BASE_URL = 'http://localhost:8080/api/fornecedoras'; // URL base da API
+const BASE_URL = 'http://localhost:8080/api/fornecedoras'; 
+import { ArrowBack, Home } from '@mui/icons-material'; 
 
 export default function FornecedoresCadastro() {
     const [newValues, setNewValues] = useState({
@@ -12,9 +12,10 @@ export default function FornecedoresCadastro() {
         endereco: '',
         chavePix: '',
         contratoUrl: '',
+        
     });
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false); // estado de carregamento// mudar pra true quando tiver for clicado 
 
     // atualiza o estado com os valores dos campos
     const handleChange = (event) => {
@@ -40,6 +41,7 @@ export default function FornecedoresCadastro() {
                 endereco: values.endereco || "N/A",
                 chavePix: values.chavePix || "N/A",
                 contratoUrl: values.contratoUrl || null, // agora usando contratoUrl
+                
             }));
 
             // adiciona o contrato ao FormData
@@ -64,7 +66,9 @@ export default function FornecedoresCadastro() {
         }
     };
     
-
+    const handleImageChange = (event) => {
+        setImagem(event.target.files[0]);
+    };
     // envia os dados para a API
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -90,15 +94,15 @@ export default function FornecedoresCadastro() {
 
     
     return (
-        <Box sx={{ display: 'flex', backgroundColor: '#ADD8E6', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', backgroundColor: '#9AE4FF', minHeight: '100vh' }}>
             <Box sx={{ width: '250px' }}>
                 <Sidebar />
             </Box>
 
             <Box sx={{ flex: 1, p: 3 }}>
-                <Box sx={{ mb: 4, textAlign: 'center', mt: 8, marginRight:'800px', }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
-                        Cadastrar Fornecedor
+                <Box sx={{ mb: 1, textAlign: 'center', mt: 8,  }}>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', marginButtom:'20px', fontSize:'40px'}}>
+                       
                     </Typography>
                 </Box>
         
@@ -106,155 +110,298 @@ export default function FornecedoresCadastro() {
                 <form autoComplete="off" onSubmit={handleSubmit}>
                     <Card
                         sx={{
-                            borderRadius: 4,
+                            borderRadius: 10,
                             backgroundColor:'#FADADD',
                             p: 3,
-                            maxWidth: '100%',
+                            maxWidth: '150%',
                             mx: 'auto',
                             mt: 8,
                             height: 'auto',
+                          
                            
-                            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                            boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
                         }}
                     >
                         <CardContent>
                             <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2, }}>
                             </Typography>
                             <Grid container spacing={3}>
-                                <Grid item md={6} xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Nome do Fornecedor"
-                                        name="nome"
-                                        onChange={handleChange}
-                                        required
-                                        value={newValues?.nome || ''}
-                                        variant="outlined"
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: 4,
-                                                backgroundColor: '#FFFFFF',
-                                            },
-                                            '& .MuiOutlinedInput-root.Mui-focused': {
-                                                backgroundColor: '#FFFFFF',
-                                            },
-                                        }}
-                                    />
-                                </Grid>
-                                <Grid item md={6} xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Contato"
-                                        name="contato"
-                                        onChange={handleChange}
-                                        required
-                                        value={newValues?.contato || ''}
-                                        variant="outlined"
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: 4,
-                                                backgroundColor: '#FFFFFF',
-                                            },
-                                            '& .MuiOutlinedInput-root.Mui-focused': {
-                                                backgroundColor: '#FFFFFF',
-                                            },
-                                        }}
-                                    />
-                                </Grid>
-                                <Grid item md={6} xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Endereço"
-                                        name="endereco"
-                                        onChange={handleChange}
-                                        required
-                                        value={newValues?.endereco || ''}
-                                        variant="outlined"
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: 4,
-                                                backgroundColor: '#FFFFFF',
-                                            },
-                                            '& .MuiOutlinedInput-root.Mui-focused': {
-                                                backgroundColor: '#FFFFFF',
-                                            },
-                                        }}
-                                    />
-                                </Grid>
-                                <Grid item md={6} xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Chave Pix"
-                                        name="chavePix"
-                                        onChange={handleChange}
-                                        value={newValues?.chavePix || ''}
-                                        variant="outlined"
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: 4,
-                                                backgroundColor: '#FFFFFF',
-                                            },
-                                            '& .MuiOutlinedInput-root.Mui-focused': {
-                                                backgroundColor: '#FFFFFF',
-                                            },
-                                        }}
-                                    />
-                                </Grid>
-                                <Grid item md={6} xs={12}>
-                                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                        Upload do Contrato:
-                                    </Typography>
-                                    <input
-                                        type="file"
-                                        id="contratoUrl"
-                                        name="contratoUrl"
-                                        accept=".pdf,.doc,.docx"
-                                        onChange={handleFileChange}
-                                        style={{ display: 'none' }}
-                                    />
-                                    <label htmlFor="contratoUrl">
-                                    <IconButton component="span" sx={{ color: 'black', fontSize: '30px' }}>
-                                            <AttachFileIcon />
-                                        </IconButton>
-                                    </label>
-                                </Grid>
-                            </Grid>
-                        </CardContent>
+    <Grid item xs={12}>
+    <Grid container direction="column" alignItems="center" spacing={1}>
+   
+    <Grid item xs={12} display="flex" justifyContent="flex-start" width="100%" alignItems="center">
+        <ArrowBack
+            sx={{
+                fontSize: '30px',
+                cursor: 'pointer',
+                color: 'black', 
+            }}
+            onClick={() => {}}
+        />
+    </Grid>
 
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                justifyContent: 'center',
-                                gap: 2,
-                                mt: 2,
-                            }}
-                        >
-                            <Button
-                                type="submit"
-                                disabled={loading}
-                                sx={{
-                                    color: 'white',
-                                    backgroundColor: '#50abe4',
-                                    textTransform: 'none',
-                                    fontSize: '15px',
-                                    borderRadius: '50px',
-                                    padding: '10px 30px',
-                                    '&:hover': {
-                                        backgroundColor: '#003B6F',
-                                    },
-                                    '&:disabled': {
-                                        backgroundColor: '#cccccc',
-                                        color: '#666666',
-                                    },
-                                }}
-                            >
-                                {loading ? (
-                                    <CircularProgress size={24} sx={{ color: '#FFFFFF', marginRight: 2, boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', }} />
-                                ) : (
-                                    'Salvar Fornecedor'
-                                )}
-                            </Button>
-                        </Box>
+
+    <Grid item xs={12} display="flex" justifyContent="flex-end" width="100%" alignItems="center">
+        <Home
+            sx={{
+                fontSize: '30px',
+                cursor: 'pointer',
+                color: 'black',
+                marginTop: '-40px',
+            }}
+            onClick={() => {}}
+        />
+    </Grid>
+
+ 
+    <Grid item xs={12}>
+        <Typography
+            variant="h4"
+            sx={{
+                mb: 4,
+                fontSize: '45px',
+                fontWeight: 'bold',
+                textAlign: 'center',
+            }}
+        >
+            Cadastro de Fornecedor
+        </Typography>
+    </Grid>
+</Grid>
+    </Grid>
+    <Grid item xs={8} sm={7}>
+    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
+            Nome
+        </Typography>
+        <TextField
+            fullWidth
+            label="Nome do Fornecedor"
+            name="nome"
+            onChange={handleChange}
+            required
+            value={newValues?.nome || ''}
+            variant="outlined"
+            sx={{
+                '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#FFFFFF',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                },
+                '& .MuiOutlinedInput-root.Mui-focused': {
+                    backgroundColor: '#FFFFFF',
+                },
+            }}
+        />
+    </Grid>
+    <Grid item xs={8} sm={7}>
+    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
+            Contato
+        </Typography>
+        <TextField
+            fullWidth
+            label="Contato"
+            name="contato"
+            onChange={handleChange}
+            required
+            value={newValues?.contato || ''}
+            variant="outlined"
+            sx={{
+                '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#FFFFFF',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                },
+                '& .MuiOutlinedInput-root.Mui-focused': {
+                    backgroundColor: '#FFFFFF',
+                },
+            }}
+        />
+    </Grid>
+    <Grid item xs={8} sm={7}>
+    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
+            Endereço
+        </Typography>
+        <TextField
+            fullWidth
+            label="Endereço"
+            name="endereco"
+            onChange={handleChange}
+            required
+            value={newValues?.endereco || ''}
+            variant="outlined"
+            sx={{
+                '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#FFFFFF',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)', 
+                },
+                '& .MuiOutlinedInput-root.Mui-focused': {
+                    backgroundColor: '#FFFFFF',
+                },
+            }}
+        />
+         <Button
+            type="submit"
+            disabled={loading}
+            sx={{
+                marginLeft: '18px', 
+                color: 'Black',
+                backgroundColor: '#50abe4',
+                textTransform: 'none',
+                width:"350px",
+                fontWeight: 'bold',
+                marginLeft:"900px",
+                fontSize: '24px',
+                marginTop:"-80px",
+                borderRadius: '50px',
+                padding: '10px 30px',
+                height: '56px', 
+                '&:hover': {
+                    backgroundColor: '#003B6F',
+                },
+                '&:disabled': {
+                    backgroundColor: '#cccccc',
+                    color: '#666666',
+                },
+            }}
+        >
+            {loading ? (
+                <CircularProgress
+                    size={30}
+                    sx={{
+                        color: '#FFFFFF',
+                        marginRight: 2,
+                        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                    }}
+                />
+            ) : (
+                ' Upload de Contrato'
+            )}
+        </Button>   
+    </Grid>
+    <Grid item xs={8} sm={7}>
+    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray' }}>
+            Chave Pix
+        </Typography>
+        <TextField
+            fullWidth
+            label="Chave Pix"
+            name="chavePix"
+            onChange={handleChange}
+            value={newValues?.chavePix || ''}
+            variant="outlined"
+            sx={{
+                '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#FFFFFF',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                },
+                '& .MuiOutlinedInput-root.Mui-focused': {
+                    backgroundColor: '#FFFFFF',
+                },
+            }}
+        />
+        <Button
+            type="submit"
+            disabled={loading}
+            sx={{
+                marginLeft: '18px', 
+                color: 'Black',
+                backgroundColor: '#50abe4',
+                textTransform: 'none',
+                width:"350px",
+                fontWeight: 'bold',
+                marginLeft:"900px",
+                fontSize: '24px',
+                marginTop:"-80px",
+                borderRadius: '50px',
+                padding: '10px 30px',
+                height: '56px', 
+                '&:hover': {
+                    backgroundColor: '#003B6F',
+                },
+                '&:disabled': {
+                    backgroundColor: '#cccccc',
+                    color: '#666666',
+                },
+            }}
+        >
+            {loading ? (
+                <CircularProgress
+                    size={30}
+                    sx={{
+                        color: '#FFFFFF',
+                        marginRight: 2,
+                        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                    }}
+                />
+            ) : (
+                'Cadastrar fornecedor'
+            )}
+        </Button>   
+    </Grid>
+    <Grid item xs={8} sm={7}>
+    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
+            Data de nascimento
+        </Typography>
+        <TextField
+            fullWidth
+            label="Data de nascimento"
+            name="Data de nascimento"
+            onChange={handleChange}
+            required
+            value={newValues?.dataDeNascimento || ''}
+            variant="outlined"
+            sx={{
+                '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#FFFFFF',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                },
+                '& .MuiOutlinedInput-root.Mui-focused': {
+                    backgroundColor: '#FFFFFF',
+                },
+            }}
+        />
+         <Button
+            type="submit"
+            disabled={loading}
+            sx={{
+                marginLeft: '18px', 
+                color: 'Black',
+                backgroundColor: '#50abe4',
+                textTransform: 'none',
+                width:"350px",
+                fontWeight: 'bold',
+                marginLeft:"900px",
+                fontSize: '24px',
+                marginTop:"-80px",
+                borderRadius: '50px',
+                padding: '10px 30px',
+                height: '56px',
+                '&:hover': {
+                    backgroundColor: '#003B6F',
+                },
+                '&:disabled': {
+                    backgroundColor: '#cccccc',
+                    color: '#666666',
+                },
+            }}
+        >
+            {loading ? (
+                <CircularProgress
+                    size={30}
+                    sx={{
+                        color: '#FFFFFF',
+                        marginRight: 2,
+                        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                    }}
+                />
+            ) : (
+                'Cadastrar Lote'
+            )}
+        </Button>   
+    </Grid>
+    
+   
+</Grid>                 </CardContent>
+
+                        
                     </Card>
                 </form>
             </Box>
