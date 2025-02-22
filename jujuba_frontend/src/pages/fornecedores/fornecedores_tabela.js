@@ -331,7 +331,7 @@ const FornecedoresPage = () => {
       boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
       border: '2px solid #FADADD',
       fontWeight: 'bold',
-      fontSize: '20px',
+      fontSize: '17px',
       borderRadius: '60px',
       padding: '10px 0',
       width: '300px', 

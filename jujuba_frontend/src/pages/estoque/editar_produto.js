@@ -98,11 +98,11 @@ export default function ProdutosEdit({ produtoId }) {
                      
                         backgroundColor:'#9AE4FF',
                         p: 3,
-                        maxWidth: '150%',
+                        maxWidth: '73%',
                         mx: 'auto',
                         mt: 8,
                         height: 'auto',
-                      
+                        marginRight:"290px"
                        
                        
                     }}
@@ -114,7 +114,7 @@ export default function ProdutosEdit({ produtoId }) {
 <Grid item xs={12}> 
 <Grid container direction="column" alignItems="center" spacing={1}>
 
-<Grid item xs={12} display="flex" justifyContent="flex-start" width="100%" alignItems="center">
+<Grid item xs={9} display="flex" justifyContent="flex-start" width="100%" alignItems="center">
     <ArrowBack
         sx={{
             fontSize: '30px',
@@ -126,7 +126,7 @@ export default function ProdutosEdit({ produtoId }) {
 </Grid>
 
 
-<Grid item xs={12} display="flex" justifyContent="flex-end" width="100%" alignItems="center">
+<Grid item xs={9} display="flex" justifyContent="flex-end" width="100%" alignItems="center">
     <Home
         sx={{
             fontSize: '30px',
@@ -139,7 +139,7 @@ export default function ProdutosEdit({ produtoId }) {
 </Grid>
 
 {}
-<Grid item xs={12}>
+<Grid item xs={9}>
     <Typography
         variant="h4"
         sx={{
@@ -177,7 +177,7 @@ sx={{
 <Box
     sx={{
         width: '850px',
-        height: '280px',
+        height: '150px',
         backgroundColor: '#FFFFFF',
         boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
         display: 'flex',
@@ -388,7 +388,7 @@ sx={{
     boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
     border: '2px solid #FADADD',
     fontWeight: 'bold',
-    fontSize: '20px',
+    fontSize: '17px',
     borderRadius: '60px',
     padding: '10px 0',
     width: '300px',

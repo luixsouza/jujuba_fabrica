@@ -93,7 +93,7 @@ const EstoquePage = () => {
           flex: 1,
           marginLeft: '250px',
           padding: '20px',
-          height: '100vh',
+          height: '150vh',
           overflow: 'hidden',
           marginTop: '50px',
         }}
