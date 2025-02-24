@@ -63,7 +63,7 @@ export default function SupplierDetails() {
                                      borderRadius: 10,
                                      backgroundColor:'#FADADD',
                                      p: 3,
-                                     maxWidth: '150%',
+                                     maxWidth: '94%',
                                      mx: 'auto',
                                      mt: 8,
                                      height: 'auto',

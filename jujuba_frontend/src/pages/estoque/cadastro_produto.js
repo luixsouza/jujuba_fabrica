@@ -116,10 +116,11 @@ export default function FornecedoresCadastro() {
                          
                             backgroundColor:'#9AE4FF',
                             p: 3,
-                            maxWidth: '150%',
+                            maxWidth: '62%',
                             mx: 'auto',
                             mt: 8,
                             height: 'auto',
+                            marginRight:'590px'
                           
                            
                            
@@ -195,7 +196,7 @@ export default function FornecedoresCadastro() {
     <Box
         sx={{
             width: '850px',
-            height: '280px',
+            height: '150px',
             backgroundColor: '#FFFFFF',
             boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
             display: 'flex',
@@ -403,7 +404,7 @@ export default function FornecedoresCadastro() {
         boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
         border: '2px solid #FADADD',
         fontWeight: 'bold',
-        fontSize: '20px',
+        fontSize: '17px',
         borderRadius: '60px',
         padding: '10px 0',
         width: '300px',
@@ -420,7 +421,7 @@ export default function FornecedoresCadastro() {
         boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
         border: '2px solid #FADADD',
         fontWeight: 'bold',
-        fontSize: '20px',
+        fontSize: '17px',
         borderRadius: '60px',
         padding: '10px 0',
         width: '300px',
@@ -438,7 +439,7 @@ export default function FornecedoresCadastro() {
         boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
         border: '2px solid #FADADD',
         fontWeight: 'bold',
-        fontSize: '20px',
+        fontSize: '17px',
         borderRadius: '60px',
         padding: '10px 0',
         width: '300px',

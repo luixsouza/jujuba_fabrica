@@ -98,10 +98,11 @@ export default function ProdutosEdit({ produtoId }) {
                      
                         backgroundColor:'#9AE4FF',
                         p: 3,
-                        maxWidth: '150%',
+                        maxWidth: '73%',
                         mx: 'auto',
                         mt: 8,
                         height: 'auto',
+                         marginRight:"290px"
                       
                        
                        
@@ -177,7 +178,7 @@ sx={{
 <Box
     sx={{
         width: '850px',
-        height: '280px',
+        height: '150px',
         backgroundColor: '#FFFFFF',
         boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
         display: 'flex',
