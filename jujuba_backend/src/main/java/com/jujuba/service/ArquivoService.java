@@ -9,21 +9,28 @@ import java.nio.file.Paths;
 
 @Service
 public class ArquivoService {
-    private static final String UPLOAD_DIR = "uploads/contratos/";
+    private static final String UPLOAD_DIR_CONTRATOS = "uploads/contratos/";
+    private static final String UPLOAD_DIR_IMAGENS = "uploads/produtos/";
 
     public String salvarContrato(MultipartFile contrato) throws IOException {
-        if (contrato == null || contrato.isEmpty() || contrato.getOriginalFilename() == null) {
+        return salvarArquivo(contrato, UPLOAD_DIR_CONTRATOS);
+    }
+
+    public String salvarImagem(MultipartFile imagem) throws IOException {
+        return salvarArquivo(imagem, UPLOAD_DIR_IMAGENS);
+    }
+
+    private String salvarArquivo(MultipartFile arquivo, String diretorio) throws IOException {
+        if (arquivo == null || arquivo.isEmpty() || arquivo.getOriginalFilename() == null) {
             throw new IOException("Arquivo inválido.");
         }
 
-        String nomeArquivo = System.currentTimeMillis() + "_" + contrato.getOriginalFilename();
-        Path caminhoArquivo = Paths.get(UPLOAD_DIR, nomeArquivo);
+        String nomeArquivo = System.currentTimeMillis() + "_" + arquivo.getOriginalFilename();
+        Path caminhoArquivo = Paths.get(diretorio, nomeArquivo);
 
-        // Cria diretório, se necessário
         Files.createDirectories(caminhoArquivo.getParent());
-        Files.write(caminhoArquivo, contrato.getBytes());
+        Files.write(caminhoArquivo, arquivo.getBytes());
 
         return caminhoArquivo.toString();
     }
 }
-

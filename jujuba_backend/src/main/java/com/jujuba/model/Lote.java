@@ -1,21 +1,11 @@
 package com.jujuba.model;
 
 import java.time.LocalDateTime;
-
+import java.util.List;
 import org.springframework.data.annotation.CreatedDate;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 @Entity
@@ -28,14 +18,13 @@ public class Lote {
     private Long id;
 
     @CreatedDate
-    @Column(name = "data_criacao_lote")
-    private LocalDateTime datacriação;
+    @Column(name = "data_criacao_lote", nullable = false, updatable = false)
+    private LocalDateTime dataCriacao;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "fornecedora_id", nullable = false)
     private Fornecedora fornecedora;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "produto_id", nullable = false)
-    private Produto produto;
+    @OneToMany(mappedBy = "lote", cascade = CascadeType.ALL)
+    private List<Produto> produtos;
 }

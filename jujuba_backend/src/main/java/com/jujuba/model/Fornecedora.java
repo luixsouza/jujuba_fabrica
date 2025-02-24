@@ -1,21 +1,19 @@
 package com.jujuba.model;
 
-import java.io.Serializable;
+import java.util.List;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "fornecedora")
-public class Fornecedora implements Serializable {
+public class Fornecedora {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,4 +37,7 @@ public class Fornecedora implements Serializable {
 
     @Column(name = "contrato_url")
     private String contratoUrl;
+
+    @OneToMany(mappedBy = "fornecedora", cascade = CascadeType.ALL)
+    private List<Lote> lotes;
 }
