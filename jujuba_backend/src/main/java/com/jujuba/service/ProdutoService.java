@@ -1,28 +1,38 @@
 package com.jujuba.service;
 
+import com.jujuba.model.Lote;
 import com.jujuba.model.Produto;
+import com.jujuba.repository.LoteRepository;
 import com.jujuba.repository.ProdutoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class ProdutoService {
 
-    @Autowired
-    private ProdutoRepository repository;
+    private ProdutoRepository produtoRepository;
+    private LoteRepository loteRepository;
 
     public List<Produto> listarTodos() {
-        return repository.findAll();
+        return produtoRepository.findAll();
     }
 
     public Produto salvar(Produto produto) {
-        return repository.save(produto);
+        Optional<Lote> lote = loteRepository.findById(produto.getLote().getId());
+        if (lote.isEmpty()) {
+            throw new IllegalArgumentException("Lote não encontrado.");
+        }
+        return produtoRepository.save(produto);
     }
 
     public Produto buscarPorId(Long id) {
-        return repository.findById(id).orElse(null);
+        return produtoRepository.findById(id).orElse(null);
     }
 
     public Produto atualizar(Long id, Produto produtoAtualizado) {
@@ -32,12 +42,12 @@ public class ProdutoService {
             produtoExistente.setDescricao(produtoAtualizado.getDescricao());
             //produtoExistente.setCodigo(produtoAtualizado.getCodigo());
             produtoExistente.setPreco(produtoAtualizado.getPreco());
-            return repository.save(produtoExistente);
+            return produtoRepository.save(produtoExistente);
         }
         return null;
     }
 
     public void excluir(Long id) {
-        repository.deleteById(id);
+        produtoRepository.deleteById(id);
     }
 }

@@ -19,9 +19,9 @@ public class Lote {
 
     @CreatedDate
     @Column(name = "data_criacao_lote", nullable = false, updatable = false)
-    private LocalDateTime dataCriacao;
+    private LocalDateTime dataCriacao = LocalDateTime.now();
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "fornecedora_id", nullable = false)
     private Fornecedora fornecedora;
 

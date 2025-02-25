@@ -2,6 +2,8 @@ package com.jujuba.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
 
 import lombok.Getter;
@@ -12,6 +14,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+@JsonIgnoreProperties({"contato", "endereco", "chavePix", "creditoLoja", "contratoUrl", "lotes"})
 @Table(name = "fornecedora")
 public class Fornecedora {
 

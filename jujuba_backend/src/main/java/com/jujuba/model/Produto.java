@@ -2,6 +2,7 @@ package com.jujuba.model;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jujuba.utils.enums.EstadoConservacao;
 import com.jujuba.utils.enums.Genero;
 
@@ -54,5 +55,6 @@ public class Produto {
     
     @ManyToOne
     @JoinColumn(name = "lote_id", nullable = false)
+    @JsonIgnore
     private Lote lote;
 }
