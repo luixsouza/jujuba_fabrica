@@ -2,13 +2,10 @@ package com.jujuba.model;
 
 import java.io.Serializable;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.jujuba.utils.enums.Role;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -22,7 +19,6 @@ import lombok.Setter;
 @Getter @Setter @NoArgsConstructor
 @Entity
 @Table(name = "usuarios")
-@EntityListeners(AuditingEntityListener.class)
 public class Usuario implements Serializable {
 
     @Id

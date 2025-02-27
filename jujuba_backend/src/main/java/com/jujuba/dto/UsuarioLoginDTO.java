@@ -15,6 +15,6 @@ public class UsuarioLoginDTO {
     @Email(message = "formato do e-mail está invalido", regexp = "^[a-z0-9.+-]+@[a-z0-9.-]+\\.[a-z]{2,}$")
     private String username;
     @NotBlank
-    @Size(min = 6, max = 6)
+    @Size(min = 50, max = 50)
     private String password;
 }
