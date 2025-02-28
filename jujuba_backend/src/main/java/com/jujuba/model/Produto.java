@@ -1,20 +1,14 @@
 package com.jujuba.model;
 
-import com.jujuba.utils.enums.EstadoConservacao;
+import java.math.BigDecimal;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.jujuba.utils.enums.EstadoConservacao;
+import com.jujuba.utils.enums.Genero;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
 @Getter @Setter @NoArgsConstructor
 @Entity
@@ -26,26 +20,41 @@ public class Produto {
     @Column(name = "id")
     private Long id;
     
+    @NotNull
+    @Size(max = 300)
     @Column(name = "descricao", nullable = false, length = 300)
     private String descricao;
     
+    @NotNull
+    @Size(max = 100)
     @Column(name = "marca", nullable = false, length = 100)
     private String marca;
     
+    @NotNull
+    @Size(max = 50)
     @Column(name = "tamanho", nullable = false, length = 50)
     private String tamanho;
     
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(name = "estado_conservacao", nullable = false, length = 20)
     private EstadoConservacao estadoConservacao;
+
+    @Enumerated(EnumType.STRING)
+    @NotNull
+    @Column(name = "genero", nullable = false, length = 10)
+    private Genero genero;
     
+    @NotNull
     @Column(name = "preco", nullable = false)
-    private Double preco;
+    private BigDecimal preco;
     
+    @Size(max = 300)
     @Column(name = "imagem_url", length = 300)
     private String imagemUrl;
     
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "fornecedora_id", nullable = false)
-    private Fornecedora fornecedora;
+    @ManyToOne
+    @JoinColumn(name = "lote_id", nullable = false)
+    @JsonIgnore
+    private Lote lote;
 }
