@@ -186,46 +186,52 @@ const EstoquePage = () => {
             marginBottom: '30px',
           }}
         >
-         <TextField 
-  label="Pesquisar"
-  variant="outlined"
-  size="medium"
-  value={search}
-  onChange={(e) => setSearch(e.target.value)}
-  sx={{
-    height: '80px',
-    width: '1800px',
-    backgroundColor: '#F5F5F5', 
-    marginRight: '10px',
-    marginBottom: '50px',
-    marginTop: '50px',
-    '& .MuiOutlinedInput-root': {
-      backgroundColor: '#F5F5F5', 
-      color: '#000000',
-      height: '160px',
-      '& fieldset': {
-        borderColor: '#CCCCCC',
-      },
-      '&:hover fieldset': {
-        borderColor: '#00509E',
-      },
-      '&.Mui-focused fieldset': {},
-      boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)', 
-    },
-    '& .MuiInputBase-input': {
-      color: '#000000',
-    },
-    '& .MuiInputLabel-root': {
-      transform: 'translateY(25px) translateX(50px)', 
-      color: '#000000',
-      fontSize: '20px',  
-    },
-    '& .MuiInputLabel-root.Mui-focused': {
-      color: '#00509E',
-    },
-  }}
-/>
-        </Box>
+       <TextField
+        label="Pesquisar"
+        variant="outlined"
+        size="medium"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        sx={{
+          width: "100%",
+          maxWidth: "1800px",
+          backgroundColor: "#F5F5F5",
+          marginBottom: "50px",
+          marginTop: "50px",
+          "& .MuiOutlinedInput-root": {
+            backgroundColor: "#F5F5F5",
+            color: "#000000",
+            height: "80px", 
+            "& fieldset": {
+              borderColor: "#CCCCCC",
+            },
+            "&:hover fieldset": {
+              borderColor: "#00509E",
+            },
+            "&.Mui-focused fieldset": {
+              borderColor: "#00509E", 
+            },
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+          },
+          "& .MuiInputBase-input": {
+            color: "#000000",
+            padding: "0 20px",
+            fontSize: "18px",
+          },
+          "& .MuiInputLabel-root": {
+            fontSize: "20px",
+            color: "#000000",
+            transform: "translate(20px, 28px)",
+          },
+          "& .MuiInputLabel-root.Mui-focused": {
+            color: "#00509E",
+          },
+          "& .MuiInputLabel-shrink": {
+            transform: "translate(20px, -6px) scale(0.75)", 
+          },
+        }}
+      />
+    </Box>
 
         <Card
   sx={{

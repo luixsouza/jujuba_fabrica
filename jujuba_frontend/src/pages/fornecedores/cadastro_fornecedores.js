@@ -1,411 +1,329 @@
-import { useState } from 'react';
-import { Box, Button, Card, CardContent, TextField, Typography, Grid, CircularProgress} from '@mui/material';
-import Sidebar from '../../components/sidebar';
-import axios from 'axios';
-const BASE_URL = 'http://localhost:8080/api/fornecedoras'; 
-import { ArrowBack, Home } from '@mui/icons-material'; 
+"use client"
+
+import { useState } from "react"
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  TextField,
+  Typography,
+  Grid,
+  CircularProgress,
+  useMediaQuery,
+  useTheme,
+  IconButton,
+} from "@mui/material"
+import { ArrowBack, Home, Upload } from "@mui/icons-material"
+import Sidebar from "../../components/sidebar"
+import { useRouter } from "next/router"
+import axios from "axios"
+const BASE_URL = "http://localhost:8080/api/fornecedoras"
 
 export default function FornecedoresCadastro() {
-    const [newValues, setNewValues] = useState({
-        nome: '',
-        contato: '',
-        endereco: '',
-        chavePix: '',
-        contratoUrl: '',
-        
-    });
+  const theme = useTheme()
+  const router = useRouter()
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
-    const [loading, setLoading] = useState(false); // estado de carregamento// mudar pra true quando tiver for clicado 
+  const [newValues, setNewValues] = useState({
+    nome: "",
+    contato: "",
+    endereco: "",
+    chavePix: "",
+    contratoUrl: "",
+    dataDeNascimento: "",
+  })
 
-    // atualiza o estado com os valores dos campos
-    const handleChange = (event) => {
-        const { name, value } = event.target;
-        setNewValues((prev) => ({ ...prev, [name]: value }));
-    };
-    const handleFileChange = (event) => {
-        const file = event.target.files[0];
-        setNewValues((prev) => ({
-            ...prev,
-            contratoUrl: file || '', // armazenando o arquivo completo, não apenas o nome
-        }));
-    };
-    // função para criar um fornecedor na API
-    const createFornecedora = async (values) => {
-        try {
-            const formData = new FormData();
+  const [loading, setLoading] = useState(false)
 
-            // serializa o objeto fornecedora como JSON
-            formData.append("fornecedora", JSON.stringify({
-                nome: values.nome || "N/A",
-                contato: values.contato || "N/A",
-                endereco: values.endereco || "N/A",
-                chavePix: values.chavePix || "N/A",
-                contratoUrl: values.contratoUrl || null, // agora usando contratoUrl
-                
-            }));
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    setNewValues((prev) => ({ ...prev, [name]: value }))
+  }
 
-            // adiciona o contrato ao FormData
-            const contrato = document.querySelector('input[name="contrato"]')?.files[0];
-            if (contrato) {
-                formData.append("contratoUrl", contrato);
-            } else {
-                throw new Error("O arquivo do contrato é obrigatório!");
-            }
-    
-            // faz a requisição para o backend
-            const response = await axios.post(BASE_URL, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data", 
-                },
-            });
+  const handleFileChange = (event) => {
+    const file = event.target.files[0]
+    setNewValues((prev) => ({
+      ...prev,
+      contratoUrl: file || "",
+    }))
+  }
 
-            return response.data;
-        } catch (error) {
-            console.error("Erro ao criar fornecedor:", error);
-            throw error;
-        }
-    };
-    
-    const handleImageChange = (event) => {
-        setImagem(event.target.files[0]);
-    };
-    // envia os dados para a API
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        setLoading(true);
-        try {
-            const data = await createFornecedora(newValues); // cria o fornecedor na API
-            console.log('Fornecedor criado com sucesso:', data);
-            alert('Fornecedor criado com sucesso!');
-            setNewValues({
-                nome: '',
-                contato: '',
-                endereco: '',
-                chavePix: '',
-                contratoUrl: '', // resetando também o contratoUrl
-            });
-        } catch (error) {
-            console.error('Erro ao criar fornecedor:', error);
-            alert('Erro ao criar fornecedor.');
-        } finally {
-            setLoading(false);
-        }
-    };
+  const createFornecedora = async (values) => {
+    try {
+      const formData = new FormData()
 
-    
-    return (
-        <Box sx={{ display: 'flex', backgroundColor: '#9AE4FF', minHeight: '100vh' }}>
-            <Box sx={{ width: '250px' }}>
-                <Sidebar />
-            </Box>
+      formData.append(
+        "fornecedora",
+        JSON.stringify({
+          nome: values.nome || "N/A",
+          contato: values.contato || "N/A",
+          endereco: values.endereco || "N/A",
+          chavePix: values.chavePix || "N/A",
+          contratoUrl: values.contratoUrl || null,
+          dataDeNascimento: values.dataDeNascimento || "N/A",
+        }),
+      )
 
-            <Box sx={{ flex: 1, p: 3 }}>
-                <Box sx={{ mb: 1, textAlign: 'center', mt: 8,  }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', marginButtom:'20px', fontSize:'40px'}}>
-                       
-                    </Typography>
-                </Box>
-        
+      const contrato = document.querySelector('input[name="contrato"]')?.files[0]
+      if (contrato) {
+        formData.append("contratoUrl", contrato)
+      } else {
+        throw new Error("O arquivo do contrato é obrigatório!")
+      }
 
-                <form autoComplete="off" onSubmit={handleSubmit}>
-                    <Card
+      const response = await axios.post(BASE_URL, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+
+      return response.data
+    } catch (error) {
+      console.error("Erro ao criar fornecedor:", error)
+      throw error
+    }
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setLoading(true)
+    try {
+      const data = await createFornecedora(newValues)
+      console.log("Fornecedor criado com sucesso:", data)
+      alert("Fornecedor criado com sucesso!")
+      setNewValues({
+        nome: "",
+        contato: "",
+        endereco: "",
+        chavePix: "",
+        contratoUrl: "",
+        dataDeNascimento: "",
+      })
+    } catch (error) {
+      console.error("Erro ao criar fornecedor:", error)
+      alert("Erro ao criar fornecedor.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        backgroundColor: "#9AE4FF",
+        minHeight: "100vh",
+      }}
+    >
+      <Box
+        sx={{
+          width: isMobile ? "100%" : "250px",
+          position: isMobile ? "static" : "sticky",
+          top: 0,
+          height: isMobile ? "auto" : "100vh",
+        }}
+      >
+        <Sidebar />
+      </Box>
+
+      <Box
+        sx={{
+          flex: 1,
+          p: isMobile ? 2 : 3,
+          width: "100%",
+        }}
+      >
+        <form autoComplete="off" onSubmit={handleSubmit}>
+          <Card
+            sx={{
+              borderRadius: 10,
+              backgroundColor: "#FADADD",
+              p: { xs: 2, sm: 3, md: 4 },
+              width: "100%",
+              maxWidth: "800px",
+              mx: "auto",
+              mt: { xs: 2, sm: 4, md: 8 },
+              height: "auto",
+              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            }}
+          >
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item xs={12} container alignItems="center" justifyContent="space-between">
+                  <Grid item>
+                    <IconButton onClick={() => router.back()}>
+                      <ArrowBack
                         sx={{
-                            borderRadius: 10,
-                            backgroundColor:'#FADADD',
-                            p: 3,
-                            maxWidth: '100%',
-                            mx: 'auto',
-                            mt: 8,
-                            height: 'auto',
-                            marginLeft:'70px',
-                           
-                            boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+                          fontSize: "30px",
+                          cursor: "pointer",
+                          color: "black",
                         }}
-                    >
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2, }}>
-                            </Typography>
-                            <Grid container spacing={3}>
-    <Grid item xs={12}>
-    <Grid container direction="column" alignItems="center" spacing={1}>
-   
-    <Grid item xs={12} display="flex" justifyContent="flex-start" width="100%" alignItems="center">
-        <ArrowBack
-            sx={{
-                fontSize: '30px',
-                cursor: 'pointer',
-                color: 'black', 
-            }}
-            onClick={() => {}}
-        />
-    </Grid>
+                      />
+                    </IconButton>
+                  </Grid>
+                  <Grid item>
+                    <IconButton onClick={() => router.push("/")}>
+                      <Home
+                        sx={{
+                          fontSize: "30px",
+                          cursor: "pointer",
+                          color: "black",
+                        }}
+                      />
+                    </IconButton>
+                  </Grid>
+                </Grid>
 
-
-    <Grid item xs={12} display="flex" justifyContent="flex-end" width="100%" alignItems="center">
-        <Home
-            sx={{
-                fontSize: '30px',
-                cursor: 'pointer',
-                color: 'black',
-                marginTop: '-40px',
-            }}
-            onClick={() => {}}
-        />
-    </Grid>
-
- 
-    <Grid item xs={12}>
-        <Typography
-            variant="h4"
-            sx={{
-                mb: 4,
-                fontSize: '45px',
-                fontWeight: 'bold',
-                textAlign: 'center',
-            }}
-        >
-            Cadastro de Fornecedor
-        </Typography>
-    </Grid>
-</Grid>
-    </Grid>
-    <Grid item xs={8} sm={7}>
-    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
-            Nome
-        </Typography>
-        <TextField
-            fullWidth
-            label="Nome do Fornecedor"
-            name="nome"
-            onChange={handleChange}
-            required
-            value={newValues?.nome || ''}
-            variant="outlined"
-            sx={{
-                '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#FFFFFF',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-                },
-                '& .MuiOutlinedInput-root.Mui-focused': {
-                    backgroundColor: '#FFFFFF',
-                },
-            }}
-        />
-    </Grid>
-    <Grid item xs={8} sm={7}>
-    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
-            Contato
-        </Typography>
-        <TextField
-            fullWidth
-            label="Contato"
-            name="contato"
-            onChange={handleChange}
-            required
-            value={newValues?.contato || ''}
-            variant="outlined"
-            sx={{
-                '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#FFFFFF',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-                },
-                '& .MuiOutlinedInput-root.Mui-focused': {
-                    backgroundColor: '#FFFFFF',
-                },
-            }}
-        />
-    </Grid>
-    <Grid item xs={8} sm={7}>
-    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
-            Endereço
-        </Typography>
-        <TextField
-            fullWidth
-            label="Endereço"
-            name="endereco"
-            onChange={handleChange}
-            required
-            value={newValues?.endereco || ''}
-            variant="outlined"
-            sx={{
-                '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#FFFFFF',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)', 
-                },
-                '& .MuiOutlinedInput-root.Mui-focused': {
-                    backgroundColor: '#FFFFFF',
-                },
-            }}
-        />
-         <Button
-            type="submit"
-            disabled={loading}
-            sx={{
-                marginLeft: '18px', 
-                color: 'Black',
-                backgroundColor: '#50abe4',
-                textTransform: 'none',
-                width:"250px",
-                fontWeight: 'bold',
-                marginLeft:"630px",
-                fontSize: '17px',
-                marginTop:"-80px",
-                borderRadius: '50px',
-                padding: '10px 30px',
-                height: '56px', 
-                '&:hover': {
-                    backgroundColor: '#003B6F',
-                },
-                '&:disabled': {
-                    backgroundColor: '#cccccc',
-                    color: '#666666',
-                },
-            }}
-        >
-            {loading ? (
-                <CircularProgress
-                    size={30}
+                <Grid item xs={12}>
+                  <Typography
+                    variant="h4"
                     sx={{
-                        color: '#FFFFFF',
-                        marginRight: 2,
-                        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                      mb: 4,
+                      fontSize: isMobile ? "28px" : isTablet ? "35px" : "45px",
+                      fontWeight: "bold",
+                      textAlign: "center",
                     }}
-                />
-            ) : (
-                ' Upload de Contrato'
-            )}
-        </Button>   
-    </Grid>
-    <Grid item xs={8} sm={7}>
-    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray' }}>
-            Chave Pix
-        </Typography>
-        <TextField
-            fullWidth
-            label="Chave Pix"
-            name="chavePix"
-            onChange={handleChange}
-            value={newValues?.chavePix || ''}
-            variant="outlined"
-            sx={{
-                '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#FFFFFF',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-                },
-                '& .MuiOutlinedInput-root.Mui-focused': {
-                    backgroundColor: '#FFFFFF',
-                },
-            }}
-        />
-        <Button
-            type="submit"
-            disabled={loading}
-            sx={{
-                marginLeft: '18px', 
-                color: 'Black',
-                backgroundColor: '#50abe4',
-                textTransform: 'none',
-                width:"250px",
+                  >
+                    Cadastro de Fornecedor
+                  </Typography>
+                </Grid>
 
-                fontWeight: 'bold',
-                marginLeft:"630px",
-                fontSize: '17px',
-                marginTop:"-80px",
-                borderRadius: '50px',
-                padding: '10px 30px',
-                height: '56px', 
-                '&:hover': {
-                    backgroundColor: '#003B6F',
-                },
-                '&:disabled': {
-                    backgroundColor: '#cccccc',
-                    color: '#666666',
-                },
-            }}
-        >
-            {loading ? (
-                <CircularProgress
-                    size={30}
-                    sx={{
-                        color: '#FFFFFF',
-                        marginRight: 2,
-                        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-                    }}
-                />
-            ) : (
-                'Cadastrar fornecedor'
-            )}
-        </Button>   
-    </Grid>
-    <Grid item xs={8} sm={7}>
-    <Typography variant="body2" sx={{ fontWeight: 'normal', fontSize: '18px', marginBottom: '4px',color: 'gray'  }}>
-            Data de nascimento
-        </Typography>
-        <TextField
-            fullWidth
-            label="Data de nascimento"
-            name="Data de nascimento"
-            onChange={handleChange}
-            required
-            value={newValues?.dataDeNascimento || ''}
-            variant="outlined"
-            sx={{
-                '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#FFFFFF',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-                },
-                '& .MuiOutlinedInput-root.Mui-focused': {
-                    backgroundColor: '#FFFFFF',
-                },
-            }}
-        />
-         <Button
-            type="submit"
-            disabled={loading}
-            sx={{
-                marginLeft: '18px', 
-                color: 'Black',
-                backgroundColor: '#50abe4',
-                textTransform: 'none',
-                width:"250px",
-                fontWeight: 'bold',
-                marginLeft:"630px",
-                fontSize: '17px',
-                marginTop:"-80px",
-                borderRadius: '50px',
-                padding: '10px 30px',
-                height: '56px',
-                '&:hover': {
-                    backgroundColor: '#003B6F',
-                },
-                '&:disabled': {
-                    backgroundColor: '#cccccc',
-                    color: '#666666',
-                },
-            }}
-        >
-            {loading ? (
-                <CircularProgress
-                    size={30}
-                    sx={{
-                        color: '#FFFFFF',
-                        marginRight: 2,
-                        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-                    }}
-                />
-            ) : (
-                'Cadastrar Lote'
-            )}
-        </Button>   
-    </Grid>
-    
-   
-</Grid>                 </CardContent>
+                <Grid item xs={12} md={8}>
+                  {/* Form Fields */}
+                  <Grid container direction="column" spacing={2}>
+                    {[
+                      { label: "Nome", name: "nome" },
+                      { label: "Contato", name: "contato" },
+                      { label: "Endereço", name: "endereco" },
+                      { label: "Chave Pix", name: "chavePix" },
+                      { label: "Data de nascimento", name: "dataDeNascimento" },
+                    ].map((field) => (
+                      <Grid item key={field.name}>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                        >
+                          {field.label}
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          label={field.label}
+                          name={field.name}
+                          onChange={handleChange}
+                          required={field.name !== "chavePix"}
+                          value={newValues[field.name] || ""}
+                          variant="outlined"
+                          sx={{
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#FFFFFF",
+                              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                              borderRadius: "20px",
+                            },
+                            "& .MuiOutlinedInput-root.Mui-focused": {
+                              backgroundColor: "#FFFFFF",
+                            },
+                          }}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Grid>
 
-                        
-                    </Card>
-                </form>
-            </Box>
-        </Box>
-    );
+                <Grid item xs={12} md={4}>
+               
+                  <Grid container direction="column" spacing={2} alignItems="flex-end">
+                    <Grid item>
+                      <Button
+                        variant="contained"
+                        component="label"
+                        disabled={loading}
+                        startIcon={<Upload />}
+                        sx={{
+                          color: "Black",
+                          backgroundColor: "#50abe4",
+                          textTransform: "none",
+                          width: "200px",
+                          fontWeight: "bold",
+                          fontSize: "16px",
+                          borderRadius: "50px",
+                          padding: "10px 20px",
+                          height: "56px",
+                          "&:hover": {
+                            backgroundColor: "#003B6F",
+                          },
+                          "&:disabled": {
+                            backgroundColor: "#cccccc",
+                            color: "#666666",
+                          },
+                        }}
+                      >
+                        {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Upload de Contrato"}
+                        <input type="file" name="contrato" hidden onChange={handleFileChange} />
+                      </Button>
+                    </Grid>
+                    <Grid item>
+                      <Button
+                        type="submit"
+                        disabled={loading}
+                        sx={{
+                          color: "Black",
+                          backgroundColor: "#50abe4",
+                          textTransform: "none",
+                          width: "200px",
+                          fontWeight: "bold",
+                          fontSize: "16px",
+                          borderRadius: "50px",
+                          padding: "10px 20px",
+                          height: "56px",
+                          "&:hover": {
+                            backgroundColor: "#003B6F",
+                          },
+                          "&:disabled": {
+                            backgroundColor: "#cccccc",
+                            color: "#666666",
+                          },
+                        }}
+                      >
+                        {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Cadastrar Fornecedor"}
+                      </Button>
+                    </Grid>
+                    <Grid item>
+                      <Button
+                        variant="contained"
+                        disabled={loading}
+                        sx={{
+                          color: "Black",
+                          backgroundColor: "#50abe4",
+                          textTransform: "none",
+                          width: "200px",
+                          fontWeight: "bold",
+                          fontSize: "16px",
+                          borderRadius: "50px",
+                          padding: "10px 20px",
+                          height: "56px",
+                          "&:hover": {
+                            backgroundColor: "#003B6F",
+                          },
+                          "&:disabled": {
+                            backgroundColor: "#cccccc",
+                            color: "#666666",
+                          },
+                        }}
+                      >
+                        {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Cadastrar Lote"}
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </form>
+      </Box>
+    </Box>
+  )
 }
+

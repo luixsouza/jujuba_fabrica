@@ -167,54 +167,51 @@ const FornecedoresPage = () => {
         >
           
           <TextField
-        label="Pesquisar "
+        label="Pesquisar"
         variant="outlined"
         size="medium"
         value={search}
-      onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => setSearch(e.target.value)}
         sx={{
-          height: '80px',
-          width: '1800px',
-          boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
-          marginRight: '10px',
-          backgroundColor: '#F5F5F5', 
-          marginBottom: '50px',
-          '& .MuiOutlinedInput-root': {
-
-            backgroundColor: '#F5F5F5', 
-            color: '#000000',
-             height: '80px',
-            '& fieldset': {
-              borderColor: '#CCCCCC',
+          width: "100%",
+          maxWidth: "1800px",
+          backgroundColor: "#F5F5F5",
+          marginBottom: "50px",
+          marginTop: "50px",
+          "& .MuiOutlinedInput-root": {
+            backgroundColor: "#F5F5F5",
+            color: "#000000",
+            height: "80px", // Consistent height
+            "& fieldset": {
+              borderColor: "#CCCCCC",
             },
-            '&:hover fieldset': {
-              borderColor: '#00509E',
+            "&:hover fieldset": {
+              borderColor: "#00509E",
             },
-            '&.Mui-focused fieldset': {
-             
+            "&.Mui-focused fieldset": {
+              borderColor: "#00509E", // Added focused border color
             },
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
           },
-          '& .MuiInputBase-input': {
-            color: '#000000',
+          "& .MuiInputBase-input": {
+            color: "#000000",
+            padding: "0 20px", // Better padding
+            fontSize: "18px",
           },
-          '& .MuiInputLabel-root': {
-            transform: 'translateY(25px) translateX(5px)', 
-            color: '#000000',
+          "& .MuiInputLabel-root": {
+            fontSize: "20px",
+            color: "#000000",
+            transform: "translate(20px, 28px)", // Fixed transform
           },
-          '& .MuiInputLabel-root.Mui-focused': {
-            color: '#00509E',
+          "& .MuiInputLabel-root.Mui-focused": {
+            color: "#00509E",
           },
-        }}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <SearchOutlinedIcon sx={{ color: 'black',fontSize:'40px' }} /> 
-            </InputAdornment>
-          ),
+          "& .MuiInputLabel-shrink": {
+            transform: "translate(20px, -6px) scale(0.75)", // Proper animation when shrinking
+          },
         }}
       />
-        </Box>
+    </Box>
 
         <Card
           sx={{

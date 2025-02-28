@@ -92,7 +92,7 @@ export default function FornecedoresCadastro() {
                     </IconButton>
                     <Box
                       sx={{
-                        width: "100%",
+                        width: "20%",
                         height: "150px",
                         backgroundColor: "#FFFFFF",
                         boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
