@@ -21,7 +21,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import searchInput from '@mui/icons-material/Search';
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import { Suspense, lazy } from 'react';
 
 
@@ -181,7 +180,7 @@ const FornecedoresPage = () => {
           "& .MuiOutlinedInput-root": {
             backgroundColor: "#F5F5F5",
             color: "#000000",
-            height: "80px", // Consistent height
+            height: "80px", 
             "& fieldset": {
               borderColor: "#CCCCCC",
             },
@@ -189,25 +188,25 @@ const FornecedoresPage = () => {
               borderColor: "#00509E",
             },
             "&.Mui-focused fieldset": {
-              borderColor: "#00509E", // Added focused border color
+              borderColor: "#00509E", 
             },
             boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
           },
           "& .MuiInputBase-input": {
             color: "#000000",
-            padding: "0 20px", // Better padding
+            padding: "0 20px",
             fontSize: "18px",
           },
           "& .MuiInputLabel-root": {
             fontSize: "20px",
             color: "#000000",
-            transform: "translate(20px, 28px)", // Fixed transform
+            transform: "translate(20px, 28px)", 
           },
           "& .MuiInputLabel-root.Mui-focused": {
             color: "#00509E",
           },
           "& .MuiInputLabel-shrink": {
-            transform: "translate(20px, -6px) scale(0.75)", // Proper animation when shrinking
+            transform: "translate(20px, -6px) scale(0.75)", 
           },
         }}
       />

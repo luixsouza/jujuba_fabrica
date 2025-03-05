@@ -18,7 +18,16 @@ import { ArrowBack, Home, Upload } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
 import { useRouter } from "next/router"
 import axios from "axios"
+
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
+
+const formFields = [
+  { label: "Nome", name: "nome" },
+  { label: "Contato", name: "contato" },
+  { label: "Endereço", name: "endereco" },
+  { label: "Chave Pix", name: "chavePix" },
+  { label: "Data de nascimento", name: "dataDeNascimento" },
+]
 
 export default function FornecedoresCadastro() {
   const theme = useTheme()
@@ -109,6 +118,36 @@ export default function FornecedoresCadastro() {
     }
   }
 
+  const buttonStyle = {
+    color: "Black",
+    backgroundColor: "#50abe4",
+    textTransform: "none",
+    width: "200px",
+    fontWeight: "bold",
+    fontSize: "16px",
+    borderRadius: "50px",
+    padding: "10px 20px",
+    height: "56px",
+    "&:hover": {
+      backgroundColor: "#003B6F",
+    },
+    "&:disabled": {
+      backgroundColor: "#cccccc",
+      color: "#666666",
+    },
+  }
+
+  const textFieldStyle = {
+    "& .MuiOutlinedInput-root": {
+      backgroundColor: "#FFFFFF",
+      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+      borderRadius: "20px",
+    },
+    "& .MuiOutlinedInput-root.Mui-focused": {
+      backgroundColor: "#FFFFFF",
+    },
+  }
+
   return (
     <Box
       sx={{
@@ -192,15 +231,8 @@ export default function FornecedoresCadastro() {
                 </Grid>
 
                 <Grid item xs={12} md={8}>
-                  {/* Form Fields */}
                   <Grid container direction="column" spacing={2}>
-                    {[
-                      { label: "Nome", name: "nome" },
-                      { label: "Contato", name: "contato" },
-                      { label: "Endereço", name: "endereco" },
-                      { label: "Chave Pix", name: "chavePix" },
-                      { label: "Data de nascimento", name: "dataDeNascimento" },
-                    ].map((field) => (
+                    {formFields.map((field) => (
                       <Grid item key={field.name}>
                         <Typography
                           variant="body2"
@@ -216,16 +248,7 @@ export default function FornecedoresCadastro() {
                           required={field.name !== "chavePix"}
                           value={newValues[field.name] || ""}
                           variant="outlined"
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#FFFFFF",
-                              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                              borderRadius: "20px",
-                            },
-                            "& .MuiOutlinedInput-root.Mui-focused": {
-                              backgroundColor: "#FFFFFF",
-                            },
-                          }}
+                          sx={textFieldStyle}
                         />
                       </Grid>
                     ))}
@@ -233,7 +256,6 @@ export default function FornecedoresCadastro() {
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-               
                   <Grid container direction="column" spacing={2} alignItems="flex-end">
                     <Grid item>
                       <Button
@@ -241,78 +263,19 @@ export default function FornecedoresCadastro() {
                         component="label"
                         disabled={loading}
                         startIcon={<Upload />}
-                        sx={{
-                          color: "Black",
-                          backgroundColor: "#50abe4",
-                          textTransform: "none",
-                          width: "200px",
-                          fontWeight: "bold",
-                          fontSize: "16px",
-                          borderRadius: "50px",
-                          padding: "10px 20px",
-                          height: "56px",
-                          "&:hover": {
-                            backgroundColor: "#003B6F",
-                          },
-                          "&:disabled": {
-                            backgroundColor: "#cccccc",
-                            color: "#666666",
-                          },
-                        }}
+                        sx={buttonStyle}
                       >
                         {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Upload de Contrato"}
                         <input type="file" name="contrato" hidden onChange={handleFileChange} />
                       </Button>
                     </Grid>
                     <Grid item>
-                      <Button
-                        type="submit"
-                        disabled={loading}
-                        sx={{
-                          color: "Black",
-                          backgroundColor: "#50abe4",
-                          textTransform: "none",
-                          width: "200px",
-                          fontWeight: "bold",
-                          fontSize: "16px",
-                          borderRadius: "50px",
-                          padding: "10px 20px",
-                          height: "56px",
-                          "&:hover": {
-                            backgroundColor: "#003B6F",
-                          },
-                          "&:disabled": {
-                            backgroundColor: "#cccccc",
-                            color: "#666666",
-                          },
-                        }}
-                      >
+                      <Button type="submit" disabled={loading} sx={buttonStyle}>
                         {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Cadastrar Fornecedor"}
                       </Button>
                     </Grid>
                     <Grid item>
-                      <Button
-                        variant="contained"
-                        disabled={loading}
-                        sx={{
-                          color: "Black",
-                          backgroundColor: "#50abe4",
-                          textTransform: "none",
-                          width: "200px",
-                          fontWeight: "bold",
-                          fontSize: "16px",
-                          borderRadius: "50px",
-                          padding: "10px 20px",
-                          height: "56px",
-                          "&:hover": {
-                            backgroundColor: "#003B6F",
-                          },
-                          "&:disabled": {
-                            backgroundColor: "#cccccc",
-                            color: "#666666",
-                          },
-                        }}
-                      >
+                      <Button variant="contained" disabled={loading} sx={buttonStyle}>
                         {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Cadastrar Lote"}
                       </Button>
                     </Grid>

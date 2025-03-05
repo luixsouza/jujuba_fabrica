@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Box, Button, Card, CardContent, TextField, Typography, Grid, IconButton } from "@mui/material"
 import Sidebar from "../../components/sidebar"
 import axios from "axios"
-import { ArrowBack, Home, ArrowForward } from "@mui/icons-material"
+import { ArrowBack, Home, ArrowForward, AddPhotoAlternate } from "@mui/icons-material"
 import { useRouter } from "next/router"
 
 const BASE_URL = "http://localhost:8080/api/produtos" // URL da API
@@ -13,8 +13,8 @@ export default function ProdutosEdit({ produtoId }) {
   const [produto, setProduto] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [imagemPreview, setImagemPreview] = useState(null)
-  const [imagem, setImagem] = useState(null)
+  const [images, setImages] = useState([null, null, null])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const router = useRouter()
 
   useEffect(() => {
@@ -23,6 +23,10 @@ export default function ProdutosEdit({ produtoId }) {
         setLoading(true)
         const response = await axios.get(`${BASE_URL}/${produtoId}`)
         setProduto(response.data)
+       //// supondo que o backend retorna a url dessas 3 imagens 
+        if (response.data.imagens && response.data.imagens.length > 0) {
+          setImages(response.data.imagens.concat(Array(3 - response.data.imagens.length).fill(null)))
+        }
       } catch (error) {
         setError("Erro ao carregar produto")
         console.error("Erro ao carregar produto:", error)
@@ -41,16 +45,25 @@ export default function ProdutosEdit({ produtoId }) {
     setProduto((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleImageChange = (event) => {
-    setImagem(event.target.files[0])
+  const handleImageChange = (event, index) => {
     const file = event.target.files[0]
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setImagemPreview(reader.result)
-    }
     if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const newImages = [...images]
+        newImages[index] = reader.result
+        setImages(newImages)
+      }
       reader.readAsDataURL(file)
     }
+  }
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : images.length - 1))
+  }
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex < images.length - 1 ? prevIndex + 1 : 0))
   }
 
   const handleSubmit = async (event) => {
@@ -61,9 +74,14 @@ export default function ProdutosEdit({ produtoId }) {
     for (const key in produto) {
       formData.append(key, produto[key])
     }
-    if (imagem) {
-      formData.append("imagem", imagem)
-    }
+    images.forEach((image, index) => {
+      if (image && image.startsWith("data:")) {
+        const blob = dataURItoBlob(image)
+        formData.append(`imagem${index + 1}`, blob, `imagem${index + 1}.jpg`)
+      } else if (image) {
+        formData.append(`imagemUrl${index + 1}`, image)
+      }
+    })
 
     try {
       const response = await axios.put(`${BASE_URL}/${produtoId}`, formData, {
@@ -76,6 +94,16 @@ export default function ProdutosEdit({ produtoId }) {
       setError("Erro ao atualizar produto")
       alert("Erro ao atualizar produto.")
     }
+  }
+  const dataURItoBlob = (dataURI) => {
+    const byteString = atob(dataURI.split(",")[1])
+    const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0]
+    const ab = new ArrayBuffer(byteString.length)
+    const ia = new Uint8Array(ab)
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i)
+    }
+    return new Blob([ab], { type: mimeString })
   }
 
   return (
@@ -121,44 +149,73 @@ export default function ProdutosEdit({ produtoId }) {
                       mb: 3,
                     }}
                   >
-                    <IconButton sx={{ color: "gray", "&:hover": { color: "black" } }}>
+                    <IconButton onClick={handlePrevImage} sx={{ color: "gray", "&:hover": { color: "black" } }}>
                       <ArrowBack fontSize="large" />
                     </IconButton>
                     <Box
                       sx={{
-                        width: "20%",
-                        height: "150px",
+                        width: "300px",
+                        height: "300px",
                         backgroundColor: "#FFFFFF",
                         boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        position: "relative",
+                        overflow: "hidden",
+                        borderRadius: "10px",
                       }}
                     >
-                      {imagemPreview ? (
+                      {images[currentImageIndex] ? (
                         <img
-                          src={imagemPreview || "/placeholder.svg"}
-                          alt="Preview"
-                          style={{ maxHeight: "100%", maxWidth: "100%" }}
+                          src={images[currentImageIndex] || "/placeholder.svg"}
+                          alt={`Produto ${currentImageIndex + 1}`}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         />
                       ) : (
                         <Typography variant="body2" color="gray">
-                          Imagem
+                          Imagem {currentImageIndex + 1}
                         </Typography>
                       )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageChange(e, currentImageIndex)}
+                        style={{ display: "none" }}
+                        id={`image-upload-${currentImageIndex}`}
+                      />
+                      <label htmlFor={`image-upload-${currentImageIndex}`}>
+                        <IconButton
+                          component="span"
+                          sx={{
+                            position: "absolute",
+                            bottom: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                            "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.9)" },
+                          }}
+                        >
+                          <AddPhotoAlternate />
+                        </IconButton>
+                      </label>
                     </Box>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      style={{ display: "none" }}
-                      id="imagemInput"
-                    />
-                    <label htmlFor="imagemInput">
-                      <IconButton sx={{ color: "gray", "&:hover": { color: "black" } }}>
-                        <ArrowForward fontSize="large" />
-                      </IconButton>
-                    </label>
+                    <IconButton onClick={handleNextImage} sx={{ color: "gray", "&:hover": { color: "black" } }}>
+                      <ArrowForward fontSize="large" />
+                    </IconButton>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                    {images.map((_, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          backgroundColor: index === currentImageIndex ? "#00509E" : "#CCCCCC",
+                          mx: 0.5,
+                        }}
+                      />
+                    ))}
                   </Box>
                 </Grid>
 
