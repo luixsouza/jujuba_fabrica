@@ -4,18 +4,22 @@ import { useState } from "react"
 import { Box, Button, Card, CardContent, TextField, Typography, Grid, IconButton } from "@mui/material"
 import Sidebar from "../../components/sidebar"
 import { useRouter } from "next/router"
-import { ArrowBack, Home, ArrowForward } from "@mui/icons-material"
+import { ArrowBack, Home, ArrowForward, AddPhotoAlternate } from "@mui/icons-material"
 
-const BASE_URL = "http://localhost:8080/api/fornecedoras" // URL base da API
+const BASE_URL = "http://localhost:8080/api/produtos" // URL base da API do backend 
 
-export default function FornecedoresCadastro() {
+export default function ProdutoCadastro() {
   const [newValues, setNewValues] = useState({
-    nome: "",
-    contato: "",
-    endereco: "",
-    chavePix: "",
-    contratoUrl: "",
+    descricao: "",
+    codigo: "",
+    lote: "",
+    estado: "",
+    fornecedora: "",
+    valor: "",
+    status: "",
   })
+  const [images, setImages] = useState([null, null, null])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -24,20 +28,45 @@ export default function FornecedoresCadastro() {
     setNewValues((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleFileChange = (event) => {
+  const handleImageUpload = (event, index) => {
     const file = event.target.files[0]
-    setNewValues((prev) => ({
-      ...prev,
-      contratoUrl: file || "",
-    }))
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const newImages = [...images]
+        newImages[index] = e.target.result
+        setImages(newImages)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
-  const createFornecedora = async (values) => {
-    // ... (keep the existing createFornecedora function)
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : images.length - 1))
+  }
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex < images.length - 1 ? prevIndex + 1 : 0))
+  }
+
+  const createProduto = async (values) => {
+    // aqui será chamada a api de criação 
   }
 
   const handleSubmit = async (event) => {
-    // ... (keep the existing handleSubmit function)
+    event.preventDefault()
+    setLoading(true)
+    try {
+      const data = await createProduto({ ...newValues, images })
+      console.log("Produto criado com sucesso:", data)
+      alert("Produto criado com sucesso!")
+     
+    } catch (error) {
+      console.error("Erro ao criar produto:", error)
+      alert("Erro ao criar produto.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleEditClick = () => {
@@ -64,6 +93,7 @@ export default function FornecedoresCadastro() {
           >
             <CardContent>
               <Grid container spacing={3}>
+              
                 <Grid item xs={12}>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                     <IconButton onClick={() => router.back()}>
@@ -78,6 +108,7 @@ export default function FornecedoresCadastro() {
                   </Typography>
                 </Grid>
 
+             
                 <Grid item xs={12}>
                   <Box
                     sx={{
@@ -87,30 +118,77 @@ export default function FornecedoresCadastro() {
                       mb: 3,
                     }}
                   >
-                    <IconButton sx={{ color: "gray", "&:hover": { color: "black" } }}>
+                    <IconButton onClick={handlePrevImage} sx={{ color: "gray", "&:hover": { color: "black" } }}>
                       <ArrowBack fontSize="large" />
                     </IconButton>
                     <Box
                       sx={{
-                        width: "20%",
-                        height: "150px",
+                        width: "300px",
+                        height: "300px",
                         backgroundColor: "#FFFFFF",
                         boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        position: "relative",
+                        overflow: "hidden",
+                        borderRadius: "10px",
                       }}
                     >
-                      <Typography variant="body2" color="gray">
-                        Imagem
-                      </Typography>
+                      {images[currentImageIndex] ? (
+                        <img
+                          src={images[currentImageIndex] || "/placeholder.svg"}
+                          alt={`Produto ${currentImageIndex + 1}`}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      ) : (
+                        <Typography variant="body2" color="gray">
+                          Imagem {currentImageIndex + 1}
+                        </Typography>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, currentImageIndex)}
+                        style={{ display: "none" }}
+                        id={`image-upload-${currentImageIndex}`}
+                      />
+                      <label htmlFor={`image-upload-${currentImageIndex}`}>
+                        <IconButton
+                          component="span"
+                          sx={{
+                            position: "absolute",
+                            bottom: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                            "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.9)" },
+                          }}
+                        >
+                          <AddPhotoAlternate />
+                        </IconButton>
+                      </label>
                     </Box>
-                    <IconButton sx={{ color: "gray", "&:hover": { color: "black" } }}>
+                    <IconButton onClick={handleNextImage} sx={{ color: "gray", "&:hover": { color: "black" } }}>
                       <ArrowForward fontSize="large" />
                     </IconButton>
                   </Box>
+                  <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                    {images.map((_, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          backgroundColor: index === currentImageIndex ? "#00509E" : "#CCCCCC",
+                          mx: 0.5,
+                        }}
+                      />
+                    ))}
+                  </Box>
                 </Grid>
 
+              
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -248,7 +326,7 @@ export default function FornecedoresCadastro() {
                     name="status"
                     onChange={handleChange}
                     required
-                    value={newValues?.Status || ""}
+                    value={newValues?.status || ""}
                     variant="outlined"
                     sx={{
                       "& .MuiOutlinedInput-root": {
@@ -262,7 +340,6 @@ export default function FornecedoresCadastro() {
                     }}
                   />
                 </Grid>
-
                 <Grid item xs={12}>
                   <Box
                     sx={{
