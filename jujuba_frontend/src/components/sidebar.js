@@ -26,11 +26,11 @@ export default function Sidebar() {
   }
 
   const handleLogout = () => {
-    // Implementar lógica de logout aqui
+   
     router.push("/")
   }
 
-  // Verificar qual item está ativo com base na rota atual
+  
   React.useEffect(() => {
     if (router.pathname.includes("fornecedores")) {
       setActiveItem("fornecedores")
@@ -43,13 +43,13 @@ export default function Sidebar() {
     }
   }, [router.pathname])
 
-  // Estilo comum para os ícones
+  
   const iconStyle = {
     strokeWidth: 1.5,
     size: 24,
   }
 
-  // Estilo para os itens de menu
+  
   const getMenuItemStyle = (itemName) => ({
     marginBottom: "0.5rem",
     paddingLeft: "1rem",
