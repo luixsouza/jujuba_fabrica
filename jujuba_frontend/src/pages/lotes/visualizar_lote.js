@@ -4,7 +4,7 @@ import Sidebar from '../../components/sidebar';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/produtos'; 
+//const BASE_URL = 'http://localhost:8080/api/produtos'; 
 
 export default function ProdutoDetails() {
     const [newValues, setNewValues] = useState(null);

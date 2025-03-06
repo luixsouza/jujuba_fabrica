@@ -9,41 +9,31 @@ import {
   Typography,
   Button,
   TextField,
-  InputAdornment,
-  IconButton,
   Container,
   Paper,
   Avatar,
   Divider,
+  IconButton,
+  Alert,
+  Collapse,
 } from "@mui/material"
 import { useRouter } from "next/router"
-import VisibilityIcon from "@mui/icons-material/Visibility"
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff"
-import LoginIcon from "@mui/icons-material/Login"
+import LockResetIcon from "@mui/icons-material/LockReset"
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
 import Link from "next/link"
 
-const Login = () => {
-  const [invalidEmail, setInvalidEmail] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
+const ResetPassword = () => {
+  const [resetSent, setResetSent] = useState(false)
   const router = useRouter()
 
   const buildResetPasswordConfirmUrl = (email) => {
-    return `/auth/reset-password/${encodeURIComponent(email)}`
-  }
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    router.push("/fornecedores/fornecedores_tabela")
-  }
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
+    return `/auth/reset-password-confirm/${encodeURIComponent(email)}`
   }
 
   const formik = useFormik({
     initialValues: {
       email: "",
-      password: "",
     },
     validationSchema: Yup.object({
       email: Yup.string()
@@ -53,20 +43,15 @@ const Login = () => {
           /^[\w._%+-]+@(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com)$/,
           "O e-mail deve ser de um dos domínios permitidos: gmail.com, hotmail.com, yahoo.com, outlook.com",
         ),
-      password: Yup.string().required("Senha é obrigatória").min(8, "A senha deve ter pelo menos 8 caracteres"),
     }),
     onSubmit: async (values) => {
-      setInvalidEmail("")
       try {
         const resetPasswordConfirmUrl = buildResetPasswordConfirmUrl(values.email)
-
         console.log("URL de confirmação:", resetPasswordConfirmUrl)
-        alert("Login realizado com sucesso!")
-        router.push("/fornecedores/fornecedores_tabela")
+        setResetSent(true)
       } catch (error) {
-        console.error("Erro ao fazer login:", error)
-        formik.setErrors({ submit: "Ocorreu um erro ao fazer login. Tente novamente." })
-        setInvalidEmail(values.email)
+        console.error("Erro ao enviar o e-mail:", error)
+        formik.setErrors({ submit: "Ocorreu um erro ao enviar o e-mail. Tente novamente." })
       }
     },
     validateOnChange: false,
@@ -76,7 +61,7 @@ const Login = () => {
   return (
     <>
       <Head>
-        <title>Login - Brechó da Jujuba</title>
+        <title>Redefinir Senha - Brechó da Jujuba</title>
         <link
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
           rel="stylesheet"
@@ -112,7 +97,6 @@ const Login = () => {
               position: "relative",
             }}
           >
-            {/* Decorative elements */}
             <Box
               sx={{
                 position: "absolute",
@@ -139,17 +123,34 @@ const Login = () => {
             />
 
             <Box sx={{ position: "relative", zIndex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Link href="/" passHref>
+                  <IconButton
+                    sx={{
+                      color: "#666",
+                      "&:hover": {
+                        color: "#9AE4FF",
+                        background: "rgba(154, 228, 255, 0.1)",
+                      },
+                    }}
+                  >
+                    <ArrowBackIcon />
+                  </IconButton>
+                </Link>
+                <Box sx={{ flexGrow: 1 }} />
+              </Box>
+
               <Box sx={{ textAlign: "center", mb: 4 }}>
                 <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
                   <Avatar
                     sx={{
                       width: 70,
                       height: 70,
-                      backgroundColor: "rgba(250, 218, 221, 0.8)",
+                      background: "linear-gradient(135deg, #9AE4FF, #FADADD)",
                       boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
                     }}
                   >
-                    <LoginIcon sx={{ fontSize: 40, color: "#fff" }} />
+                    <LockResetIcon sx={{ fontSize: 40, color: "#fff" }} />
                   </Avatar>
                 </Box>
                 <Typography
@@ -162,7 +163,7 @@ const Login = () => {
                     mb: 1,
                   }}
                 >
-                  Brechó da Jujuba
+                  Redefinir Senha
                 </Typography>
                 <Typography
                   variant="body1"
@@ -171,12 +172,37 @@ const Login = () => {
                     color: "#666",
                     fontFamily: "'Plus Jakarta Sans', sans-serif",
                     mb: 1,
+                    px: 2,
                   }}
                 >
-                  Entre com suas credenciais para acessar o sistema
+                  Digite seu email abaixo e enviaremos instruções para redefinir sua senha
                 </Typography>
                 <Divider sx={{ width: "60%", margin: "1rem auto", opacity: 0.6 }} />
               </Box>
+
+              <Collapse in={resetSent}>
+                <Alert
+                  icon={<CheckCircleOutlineIcon fontSize="inherit" />}
+                  severity="success"
+                  sx={{
+                    mb: 3,
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(154, 228, 255, 0.2)",
+                    color: "#333",
+                    border: "1px solid rgba(154, 228, 255, 0.5)",
+                    "& .MuiAlert-icon": {
+                      color: "#9AE4FF",
+                    },
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    Email enviado com sucesso!
+                  </Typography>
+                  <Typography variant="caption">
+                    Verifique sua caixa de entrada para as instruções de redefinição de senha.
+                  </Typography>
+                </Alert>
+              </Collapse>
 
               <form onSubmit={formik.handleSubmit}>
                 <Box sx={{ mb: 3 }}>
@@ -191,6 +217,7 @@ const Login = () => {
                     onBlur={formik.handleBlur}
                     error={formik.touched.email && Boolean(formik.errors.email)}
                     helperText={formik.touched.email && formik.errors.email}
+                    disabled={resetSent}
                     sx={{
                       mb: 2,
                       "& .MuiOutlinedInput-root": {
@@ -208,136 +235,60 @@ const Login = () => {
                       },
                     }}
                   />
-                  <TextField
-                    fullWidth
-                    id="password"
-                    name="password"
-                    label="Senha"
-                    type={showPassword ? "text" : "password"}
-                    variant="outlined"
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.password && Boolean(formik.errors.password)}
-                    helperText={formik.touched.password && formik.errors.password}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={togglePasswordVisibility}
-                            edge="end"
-                            sx={{
-                              color: "#666",
-                              "&:hover": {
-                                color: "#9AE4FF",
-                                background: "rgba(154, 228, 255, 0.1)",
-                              },
-                            }}
-                          >
-                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#9AE4FF",
-                          borderWidth: "2px",
-                        },
-                        "&:hover fieldset": {
-                          borderColor: "#FADADD",
-                        },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": {
-                        color: "#9AE4FF",
-                      },
-                    }}
-                  />
-                </Box>
-
-                <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-                  <Link href="/reset_password/reset_password" passHref>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#9AE4FF",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        "&:hover": {
-                          textDecoration: "underline",
-                        },
-                      }}
-                    >
-                      Esqueceu sua senha?
-                    </Typography>
-                  </Link>
                 </Box>
 
                 <Button
                   type="submit"
                   fullWidth
+                  disabled={resetSent}
                   sx={{
                     py: 1.5,
-                    background: "linear-gradient(90deg, #FADADD 0%, #9AE4FF 100%)",
-                    color: "#333",
+                    background: resetSent
+                      ? "rgba(154, 228, 255, 0.5)"
+                      : "linear-gradient(90deg, #FADADD 0%, #9AE4FF 100%)",
+                    color: resetSent ? "#666" : "#333",
                     fontWeight: 600,
                     borderRadius: "10px",
                     textTransform: "none",
                     fontSize: "1rem",
-                    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",
+                    boxShadow: resetSent ? "none" : "0 4px 10px rgba(0, 0, 0, 0.05)",
                     transition: "all 0.3s ease",
                     "&:hover": {
-                      background: "linear-gradient(90deg, #f8c8cb 0%, #7bc8ff 100%)",
-                      boxShadow: "0 6px 15px rgba(0, 0, 0, 0.1)",
-                      transform: "translateY(-2px)",
+                      background: resetSent
+                        ? "rgba(154, 228, 255, 0.5)"
+                        : "linear-gradient(90deg, #f8c8cb 0%, #7bc8ff 100%)",
+                      boxShadow: resetSent ? "none" : "0 6px 15px rgba(0, 0, 0, 0.1)",
+                      transform: resetSent ? "none" : "translateY(-2px)",
                     },
                     "&:active": {
                       transform: "translateY(0)",
                     },
                   }}
                 >
-                  Entrar
+                  {resetSent ? "Email Enviado" : "Enviar Instruções"}
                 </Button>
 
-                <Box sx={{ mt: 3, textAlign: "center" }}>
-                  <Divider sx={{ width: "100%", margin: "1rem auto", opacity: 0.6 }}>
-                    <Typography variant="body2" sx={{ color: "#666", px: 1, fontSize: "0.8rem" }}>
-                      OU
-                    </Typography>
-                  </Divider>
-                  <Typography variant="body2" sx={{ color: "#666", mb: 1, mt: 2 }}>
-                    Não tem uma conta?
-                  </Typography>
-                  <Link href="../singup/singup" passHref>
+                {resetSent && (
+                  <Box sx={{ mt: 3, textAlign: "center" }}>
                     <Button
-                      fullWidth
+                      component={Link}
+                      href="/"
+                      variant="outlined"
                       sx={{
-                        py: 1.5,
-                        background: "linear-gradient(90deg, #9AE4FF 0%, #FADADD 100%)",
-                        color: "#333",
-                        fontWeight: 600,
                         borderRadius: "10px",
+                        borderColor: "#9AE4FF",
+                        color: "#666",
                         textTransform: "none",
-                        fontSize: "1rem",
-                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",
-                        transition: "all 0.3s ease",
                         "&:hover": {
-                          background: "linear-gradient(90deg, #7bc8ff 0%, #f8c8cb 100%)",
-                          boxShadow: "0 6px 15px rgba(0, 0, 0, 0.1)",
-                          transform: "translateY(-2px)",
-                        },
-                        "&:active": {
-                          transform: "translateY(0)",
+                          borderColor: "#FADADD",
+                          backgroundColor: "rgba(250, 218, 221, 0.05)",
                         },
                       }}
                     >
-                      Criar Conta
+                      Voltar para o Login
                     </Button>
-                  </Link>
-                </Box>
+                  </Box>
+                )}
               </form>
 
               {formik.errors.submit && (
@@ -357,6 +308,29 @@ const Login = () => {
                 </Typography>
               )}
 
+              {!resetSent && (
+                <Box sx={{ mt: 4, textAlign: "center" }}>
+                  <Typography variant="body2" sx={{ color: "#666" }}>
+                    Lembrou sua senha?{" "}
+                    <Link href="/" passHref>
+                      <Typography
+                        component="span"
+                        sx={{
+                          color: "#9AE4FF",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          "&:hover": {
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        Voltar para o Login
+                      </Typography>
+                    </Link>
+                  </Typography>
+                </Box>
+              )}
+
               <Box sx={{ mt: 4, textAlign: "center" }}>
                 <Typography
                   variant="caption"
@@ -371,8 +345,6 @@ const Login = () => {
             </Box>
           </Paper>
         </Container>
-
-        {/* Animated dots */}
         <Box
           sx={{
             position: "absolute",
@@ -410,5 +382,5 @@ const Login = () => {
   )
 }
 
-export default Login
+export default ResetPassword
 

@@ -23,7 +23,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility"
 import { useRouter } from "next/router"
 import axios from "axios"
 
-const BASE_URL = "http://localhost:8080/api/produtos"
+//const BASE_URL = "http://localhost:8080/api/produtos"
 
 const EstoquePage = () => {
   const [produtos, setProdutos] = useState([])

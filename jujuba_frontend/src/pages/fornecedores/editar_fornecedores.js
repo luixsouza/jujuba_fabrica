@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Button,
@@ -13,20 +13,25 @@ import {
   useMediaQuery,
   useTheme,
   IconButton,
+  Snackbar,
+  Alert,
+  Chip,
 } from "@mui/material"
-import { ArrowBack, Home, Upload } from "@mui/icons-material"
+import { ArrowBack, Home, Upload, CheckCircle } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
 import { useRouter } from "next/router"
 import axios from "axios"
+
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
 
-export default function FornecedoresCadastro() {
+export default function FornecedoresEdicao() {
   const theme = useTheme()
   const router = useRouter()
+  const { id } = router.query
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
-  const [newValues, setNewValues] = useState({
+  const [fornecedora, setFornecedora] = useState({
     nome: "",
     contato: "",
     endereco: "",
@@ -36,44 +41,100 @@ export default function FornecedoresCadastro() {
   })
 
   const [loading, setLoading] = useState(false)
+  const [fetchLoading, setFetchLoading] = useState(true)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [contratoAtual, setContratoAtual] = useState("")
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  })
+
+  // busca dados do fornecedor quando o componente carregar
+  useEffect(() => {
+    if (id) {
+      fetchFornecedora(id)
+    }
+  }, [id])
+
+  const fetchFornecedora = async (fornecedoraId) => {
+    try {
+      setFetchLoading(true)
+      const response = await axios.get(`${BASE_URL}/${fornecedoraId}`)
+      const data = response.data
+
+      setFornecedora({
+        nome: data.nome || "",
+        contato: data.contato || "",
+        endereco: data.endereco || "",
+        chavePix: data.chavePix || "",
+        dataDeNascimento: data.dataDeNascimento || "",
+        contratoUrl: data.contratoUrl || "",
+      })
+
+      if (data.contratoUrl) {
+        setContratoAtual(data.contratoUrl)
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados do fornecedor:", error)
+      setSnackbar({
+        open: true,
+        message: "Erro ao carregar dados do fornecedor",
+        severity: "error",
+      })
+    } finally {
+      setFetchLoading(false)
+    }
+  }
 
   const handleChange = (event) => {
     const { name, value } = event.target
-    setNewValues((prev) => ({ ...prev, [name]: value }))
+    setFornecedor((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleFileChange = (event) => {
     const file = event.target.files[0]
-    setNewValues((prev) => ({
-      ...prev,
-      contratoUrl: file || "",
-    }))
+    if (file) {
+      setSelectedFile(file)
+      setFornecedor((prev) => ({
+        ...prev,
+        contratoUrl: file.name,
+      }))
+    }
   }
 
-  const createFornecedora = async (values) => {
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false })
+  }
+
+  const updateFornecedora = async (values) => {
+    if (!id) {
+      throw new Error("ID do fornecedor não encontrado")
+    }
+
     try {
       const formData = new FormData()
 
-      formData.append(
-        "fornecedora",
-        JSON.stringify({
-          nome: values.nome || "N/A",
-          contato: values.contato || "N/A",
-          endereco: values.endereco || "N/A",
-          chavePix: values.chavePix || "N/A",
-          contratoUrl: values.contratoUrl || null,
-          dataDeNascimento: values.dataDeNascimento || "N/A",
-        }),
-      )
-
-      const contrato = document.querySelector('input[name="contrato"]')?.files[0]
-      if (contrato) {
-        formData.append("contratoUrl", contrato)
-      } else {
-        throw new Error("O arquivo do contrato é obrigatório!")
+      // cria objeto fornecedora sem o arquivo
+      const fornecedoraData = {
+        id: id,
+        nome: values.nome || "N/A",
+        contato: values.contato || "N/A",
+        endereco: values.endereco || "N/A",
+        chavePix: values.chavePix || "N/A",
+        dataDeNascimento: values.dataDeNascimento || "N/A",
+        contratoUrl: selectedFile ? null : contratoAtual,
       }
 
-      const response = await axios.post(BASE_URL, formData, {
+      // adicionar objeto JSON ao FormData
+      formData.append("fornecedora", JSON.stringify(fornecedoraData))
+
+      // adicionar arquivo se existir um novo
+      if (selectedFile) {
+        formData.append("contratoUrl", selectedFile)
+      }
+
+      const response = await axios.put(`${BASE_URL}/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -81,32 +142,119 @@ export default function FornecedoresCadastro() {
 
       return response.data
     } catch (error) {
-      console.error("Erro ao criar fornecedor:", error)
+      console.error("Erro ao atualizar fornecedor:", error)
       throw error
     }
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+
+   
+    if (!fornecedora.nome || !fornecedora.contato || !fornecedora.endereco || !fornecedora.dataDeNascimento) {
+      setSnackbar({
+        open: true,
+        message: "Por favor, preencha todos os campos obrigatórios.",
+        severity: "error",
+      })
+      return
+    }
+
     setLoading(true)
     try {
-      const data = await createFornecedora(newValues)
-      console.log("Fornecedor criado com sucesso:", data)
-      alert("Fornecedor criado com sucesso!")
-      setNewValues({
-        nome: "",
-        contato: "",
-        endereco: "",
-        chavePix: "",
-        contratoUrl: "",
-        dataDeNascimento: "",
+      const data = await updateFornecedora(fornecedora)
+      console.log("Fornecedor atualizado com sucesso:", data)
+
+      setSnackbar({
+        open: true,
+        message: "Fornecedor atualizado com sucesso!",
+        severity: "success",
       })
+
+      
+      setTimeout(() => {
+        router.push("/fornecedores/fornecedores_tabela")
+      }, 2000)
     } catch (error) {
-      console.error("Erro ao criar fornecedor:", error)
-      alert("Erro ao criar fornecedor.")
+      console.error("Erro ao atualizar fornecedor:", error)
+      setSnackbar({
+        open: true,
+        message: error.message || "Erro ao atualizar fornecedor. Tente novamente.",
+        severity: "error",
+      })
     } finally {
       setLoading(false)
     }
+  }
+
+  
+  const buttonStyle = {
+    color: "Black",
+    backgroundColor: "#50abe4",
+    textTransform: "none",
+    width: "200px",
+    fontWeight: "bold",
+    fontSize: "16px",
+    borderRadius: "50px",
+    padding: "10px 20px",
+    height: "56px",
+    "&:hover": {
+      backgroundColor: "#003B6F",
+    },
+    "&:disabled": {
+      backgroundColor: "#cccccc",
+      color: "#666666",
+    },
+  }
+
+  
+  const textFieldStyle = {
+    "& .MuiOutlinedInput-root": {
+      backgroundColor: "#FFFFFF",
+      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+      borderRadius: "20px",
+    },
+    "& .MuiOutlinedInput-root.Mui-focused": {
+      backgroundColor: "#FFFFFF",
+    },
+  }
+
+  if (fetchLoading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          backgroundColor: "#9AE4FF",
+          minHeight: "100vh",
+        }}
+      >
+        <Box
+          sx={{
+            width: isMobile ? "100%" : "250px",
+            position: isMobile ? "static" : "sticky",
+            top: 0,
+            height: isMobile ? "auto" : "100vh",
+          }}
+        >
+          <Sidebar />
+        </Box>
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            p: 3,
+          }}
+        >
+          <CircularProgress size={60} sx={{ color: "#FADADD" }} />
+          <Typography variant="h6" sx={{ ml: 2, color: "#333" }}>
+            Carregando dados do fornecedora...
+          </Typography>
+        </Box>
+      </Box>
+    )
   }
 
   return (
@@ -181,18 +329,29 @@ export default function FornecedoresCadastro() {
                   <Typography
                     variant="h4"
                     sx={{
-                      mb: 4,
+                      mb: 2,
                       fontSize: isMobile ? "28px" : isTablet ? "35px" : "45px",
                       fontWeight: "bold",
                       textAlign: "center",
                     }}
                   >
-                    Cadastro de Fornecedor
+                    Editar Fornecedor
                   </Typography>
+
+                  <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+                    <Chip
+                      label={`ID: ${id}`}
+                      color="primary"
+                      sx={{
+                        backgroundColor: "rgba(154, 228, 255, 0.8)",
+                        color: "#333",
+                        fontWeight: "bold",
+                      }}
+                    />
+                  </Box>
                 </Grid>
 
                 <Grid item xs={12} md={8}>
-                 
                   <Grid container direction="column" spacing={2}>
                     {[
                       { label: "Nome", name: "nome" },
@@ -210,22 +369,14 @@ export default function FornecedoresCadastro() {
                         </Typography>
                         <TextField
                           fullWidth
-                          label={field.label}
                           name={field.name}
                           onChange={handleChange}
                           required={field.name !== "chavePix"}
-                          value={newValues[field.name] || ""}
+                          value={fornecedor[field.name] || ""}
                           variant="outlined"
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#FFFFFF",
-                              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                              borderRadius: "20px",
-                            },
-                            "& .MuiOutlinedInput-root.Mui-focused": {
-                              backgroundColor: "#FFFFFF",
-                            },
-                          }}
+                          placeholder={field.label}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
                         />
                       </Grid>
                     ))}
@@ -233,85 +384,80 @@ export default function FornecedoresCadastro() {
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-               
                   <Grid container direction="column" spacing={2} alignItems="flex-end">
                     <Grid item>
+                      {contratoAtual && !selectedFile && (
+                        <Box sx={{ mb: 2, textAlign: "center", width: "100%" }}>
+                          <Chip icon={<CheckCircle />} label="Contrato Atual" color="success" sx={{ mb: 1 }} />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              display: "block",
+                              color: "text.secondary",
+                              maxWidth: "200px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {contratoAtual.split("/").pop()}
+                          </Typography>
+                        </Box>
+                      )}
+
                       <Button
                         variant="contained"
                         component="label"
                         disabled={loading}
                         startIcon={<Upload />}
                         sx={{
-                          color: "Black",
-                          backgroundColor: "#50abe4",
-                          textTransform: "none",
-                          width: "200px",
-                          fontWeight: "bold",
-                          fontSize: "16px",
-                          borderRadius: "50px",
-                          padding: "10px 20px",
-                          height: "56px",
-                          "&:hover": {
-                            backgroundColor: "#003B6F",
-                          },
-                          "&:disabled": {
-                            backgroundColor: "#cccccc",
-                            color: "#666666",
-                          },
+                          ...buttonStyle,
+                          backgroundColor: selectedFile ? "#4CAF50" : "#50abe4",
                         }}
                       >
-                        {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Upload de Contrato"}
-                        <input type="file" name="contrato" hidden onChange={handleFileChange} />
+                        {loading ? (
+                          <CircularProgress size={30} sx={{ color: "#FFFFFF" }} />
+                        ) : selectedFile ? (
+                          "Novo Contrato"
+                        ) : (
+                          "Atualizar Contrato"
+                        )}
+                        <input
+                          type="file"
+                          name="contrato"
+                          hidden
+                          onChange={handleFileChange}
+                          accept=".pdf,.doc,.docx"
+                        />
                       </Button>
+                      {selectedFile && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: "block",
+                            mt: 1,
+                            color: "text.secondary",
+                            maxWidth: "200px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {selectedFile.name}
+                        </Typography>
+                      )}
                     </Grid>
-                    <Grid item>
-                      <Button
-                        type="submit"
-                        disabled={loading}
-                        sx={{
-                          color: "Black",
-                          backgroundColor: "#50abe4",
-                          textTransform: "none",
-                          width: "200px",
-                          fontWeight: "bold",
-                          fontSize: "16px",
-                          borderRadius: "50px",
-                          padding: "10px 20px",
-                          height: "56px",
-                          "&:hover": {
-                            backgroundColor: "#003B6F",
-                          },
-                          "&:disabled": {
-                            backgroundColor: "#cccccc",
-                            color: "#666666",
-                          },
-                        }}
-                      >
-                        {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Salvar edições"}
+                    <Grid item sx={{ mt: 2 }}>
+                      <Button type="submit" variant="contained" disabled={loading} sx={buttonStyle}>
+                        {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Salvar Edições"}
                       </Button>
                     </Grid>
                     <Grid item>
                       <Button
                         variant="contained"
                         disabled={loading}
-                        sx={{
-                          color: "Black",
-                          backgroundColor: "#50abe4",
-                          textTransform: "none",
-                          width: "200px",
-                          fontWeight: "bold",
-                          fontSize: "16px",
-                          borderRadius: "50px",
-                          padding: "10px 20px",
-                          height: "56px",
-                          "&:hover": {
-                            backgroundColor: "#003B6F",
-                          },
-                          "&:disabled": {
-                            backgroundColor: "#cccccc",
-                            color: "#666666",
-                          },
-                        }}
+                        onClick={() => router.push("/lotes/lotes_cadastro")}
+                        sx={buttonStyle}
                       >
                         {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Cadastrar Lote"}
                       </Button>
@@ -323,6 +469,16 @@ export default function FornecedoresCadastro() {
           </Card>
         </form>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

@@ -6,7 +6,7 @@ import Sidebar from "../../components/sidebar"
 import { useRouter } from "next/router"
 import { ArrowBack, Home, ArrowForward, AddPhotoAlternate } from "@mui/icons-material"
 
-const BASE_URL = "http://localhost:8080/api/produtos" // URL base da API do backend 
+//const BASE_URL = "http://localhost:8080/api/produtos" // URL base da API do backend 
 
 export default function ProdutoCadastro() {
   const [newValues, setNewValues] = useState({
@@ -50,7 +50,7 @@ export default function ProdutoCadastro() {
   }
 
   const createProduto = async (values) => {
-    // aqui será chamada a api de criação 
+    
   }
 
   const handleSubmit = async (event) => {

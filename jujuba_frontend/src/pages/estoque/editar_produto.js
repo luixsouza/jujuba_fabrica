@@ -7,7 +7,7 @@ import axios from "axios"
 import { ArrowBack, Home, ArrowForward, AddPhotoAlternate } from "@mui/icons-material"
 import { useRouter } from "next/router"
 
-const BASE_URL = "http://localhost:8080/api/produtos" // URL da API
+///const BASE_URL = "http://localhost:8080/api/produtos" // URL da API
 
 export default function ProdutosEdit({ produtoId }) {
   const [produto, setProduto] = useState({})

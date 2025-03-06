@@ -13,6 +13,8 @@ import {
   useMediaQuery,
   useTheme,
   IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material"
 import { ArrowBack, Home, Upload } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
@@ -45,6 +47,12 @@ export default function FornecedoresCadastro() {
   })
 
   const [loading, setLoading] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  })
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -53,31 +61,38 @@ export default function FornecedoresCadastro() {
 
   const handleFileChange = (event) => {
     const file = event.target.files[0]
-    setNewValues((prev) => ({
-      ...prev,
-      contratoUrl: file || "",
-    }))
+    if (file) {
+      setSelectedFile(file)
+      setNewValues((prev) => ({
+        ...prev,
+        contratoUrl: file.name,
+      }))
+    }
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false })
   }
 
   const createFornecedora = async (values) => {
     try {
       const formData = new FormData()
 
-      formData.append(
-        "fornecedora",
-        JSON.stringify({
-          nome: values.nome || "N/A",
-          contato: values.contato || "N/A",
-          endereco: values.endereco || "N/A",
-          chavePix: values.chavePix || "N/A",
-          contratoUrl: values.contratoUrl || null,
-          dataDeNascimento: values.dataDeNascimento || "N/A",
-        }),
-      )
+      // cria objeto fornecedora sem o arquivo
+      const fornecedoraData = {
+        nome: values.nome || "N/A",
+        contato: values.contato || "N/A",
+        endereco: values.endereco || "N/A",
+        chavePix: values.chavePix || "N/A",
+        dataDeNascimento: values.dataDeNascimento || "N/A",
+      }
 
-      const contrato = document.querySelector('input[name="contrato"]')?.files[0]
-      if (contrato) {
-        formData.append("contratoUrl", contrato)
+      // adiciona objeto JSON ao FormData
+      formData.append("fornecedora", JSON.stringify(fornecedoraData))
+
+      // adicionar arquivo se existir
+      if (selectedFile) {
+        formData.append("contratoUrl", selectedFile)
       } else {
         throw new Error("O arquivo do contrato é obrigatório!")
       }
@@ -97,11 +112,38 @@ export default function FornecedoresCadastro() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+
+    // valida
+    if (!newValues.nome || !newValues.contato || !newValues.endereco || !newValues.dataDeNascimento) {
+      setSnackbar({
+        open: true,
+        message: "Por favor, preencha todos os campos obrigatórios.",
+        severity: "error",
+      })
+      return
+    }
+
+    if (!selectedFile) {
+      setSnackbar({
+        open: true,
+        message: "O arquivo do contrato é obrigatório!",
+        severity: "error",
+      })
+      return
+    }
+
     setLoading(true)
     try {
       const data = await createFornecedora(newValues)
       console.log("Fornecedor criado com sucesso:", data)
-      alert("Fornecedor criado com sucesso!")
+
+      setSnackbar({
+        open: true,
+        message: "Fornecedor cadastrado com sucesso!",
+        severity: "success",
+      })
+
+      // limpa formulário
       setNewValues({
         nome: "",
         contato: "",
@@ -110,9 +152,19 @@ export default function FornecedoresCadastro() {
         contratoUrl: "",
         dataDeNascimento: "",
       })
+      setSelectedFile(null)
+
+      // redirecionar após 2 segundos
+      setTimeout(() => {
+        router.push("/fornecedores/fornecedores_tabela")
+      }, 2000)
     } catch (error) {
       console.error("Erro ao criar fornecedor:", error)
-      alert("Erro ao criar fornecedor.")
+      setSnackbar({
+        open: true,
+        message: error.message || "Erro ao cadastrar fornecedor. Tente novamente.",
+        severity: "error",
+      })
     } finally {
       setLoading(false)
     }
@@ -242,13 +294,14 @@ export default function FornecedoresCadastro() {
                         </Typography>
                         <TextField
                           fullWidth
-                          label={field.label}
                           name={field.name}
                           onChange={handleChange}
                           required={field.name !== "chavePix"}
                           value={newValues[field.name] || ""}
                           variant="outlined"
+                          placeholder={field.label}
                           sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
                         />
                       </Grid>
                     ))}
@@ -263,19 +316,55 @@ export default function FornecedoresCadastro() {
                         component="label"
                         disabled={loading}
                         startIcon={<Upload />}
-                        sx={buttonStyle}
+                        sx={{
+                          ...buttonStyle,
+                          backgroundColor: selectedFile ? "#4CAF50" : "#50abe4",
+                        }}
                       >
-                        {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Upload de Contrato"}
-                        <input type="file" name="contrato" hidden onChange={handleFileChange} />
+                        {loading ? (
+                          <CircularProgress size={30} sx={{ color: "#FFFFFF" }} />
+                        ) : selectedFile ? (
+                          "Contrato Selecionado"
+                        ) : (
+                          "Upload de Contrato"
+                        )}
+                        <input
+                          type="file"
+                          name="contrato"
+                          hidden
+                          onChange={handleFileChange}
+                          accept=".pdf,.doc,.docx"
+                        />
                       </Button>
+                      {selectedFile && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: "block",
+                            mt: 1,
+                            color: "text.secondary",
+                            maxWidth: "200px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {selectedFile.name}
+                        </Typography>
+                      )}
                     </Grid>
-                    <Grid item>
-                      <Button type="submit" disabled={loading} sx={buttonStyle}>
+                    <Grid item sx={{ mt: 2 }}>
+                      <Button type="submit" variant="contained" disabled={loading} sx={buttonStyle}>
                         {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Cadastrar Fornecedor"}
                       </Button>
                     </Grid>
                     <Grid item>
-                      <Button variant="contained" disabled={loading} sx={buttonStyle}>
+                      <Button
+                        variant="contained"
+                        disabled={loading}
+                        onClick={() => router.push("/lotes/lotes_cadastro")}
+                        sx={buttonStyle}
+                      >
                         {loading ? <CircularProgress size={30} sx={{ color: "#FFFFFF" }} /> : "Cadastrar Lote"}
                       </Button>
                     </Grid>
@@ -286,6 +375,18 @@ export default function FornecedoresCadastro() {
           </Card>
         </form>
       </Box>
+
+ 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

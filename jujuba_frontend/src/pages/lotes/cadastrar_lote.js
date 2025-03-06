@@ -5,7 +5,7 @@ import axios from 'axios';
 import { CloudUpload } from '@mui/icons-material';  
 
 
-const BASE_URL = 'http://localhost:8080/api/produtos'; // url da api 
+///const BASE_URL = 'http://localhost:8080/api/lotes'; // url da api 
 
 export default function ProdutosCadastro() {
     const [newValues, setNewValues] = useState({
