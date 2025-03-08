@@ -34,6 +34,32 @@ const EstoquePage = () => {
   const [search, setSearch] = useState('');
   const router = useRouter();
   
+  const mockProdutos = [
+    {
+      id: 1,
+      imagem: 'https://via.placeholder.com/50',
+      nome: 'Lote 001',
+      quantidade: 100,
+      preco: 50.0,
+      fornecedora: 'Fornecedor A',
+    },
+    {
+      id: 2,
+      imagem: 'https://via.placeholder.com/50',
+      nome: 'Lote 002',
+      quantidade: 200,
+      preco: 75.5,
+      fornecedora: 'Fornecedor B',
+    },
+    {
+      id: 3,
+      imagem: 'https://via.placeholder.com/50',
+      nome: 'Lote 003',
+      quantidade: 150,
+      preco: 60.25,
+      fornecedora: 'Fornecedor C',
+    },
+  ];
 
   const handleChangePage = (event, newPage) => setPage(newPage);
   const handleChangeRowsPerPage = (event) => {
@@ -66,7 +92,7 @@ const EstoquePage = () => {
 
   const handleNavigateToRegister = () => {
     if (router) {
-      router.push('./cadastro_produto');
+      router.push('./cadastrar_lote');
     }
   };
   useEffect(() => {
@@ -198,7 +224,7 @@ const EstoquePage = () => {
       sx={{ 
         fontSize: '18px', 
         fontWeight: 'normal', 
-        backgroundColor: '#FADADD', 
+        backgroundColor: '#f8c0e0', 
         borderRight: '2px solid #F5F5F5',
         textAlign: 'center',  // Linha branca à direita
       }}
@@ -208,7 +234,7 @@ const EstoquePage = () => {
     <TableCell 
       sx={{ 
         fontSize: '18px', 
-        backgroundColor: '#FADADD', 
+        backgroundColor: '#f8c0e0', 
         fontWeight: 'normal', 
         borderRight: '2px solid #F5F5F5',
         textAlign: 'center',  // Linha branca à direita
@@ -220,7 +246,7 @@ const EstoquePage = () => {
       sx={{ 
         fontSize: '18px', 
         fontWeight: 'lighter', // Fonte mais fina
-        backgroundColor: '#FADADD', 
+        backgroundColor: '#f8c0e0;', 
         borderRight: '2px solid #F5F5F5',
         textAlign: 'center',  // Linha branca à direita
       }}
@@ -232,7 +258,7 @@ const EstoquePage = () => {
       sx={{ 
         fontSize: '18px', 
         fontWeight: 'normal', 
-        backgroundColor: '#FADADD', 
+        backgroundColor: '#f8c0e0;', 
         borderRight: '2px solid #F5F5F5',
         textAlign: 'center',  // Linha branca à direita
       }}
@@ -301,10 +327,10 @@ const EstoquePage = () => {
  <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '30px', }}>
         <Button
     sx={{
-      backgroundColor: '#FADADD',
+      backgroundColor: '#f8c0e0;',
       color: 'black',
       boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
-      border: '2px solid #FADADD',
+      border: '2px solid #f8c0e0;',
       fontWeight: 'bold',
       fontSize: '17px',
       borderRadius: '60px',

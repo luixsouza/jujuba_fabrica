@@ -68,7 +68,7 @@ export default function Sidebar() {
       sx={{
         width: "250px",
         height: "100vh",
-        backgroundColor: "#FADADD",
+        backgroundColor: "#f8c0e0;",
         color: "#FFFFFF",
         display: "flex",
         flexDirection: "column",
