@@ -1,22 +1,12 @@
 "use client"
 
-import React, { useState } from "react"
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-  Divider,
-  Tooltip,
-  Avatar,
-  Button,
-} from "@mui/material"
-import { Users, ShoppingBag, DollarSign, Package, LogOut, ChevronRight } from "lucide-react"
-import { useRouter } from "next/router"
+import { useState } from "react"
+import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { Users, ShoppingBag, DollarSign, Package, ChevronRight } from "lucide-react"
+import { Tooltip, ListItem, ListItemIcon, ListItemText, List } from "@mui/material"
 
-export default function Sidebar() {
+export default function Sidebar({ lotes = [] }) {
   const router = useRouter()
   const [activeItem, setActiveItem] = useState("")
 
@@ -25,102 +15,35 @@ export default function Sidebar() {
     router.push(path)
   }
 
-  const handleLogout = () => {
-   
-    router.push("/")
-  }
-
-  
-  React.useEffect(() => {
-    if (router.pathname.includes("fornecedores")) {
-      setActiveItem("fornecedores")
-    } else if (router.pathname.includes("estoque")) {
-      setActiveItem("estoque")
-    } else if (router.pathname.includes("caixa")) {
-      setActiveItem("caixa")
-    } else if (router.pathname.includes("lotes")) {
-      setActiveItem("lotes")
-    }
-  }, [router.pathname])
-
-  
-  const iconStyle = {
-    strokeWidth: 1.5,
-    size: 24,
-  }
-
-  
+  // Style function for menu items
   const getMenuItemStyle = (itemName) => ({
-    marginBottom: "0.5rem",
-    paddingLeft: "1rem",
-    borderRadius: "10px",
-    height: "48px",
-    transition: "all 0.3s ease",
+    marginBottom: "8px",
+    borderRadius: "8px",
+    padding: "10px 12px",
     backgroundColor: activeItem === itemName ? "rgba(255, 255, 255, 0.3)" : "transparent",
+    position: "relative",
     "&:hover": {
       backgroundColor: "rgba(255, 255, 255, 0.2)",
       transform: "translateX(5px)",
     },
+    transition: "all 0.3s ease",
   })
 
+  // Style for icons
+  const iconStyle = {
+    size: 20,
+    strokeWidth: 2,
+  }
+
   return (
-    <Box
-      sx={{
-        width: "250px",
-        height: "100vh",
-        backgroundColor: "#f8c0e0;",
-        color: "#FFFFFF",
-        display: "flex",
-        flexDirection: "column",
-        position: "fixed",
-        padding: "1rem",
-        paddingTop: "1rem",
-        boxShadow: "2px 0 10px rgba(0, 0, 0, 0.1)",
-      }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          marginBottom: "0.3rem",
-          flexShrink: 0,
-        }}
-      >
-        <img
-          src="/imagens/bbdefin.png"
-          alt="Logo"
-          style={{
-            width: "220px",
-            height: "auto",
-            borderRadius: "5px",
-          }}
-        />
-      </Box>
+    <div className="sidebar">
+      <div className="logo-container">
+        <div className="logo">
+          <Image src="/placeholder.svg?height=80&width=80" alt="Jujuba Logo" width={100} height={40} />
+        </div>
+      </div>
 
-      <Box sx={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontFamily: '"Pacifico", cursive',
-            color: "black",
-            fontWeight: "bold",
-            marginBottom: "0.4rem",
-          }}
-        >
-          Brechó da Jujuba
-        </Typography>
-      </Box>
-
-      <Divider
-        sx={{
-          mb: 2,
-          backgroundColor: "rgba(0, 0, 0, 0.1)",
-          width: "90%",
-          mx: "auto",
-        }}
-      />
-
-      <List sx={{ flexGrow: 1 }}>
+      <List sx={{ width: "100%", padding: "0 8px" }}>
         <Tooltip title="Gerenciar Fornecedores" placement="right" arrow>
           <ListItem
             button
@@ -206,68 +129,75 @@ export default function Sidebar() {
         </Tooltip>
       </List>
 
-    
-      <Box sx={{ mt: "auto", mb: 2 }}>
-        <Divider
-          sx={{
-            mb: 2,
-            backgroundColor: "rgba(0, 0, 0, 0.1)",
-            width: "90%",
-            mx: "auto",
-          }}
-        />
+      <div className="lotes-list">
+        <h3>Lista de Lotes</h3>
+        {lotes.map((lote) => (
+          <div key={lote.codigo} className="lote-item">
+            <span>{lote.codigo}</span>
+            <span>{lote.data}</span>
+          </div>
+        ))}
+      </div>
 
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            px: 2,
-            mb: 2,
-          }}
-        >
-          <Avatar
-            sx={{
-              width: 40,
-              height: 40,
-              bgcolor: "#9AE4FF",
-              border: "2px solid white",
-            }}
-          >
-            JJ
-          </Avatar>
-          <Box sx={{ ml: 2 }}>
-            <Typography variant="body2" sx={{ color: "black", fontWeight: 600 }}>
-              Administrador
-            </Typography>
-            <Typography variant="caption" sx={{ color: "rgba(0, 0, 0, 0.7)" }}>
-              admin@brechojujuba.com
-            </Typography>
-          </Box>
-        </Box>
+      <style jsx>{`
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 100vh;
+          width: 244px;
+          background-color: #f8c0e0;
+          display: flex;
+          flex-direction: column;
+          padding: 20px;
+          box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
 
-        <Button
-          variant="outlined"
-          startIcon={<LogOut size={18} />}
-          onClick={handleLogout}
-          sx={{
-            width: "90%",
-            mx: "auto",
-            display: "flex",
-            justifyContent: "flex-start",
-            color: "black",
-            borderColor: "rgba(0, 0, 0, 0.2)",
-            borderRadius: "10px",
-            textTransform: "none",
-            "&:hover": {
-              backgroundColor: "rgba(255, 255, 255, 0.3)",
-              borderColor: "rgba(0, 0, 0, 0.3)",
-            },
-          }}
-        >
-          Sair do Sistema
-        </Button>
-      </Box>
-    </Box>
+        .logo-container {
+          display: flex;
+          justify-content: center;
+          margin: 20px 0 40px;
+        }
+
+        .logo {
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .lotes-list {
+          margin-top: 40px;
+        }
+
+        .lotes-list h3 {
+          color: #6b7280;
+          margin-bottom: 12px;
+          font-size: 16px;
+          font-weight: bold;
+        }
+
+        .lote-item {
+          display: flex;
+          justify-content: space-between;
+          background-color: #ffd0e8;
+          padding: 8px 12px;
+          margin-bottom: 6px;
+          border-radius: 4px;
+          transition: all 0.2s ease;
+        }
+
+        .lote-item:hover {
+          transform: scale(1.02);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+      `}</style>
+    </div>
   )
 }
 

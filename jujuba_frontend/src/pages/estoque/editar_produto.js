@@ -7,10 +7,18 @@ import axios from "axios"
 import { ArrowBack, Home, ArrowForward, AddPhotoAlternate } from "@mui/icons-material"
 import { useRouter } from "next/router"
 
-///const BASE_URL = "http://localhost:8080/api/produtos" // URL da API
+const BASE_URL = "http://localhost:8080/api/produtos"
 
 export default function ProdutosEdit({ produtoId }) {
-  const [produto, setProduto] = useState({})
+  const [produto, setProduto] = useState({
+    descricao: "",
+    codigo: "",
+    lote: "",
+    estado: "",
+    fornecedora: "",
+    valor: "",
+    status: "",
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [images, setImages] = useState([null, null, null])
@@ -22,8 +30,17 @@ export default function ProdutosEdit({ produtoId }) {
       try {
         setLoading(true)
         const response = await axios.get(`${BASE_URL}/${produtoId}`)
-        setProduto(response.data)
-       //// supondo que o backend retorna a url dessas 3 imagens 
+       
+        setProduto({
+          descricao: response.data.descricao || "",
+          codigo: response.data.codigo || "",
+          lote: response.data.lote || "",
+          estado: response.data.estado || "",
+          fornecedora: response.data.fornecedora || "",
+          valor: response.data.valor || "", 
+          status: response.data.status || "",
+        })
+   
         if (response.data.imagens && response.data.imagens.length > 0) {
           setImages(response.data.imagens.concat(Array(3 - response.data.imagens.length).fill(null)))
         }
@@ -68,18 +85,26 @@ export default function ProdutosEdit({ produtoId }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    setLoading(true)
     setError(null)
 
     const formData = new FormData()
-    for (const key in produto) {
-      formData.append(key, produto[key])
-    }
+   
+    formData.append("descricao", produto.descricao)
+    formData.append("codigo", produto.codigo)
+    formData.append("lote", produto.lote)
+    formData.append("estado", produto.estado)
+    formData.append("fornecedora", produto.fornecedora)
+    
+    formData.append("valor", produto.valor)
+    formData.append("status", produto.status)
+   
     images.forEach((image, index) => {
       if (image && image.startsWith("data:")) {
         const blob = dataURItoBlob(image)
-        formData.append(`imagem${index + 1}`, blob, `imagem${index + 1}.jpg`)
+        formData.append(`imagens[${index}]`, blob, `imagem${index + 1}.jpg`) 
       } else if (image) {
-        formData.append(`imagemUrl${index + 1}`, image)
+        formData.append(`imagens[${index}]`, image) 
       }
     })
 
@@ -89,12 +114,16 @@ export default function ProdutosEdit({ produtoId }) {
       })
       console.log("Produto atualizado com sucesso:", response.data)
       alert("Produto atualizado com sucesso!")
+      router.push("/produtos")
     } catch (error) {
       console.error("Erro ao atualizar produto:", error)
-      setError("Erro ao atualizar produto")
+      setError("Erro ao atualizar produto. Verifique os dados e tente novamente.")
       alert("Erro ao atualizar produto.")
+    } finally {
+      setLoading(false)
     }
   }
+
   const dataURItoBlob = (dataURI) => {
     const byteString = atob(dataURI.split(",")[1])
     const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0]
@@ -275,6 +304,7 @@ export default function ProdutosEdit({ produtoId }) {
                   <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
                     <Button
                       type="submit"
+                      disabled={loading}
                       sx={{
                         backgroundColor: "#FADADD",
                         color: "black",
@@ -289,9 +319,14 @@ export default function ProdutosEdit({ produtoId }) {
                         textTransform: "none",
                       }}
                     >
-                      Salvar Edição
+                      {loading ? "Salvando..." : "Salvar Edição"}
                     </Button>
                   </Box>
+                  {error && (
+                    <Typography color="error" sx={{ textAlign: "center", mt: 2 }}>
+                      {error}
+                    </Typography>
+                  )}
                 </Grid>
               </Grid>
             </CardContent>
@@ -301,4 +336,3 @@ export default function ProdutosEdit({ produtoId }) {
     </Box>
   )
 }
-

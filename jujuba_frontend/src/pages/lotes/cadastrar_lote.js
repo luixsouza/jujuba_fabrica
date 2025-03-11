@@ -1,137 +1,228 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
-import { ArrowLeft, Eye, Home, Pencil, Upload, User, Package, ShoppingCart, List } from "lucide-react"
+import { ArrowLeft, Eye, Home, Pencil, Upload } from "lucide-react"
+import Sidebar from "../../components/sidebar"
 
 export default function NovoLotePage() {
-  const [items, setItems] = useState([
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Camisa Lacoste (Original) Tamanho 8 anos",
-      estadoConservacao: "Ótimo",
-      valor: 89.9,
-      codigo: "ALC222333",
-      genero: "Masc",
-    },
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Crocs Minnie Tamanho 19/20",
-      estadoConservacao: "Ótimo",
-      valor: 68.9,
-      codigo: "ALC352333",
-      genero: "Fem",
-    },
-  ])
-
-  const lotes = [
-    { codigo: "A321", data: "31/02/2025" },
-    { codigo: "B321", data: "03/08/2024" },
-    { codigo: "C123", data: "21/06/2024" },
-    { codigo: "K123", data: "12/04/2024" },
-    { codigo: "L569", data: "10/04/2024" },
-    { codigo: "M123", data: "07/03/2024" },
-  ]
-
+  const [items, setItems] = useState([])
+  const [lotes, setLotes] = useState([])
+  const [loading, setLoading] = useState({
+    items: false,
+    lotes: false,
+  })
+  const [error, setError] = useState(null)
   const fileInputRef = useRef(null)
+
+  
+  const fetchItems = async () => {
+    try {
+      setLoading((prev) => ({ ...prev, items: true }))
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/items`)
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch items")
+      }
+
+      const data = await response.json()
+      setItems(data)
+    } catch (err) {
+      console.error("Error fetching items:", err)
+      setError("Failed to load items. Please try again.")
+      setItems([]) // Set empty array instead of mock data
+    } finally {
+      setLoading((prev) => ({ ...prev, items: false }))
+    }
+  }
+
+  // Fetch lotes data from API
+  const fetchLotes = async () => {
+    try {
+      setLoading((prev) => ({ ...prev, lotes: true }))
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lotes`)
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch lotes")
+      }
+
+      const data = await response.json()
+      setLotes(data)
+    } catch (err) {
+      console.error("Error fetching lotes:", err)
+      setError("Failed to load lotes. Please try again.")
+      setLotes([]) // Set empty array instead of mock data
+    } finally {
+      setLoading((prev) => ({ ...prev, lotes: false }))
+    }
+  }
+
+  // Fetch data when component mounts
+  useEffect(() => {
+    fetchItems()
+    fetchLotes()
+  }, [])
 
   const handleUploadClick = () => {
     fileInputRef.current.click()
   }
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0]
     if (file) {
-      // Handle the file upload here
-      console.log("File selected:", file.name)
-      // You would typically upload the file to a server or process it here
+      try {
+        const formData = new FormData()
+        formData.append("image", file)
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to upload image")
+        }
+
+
+        fetchItems()
+      } catch (err) {
+        console.error("Error uploading image:", err)
+        setError("Failed to upload image. Please try again.")
+      }
     }
   }
 
+ 
+  const handleAddItem = async () => {
+    
+  }
+
   return (
-    <>
+    <div className="container">
+      {/* Import the Sidebar component */}
+      <Sidebar lotes={lotes} />
+
+      {/* Main Content */}
+      <div className="main-content">
+        <header className="header">
+          <button className="nav-button">
+            <ArrowLeft size={20} />
+          </button>
+          <div className="header-title">
+            <h1>NOVO LOTE: C123</h1>
+            <p>Adicionando item</p>
+          </div>
+          <button className="nav-button">
+            <Home size={20} />
+          </button>
+        </header>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <div className="form-grid">
+          <input type="text" placeholder="DESCRIÇÃO" className="input" />
+          <input type="text" placeholder="MARCA" className="input" />
+          <input type="text" placeholder="TAMANHO" className="input" />
+
+          <select className="select">
+            <option value="">ESTADO DE CONSERVAÇÃO</option>
+            <option value="otimo">Ótimo</option>
+            <option value="bom">Bom</option>
+            <option value="regular">Regular</option>
+          </select>
+
+          <input type="text" placeholder="VALOR" className="input" />
+          <input type="text" placeholder="FORNECEDOR" className="input" />
+
+          <select className="select">
+            <option value="">GÊNERO</option>
+            <option value="masc">Masculino</option>
+            <option value="fem">Feminino</option>
+            <option value="unisex">Unisex</option>
+          </select>
+
+          <button className="upload-button" onClick={handleUploadClick}>
+            <Upload size={20} />
+            ADICIONAR IMAGEM
+          </button>
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden-input" accept="image/*" />
+        </div>
+
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Imagem</th>
+                <th>Descrição</th>
+                <th>Estado de conservação</th>
+                <th>Valor</th>
+                <th>Código do Produto</th>
+                <th>Genero</th>
+                <th style={{ textAlign: "center" }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading.items ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "20px" }}>
+                    Carregando itens...
+                  </td>
+                </tr>
+              ) : items.length > 0 ? (
+                items.map((item, index) => (
+                  <tr key={index}>
+                    <td>
+                      <Image
+                        src={item.imagem || "/placeholder.svg?height=80&width=80"}
+                        alt={item.descricao}
+                        width={70}
+                        height={70}
+                        style={{ borderRadius: "8px" }}
+                      />
+                    </td>
+                    <td>{item.descricao}</td>
+                    <td>{item.estadoConservacao}</td>
+                    <td>R$ {item.valor.toFixed(2).replace(".", ",")}</td>
+                    <td>{item.codigo}</td>
+                    <td>{item.genero}</td>
+                    <td>
+                      <div className="actions">
+                        <button className="action-button">
+                          <Eye size={20} />
+                        </button>
+                        <button className="action-button">
+                          <Pencil size={20} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "20px" }}>
+                    Nenhum item encontrado
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="bottom-buttons">
+          <button className="yellow-button" onClick={handleAddItem}>
+            Adicionar Item
+          </button>
+          <button className="yellow-button">Finalizar Lote</button>
+        </div>
+      </div>
+
       <style jsx>{`
         .container {
           display: flex;
           min-height: 100vh;
+          width: 100%;
           font-family: Arial, sans-serif;
-        }
-
-        .sidebar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          height: 100vh;
-          width: 276px;
-          background-color: #f8c0e0; /* Changed from yellow to pink */
-          display: flex;
-          flex-direction: column;
-          padding: 20px;
-          box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-        }
-
-        .logo-container {
-          display: flex;
-          justify-content: center;
-          margin: 20px 0 40px;
-        }
-
-        .logo {
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          background: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .menu-item {
-          display: flex;
-          align-items: center;
-          color: #6b7280;
-          margin-bottom: 16px;
-          cursor: pointer;
-          padding: 8px;
-          border-radius: 8px;
-          transition: all 0.3s ease;
-        }
-
-        .menu-item:hover {
-          background-color: rgba(255,255,255,0.5);
-          transform: translateX(5px);
-        }
-
-        .menu-item svg {
-          margin-right: 12px;
-        }
-
-        .lotes-list {
-          margin-top: 40px;
-        }
-
-        .lotes-list h3 {
-          color: #6b7280;
-          margin-bottom: 12px;
-          font-size: 16px;
-          font-weight: bold;
-        }
-
-        .lote-item {
-          display: flex;
-          justify-content: space-between;
-          background-color: #ffd0e8; /* Changed from yellow to pink */
-          padding: 8px 12px;
-          margin-bottom: 6px;
-          border-radius: 4px;
-          transition: all 0.2s ease;
-        }
-
-        .lote-item:hover {
-          transform: scale(1.02);
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          background-color: #a3e0f5;
         }
 
         .main-content {
@@ -139,6 +230,7 @@ export default function NovoLotePage() {
           margin-left: 276px;
           background-color: #a3e0f5;
           padding: 32px;
+          min-height: 100vh;
         }
 
         .header {
@@ -157,7 +249,7 @@ export default function NovoLotePage() {
           font-weight: 800;
           color: #333;
           text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-          margin-bottom: 12px; /* Added margin to create space */
+          margin-bottom: 12px;
         }
 
         .header-title p {
@@ -166,18 +258,18 @@ export default function NovoLotePage() {
         }
 
         .nav-button {
-          background: transparent; /* Changed from white to transparent */
+          background: transparent;
           border-radius: 50%;
           padding: 12px;
           cursor: pointer;
           border: none;
           transition: all 0.2s ease;
-          color: #333; /* Added to ensure icon is visible */
+          color: #333;
         }
 
         .nav-button:hover {
           transform: scale(1.1);
-          color: #000; /* Darker on hover */
+          color: #000;
         }
 
         .form-grid {
@@ -188,7 +280,7 @@ export default function NovoLotePage() {
         }
 
         .input, .select {
-          padding: 16px; /* Larger inputs */
+          padding: 16px;
           border-radius: 8px;
           border: none;
           box-shadow: 0 4px 8px rgba(0,0,0,0.1);
@@ -218,7 +310,7 @@ export default function NovoLotePage() {
           background: white;
           border: none;
           border-radius: 8px;
-          padding: 16px; /* Larger button */
+          padding: 16px;
           cursor: pointer;
           box-shadow: 0 4px 8px rgba(0,0,0,0.1);
           font-size: 16px;
@@ -247,7 +339,7 @@ export default function NovoLotePage() {
         }
 
         th {
-          background: #ffd0e8; /* Changed from yellow to pink */
+          background: #ffd0e8;
           text-align: left;
           padding: 14px;
           font-weight: 600;
@@ -307,9 +399,9 @@ export default function NovoLotePage() {
         }
 
         .yellow-button {
-          background: #ffd0e8; /* Changed from yellow to pink */
+          background: #ffd0e8;
           border: none;
-          padding: 16px 40px; /* Larger buttons */
+          padding: 16px 40px;
           border-radius: 9999px;
           font-weight: 600;
           font-size: 16px;
@@ -319,7 +411,7 @@ export default function NovoLotePage() {
         }
 
         .yellow-button:hover {
-          background: #ffb0d8; /* Darker pink on hover */
+          background: #ffb0d8;
           box-shadow: 0 6px 12px rgba(0,0,0,0.15);
           transform: translateY(-3px);
         }
@@ -327,150 +419,17 @@ export default function NovoLotePage() {
         .hidden-input {
           display: none;
         }
+
+        .error-message {
+          background-color: #fee2e2;
+          color: #b91c1c;
+          padding: 12px;
+          border-radius: 8px;
+          margin-bottom: 16px;
+          font-weight: 500;
+        }
       `}</style>
-
-      <div className="container">
-        {/* Sidebar */}
-        <div className="sidebar">
-          <div className="logo-container">
-            <div className="logo">
-              <Image src="/placeholder.svg?height=80&width=80" alt="Jujuba Logo" width={100} height={40} />
-            </div>
-          </div>
-
-          <div>
-            <div className="menu-item">
-              <User size={20} />
-              <span>Fornecedores</span>
-            </div>
-            <div className="menu-item">
-              <Package size={20} />
-              <span>Estoque</span>
-            </div>
-            <div className="menu-item">
-              <ShoppingCart size={20} />
-              <span>Vendas</span>
-            </div>
-            <div className="menu-item">
-              <List size={20} />
-              <span>Lotes</span>
-            </div>
-          </div>
-
-          <div className="lotes-list">
-            <h3>Lista de Lotes</h3>
-            {lotes.map((lote) => (
-              <div key={lote.codigo} className="lote-item">
-                <span>{lote.codigo}</span>
-                <span>{lote.data}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="main-content">
-          <header className="header">
-            <button className="nav-button">
-              <ArrowLeft size={20} />
-            </button>
-            <div className="header-title">
-              <h1>NOVO LOTE: C123</h1>
-              <p>Adicionando item</p>
-            </div>
-            <button className="nav-button">
-              <Home size={20} />
-            </button>
-          </header>
-
-          <div className="form-grid">
-            <input type="text" placeholder="DESCRIÇÃO" className="input" />
-            <input type="text" placeholder="MARCA" className="input" />
-            <input type="text" placeholder="TAMANHO" className="input" />
-
-            <select className="select">
-              <option value="">ESTADO DE CONSERVAÇÃO</option>
-              <option value="otimo">Ótimo</option>
-              <option value="bom">Bom</option>
-              <option value="regular">Regular</option>
-            </select>
-
-            <input type="text" placeholder="VALOR" className="input" />
-            <input type="text" placeholder="FORNECEDOR" className="input" />
-
-            <select className="select">
-              <option value="">GÊNERO</option>
-              <option value="masc">Masculino</option>
-              <option value="fem">Feminino</option>
-              <option value="unisex">Unisex</option>
-            </select>
-
-            <button className="upload-button" onClick={handleUploadClick}>
-              <Upload size={20} />
-              ADICIONAR IMAGEM
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden-input"
-              accept="image/*"
-            />
-          </div>
-
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Imagem</th>
-                  <th>Descrição</th>
-                  <th>Estado de conservação</th>
-                  <th>Valor</th>
-                  <th>Código do Produto</th>
-                  <th>Genero</th>
-                  <th style={{ textAlign: "center" }}>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => (
-                  <tr key={index}>
-                    <td>
-                      <Image
-                        src={item.imagem || "/placeholder.svg"}
-                        alt={item.descricao}
-                        width={70}
-                        height={70}
-                        style={{ borderRadius: "8px" }}
-                      />
-                    </td>
-                    <td>{item.descricao}</td>
-                    <td>{item.estadoConservacao}</td>
-                    <td>R$ {item.valor.toFixed(2).replace(".", ",")}</td>
-                    <td>{item.codigo}</td>
-                    <td>{item.genero}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="action-button">
-                          <Eye size={20} />
-                        </button>
-                        <button className="action-button">
-                          <Pencil size={20} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="bottom-buttons">
-            <button className="yellow-button">Adicionar Item</button>
-            <button className="yellow-button">Finalizar Lote</button>
-          </div>
-        </div>
-      </div>
-    </>
+    </div>
   )
 }
 

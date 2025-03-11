@@ -23,7 +23,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility"
 import { useRouter } from "next/router"
 import axios from "axios"
 
-//const BASE_URL = "http://localhost:8080/api/produtos"
+const BASE_URL = "http://localhost:8080/api/produtos"
 
 const EstoquePage = () => {
   const [produtos, setProdutos] = useState([])
@@ -40,8 +40,8 @@ const EstoquePage = () => {
 
   useEffect(() => {
     if (produtos.length > 0) {
-      const quantidade = produtos.reduce((acc, p) => acc + p.quantidade, 0)
-      const valor = produtos.reduce((acc, p) => acc + p.quantidade * p.preco, 0)
+      const quantidade = produtos.reduce((acc, p) => acc + (p.quantidade || 0), 0)
+      const valor = produtos.reduce((acc, p) => acc + (p.quantidade || 0) * (p.preco || 0), 0)
       setQuantidadeExibida(quantidade)
       setValorExibido(valor)
     }
@@ -50,15 +50,26 @@ const EstoquePage = () => {
   const fetchProdutos = async () => {
     try {
       const response = await axios.get(BASE_URL)
-      setProdutos(response.data)
+      // Ajuste os dados da API para incluir campos padrão, se necessário
+      const produtosAjustados = response.data.map((produto) => ({
+        ...produto,
+        nome: produto.codigo_produto || "N/A", // Código ou nome do produto
+        data: produto.data || "N/A", // Data da venda
+        fornecedora: produto.fornecedora || "N/A", // Fornecedora
+        forma_pagamento: produto.forma_pagamento || "N/A", // Forma de pagamento
+        quantidade: produto.quantidade || 0, // Quantidade para cálculo do valor
+        preco: produto.preco || 0, 
+      }))
+      setProdutos(produtosAjustados)
     } catch (error) {
       console.error("Erro ao buscar produtos:", error.message)
+      setProdutos([]) // Define como array vazio em caso de erro
     }
   }
 
   const handleDeleteProduto = async (id) => {
     try {
-      await axios.delete(`${BASE_URL}?id=${id}`)
+      await axios.delete(`${BASE_URL}/${id}`)
       setProdutos((prev) => prev.filter((produto) => produto.id !== id))
     } catch (error) {
       console.error("Erro ao excluir produto:", error.message)
@@ -77,7 +88,9 @@ const EstoquePage = () => {
     setPage(0)
   }
 
-  const produtosFiltrados = produtos.filter((produto) => produto.nome.toLowerCase().includes(search.toLowerCase()))
+  const produtosFiltrados = produtos.filter((produto) => 
+    produto.nome.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
@@ -292,22 +305,11 @@ const ProductTable = ({
         <TableBody>
           {produtosFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((produto) => (
             <TableRow key={produto.id} hover>
-              <TableCell>
-                <img
-                  src={produto.imagem || "/placeholder.svg"}
-                  alt={produto.nome}
-                  style={{
-                    width: "50px",
-                    height: "50px",
-                    borderRadius: "5px",
-                    objectFit: "cover",
-                  }}
-                />
-              </TableCell>
-              <TableCell>{produto.nome}</TableCell>
-              <TableCell>{produto.quantidade}</TableCell>
-              <TableCell>R$ {produto.preco.toFixed(2)}</TableCell>
-              <TableCell>R$ {(produto.quantidade * produto.preco).toFixed(2)}</TableCell>
+              <TableCell>{produto.codigo_produto}</TableCell> {/* Código do produto */}
+              <TableCell>{produto.data}</TableCell> {/* Data da venda */}
+              <TableCell>{produto.fornecedora}</TableCell> {/* Fornecedora */}
+              <TableCell>{produto.forma_pagamento}</TableCell> {/* Forma de pagamento */}
+              <TableCell>R$ {(produto.quantidade * produto.preco).toFixed(2)}</TableCell> {/* Valor da venda */}
               <TableCell align="center">
                 <IconButton sx={{ marginRight: 1, color: "#00509E" }}>
                   <VisibilityIcon />
@@ -366,4 +368,3 @@ const AddProductButton = ({ handleNavigateToRegister }) => (
 )
 
 export default EstoquePage
-
