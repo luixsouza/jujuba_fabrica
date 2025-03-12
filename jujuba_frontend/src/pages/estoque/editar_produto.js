@@ -1,86 +1,71 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Box, Button, Card, CardContent, TextField, Typography, Grid, IconButton } from "@mui/material"
+import { Box, Button, Paper, TextField, Typography, Grid, IconButton, CircularProgress } from "@mui/material"
+import { ArrowBack, Home } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
-import axios from "axios"
-import { ArrowBack, Home, ArrowForward, AddPhotoAlternate } from "@mui/icons-material"
 import { useRouter } from "next/router"
+import axios from "axios"
 
 const BASE_URL = "http://localhost:8080/api/produtos"
 
-export default function ProdutosEdit({ produtoId }) {
+export default function ProdutosEdit() {
+  const router = useRouter()
+  const { id } = router.query
+
   const [produto, setProduto] = useState({
     descricao: "",
+    marca: "",
+    tamanho: "",
+    estadoConservacao: "",
+    genero: "",
+    preco: "",
     codigo: "",
     lote: "",
-    estado: "",
-    fornecedora: "",
-    valor: "",
+    fornecedor: "",
     status: "",
   })
+
   const [loading, setLoading] = useState(false)
+  const [fetchLoading, setFetchLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [images, setImages] = useState([null, null, null])
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const router = useRouter()
+
 
   useEffect(() => {
-    const fetchProduto = async () => {
-      try {
-        setLoading(true)
-        const response = await axios.get(`${BASE_URL}/${produtoId}`)
-       
-        setProduto({
-          descricao: response.data.descricao || "",
-          codigo: response.data.codigo || "",
-          lote: response.data.lote || "",
-          estado: response.data.estado || "",
-          fornecedora: response.data.fornecedora || "",
-          valor: response.data.valor || "", 
-          status: response.data.status || "",
-        })
-   
-        if (response.data.imagens && response.data.imagens.length > 0) {
-          setImages(response.data.imagens.concat(Array(3 - response.data.imagens.length).fill(null)))
-        }
-      } catch (error) {
-        setError("Erro ao carregar produto")
-        console.error("Erro ao carregar produto:", error)
-      } finally {
-        setLoading(false)
-      }
+    if (id) {
+      fetchProduto(id)
     }
+  }, [id])
 
-    if (produtoId) {
-      fetchProduto()
+  const fetchProduto = async (produtoId) => {
+    try {
+      setFetchLoading(true)
+      const response = await axios.get(`${BASE_URL}/${produtoId}`)
+      const data = response.data
+
+      setProduto({
+        descricao: data.descricao || "",
+        marca: data.marca || "",
+        tamanho: data.tamanho || "",
+        estadoConservacao: data.estadoConservacao || "",
+        genero: data.genero || "",
+        preco: data.preco || "",
+        codigo: data.codigo || "",
+        lote: data.lote || "",
+        fornecedor: data.fornecedor || "",
+        status: data.status || "Disponível",
+      })
+    } catch (error) {
+      console.error("Erro ao buscar dados do produto:", error)
+      setError("Erro ao carregar dados do produto")
+    } finally {
+      setFetchLoading(false)
     }
-  }, [produtoId])
+  }
 
   const handleChange = (event) => {
     const { name, value } = event.target
     setProduto((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleImageChange = (event, index) => {
-    const file = event.target.files[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const newImages = [...images]
-        newImages[index] = reader.result
-        setImages(newImages)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : images.length - 1))
-  }
-
-  const handleNextImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex < images.length - 1 ? prevIndex + 1 : 0))
   }
 
   const handleSubmit = async (event) => {
@@ -88,251 +73,429 @@ export default function ProdutosEdit({ produtoId }) {
     setLoading(true)
     setError(null)
 
-    const formData = new FormData()
-   
-    formData.append("descricao", produto.descricao)
-    formData.append("codigo", produto.codigo)
-    formData.append("lote", produto.lote)
-    formData.append("estado", produto.estado)
-    formData.append("fornecedora", produto.fornecedora)
-    
-    formData.append("valor", produto.valor)
-    formData.append("status", produto.status)
-   
-    images.forEach((image, index) => {
-      if (image && image.startsWith("data:")) {
-        const blob = dataURItoBlob(image)
-        formData.append(`imagens[${index}]`, blob, `imagem${index + 1}.jpg`) 
-      } else if (image) {
-        formData.append(`imagens[${index}]`, image) 
-      }
-    })
-
     try {
-      const response = await axios.put(`${BASE_URL}/${produtoId}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
+      const response = await axios.put(`${BASE_URL}/${id}`, produto)
       console.log("Produto atualizado com sucesso:", response.data)
       alert("Produto atualizado com sucesso!")
       router.push("/produtos")
     } catch (error) {
       console.error("Erro ao atualizar produto:", error)
       setError("Erro ao atualizar produto. Verifique os dados e tente novamente.")
-      alert("Erro ao atualizar produto.")
     } finally {
       setLoading(false)
     }
   }
 
-  const dataURItoBlob = (dataURI) => {
-    const byteString = atob(dataURI.split(",")[1])
-    const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0]
-    const ab = new ArrayBuffer(byteString.length)
-    const ia = new Uint8Array(ab)
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i)
-    }
-    return new Blob([ab], { type: mimeString })
+  // Loading state
+  if (fetchLoading) {
+    return (
+      <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
+        <Sidebar />
+        <Box
+          sx={{
+            flex: 1,
+            marginLeft: "280px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <CircularProgress size={60} sx={{ color: "#FADADD" }} />
+          <Typography variant="h6" sx={{ ml: 2, color: "#333" }}>
+            Carregando dados do produto...
+          </Typography>
+        </Box>
+      </Box>
+    )
   }
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
-      <Box sx={{ width: { xs: "100%", md: "250px" } }}>
-        <Sidebar />
-      </Box>
+      <Sidebar />
 
-      <Box sx={{ flex: 1, p: 3, width: "100%" }}>
-        <form autoComplete="off" onSubmit={handleSubmit}>
-          <Card
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          marginLeft: "280px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
+        >
+          <IconButton
+            onClick={() => router.back()}
             sx={{
               backgroundColor: "#9AE4FF",
-              p: 3,
-              maxWidth: "100%",
-              mx: "auto",
-              mt: 4,
-              height: "auto",
+              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.9)" },
             }}
           >
-            <CardContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                    <IconButton onClick={() => router.back()}>
-                      <ArrowBack />
-                    </IconButton>
-                    <IconButton onClick={() => router.push("/")}>
-                      <Home />
-                    </IconButton>
-                  </Box>
-                  <Typography variant="h4" sx={{ textAlign: "center", fontWeight: "bold", mb: 4 }}>
-                    Editar Produto
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+            VISUALIZAR ITEM
+          </Typography>
+          <IconButton
+            onClick={() => router.push("/")}
+            sx={{
+              backgroundColor: "#9AE4FF",
+              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.9)" },
+            }}
+          >
+            <Home />
+          </IconButton>
+        </Box>
+
+        <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "800px" }}>
+          <Paper
+            elevation={3}
+            sx={{
+              width: "100%",
+              borderRadius: "20px",
+              backgroundColor: "#9AE4FF",
+              p: 3,
+              mb: 3,
+            }}
+          >
+            <TextField
+              fullWidth
+              placeholder="Nome do produto"
+              name="descricao"
+              value={produto.descricao}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "30px",
+                  backgroundColor: "#f8f9fa",
+                  fontSize: "18px",
+                },
+              }}
+            />
+
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Descrição:
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              name="descricao"
+              value={produto.descricao}
+              onChange={handleChange}
+              variant="outlined"
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                },
+              }}
+            />
+
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Observações:
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
+              name="observacoes"
+              variant="outlined"
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                },
+              }}
+            />
+
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={4}>
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    borderRadius: "30px",
+                    textAlign: "center",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
+                    CÓDIGO
                   </Typography>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      mb: 3,
+                  <TextField
+                    fullWidth
+                    name="codigo"
+                    value={produto.codigo}
+                    onChange={handleChange}
+                    variant="standard"
+                    placeholder="ALC222333"
+                    InputProps={{
+                      disableUnderline: true,
                     }}
-                  >
-                    <IconButton onClick={handlePrevImage} sx={{ color: "gray", "&:hover": { color: "black" } }}>
-                      <ArrowBack fontSize="large" />
-                    </IconButton>
-                    <Box
-                      sx={{
-                        width: "300px",
-                        height: "300px",
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        position: "relative",
-                        overflow: "hidden",
-                        borderRadius: "10px",
-                      }}
-                    >
-                      {images[currentImageIndex] ? (
-                        <img
-                          src={images[currentImageIndex] || "/placeholder.svg"}
-                          alt={`Produto ${currentImageIndex + 1}`}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                      ) : (
-                        <Typography variant="body2" color="gray">
-                          Imagem {currentImageIndex + 1}
-                        </Typography>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageChange(e, currentImageIndex)}
-                        style={{ display: "none" }}
-                        id={`image-upload-${currentImageIndex}`}
-                      />
-                      <label htmlFor={`image-upload-${currentImageIndex}`}>
-                        <IconButton
-                          component="span"
-                          sx={{
-                            position: "absolute",
-                            bottom: 8,
-                            right: 8,
-                            backgroundColor: "rgba(255, 255, 255, 0.7)",
-                            "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.9)" },
-                          }}
-                        >
-                          <AddPhotoAlternate />
-                        </IconButton>
-                      </label>
-                    </Box>
-                    <IconButton onClick={handleNextImage} sx={{ color: "gray", "&:hover": { color: "black" } }}>
-                      <ArrowForward fontSize="large" />
-                    </IconButton>
-                  </Box>
-                  <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                    {images.map((_, index) => (
-                      <Box
-                        key={index}
-                        sx={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          backgroundColor: index === currentImageIndex ? "#00509E" : "#CCCCCC",
-                          mx: 0.5,
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Grid>
-
-                {["Descrição", "Código", "Lote", "Estado", "Fornecedora", "Valor", "Status"].map((label) => {
-                  if (label === "Descrição") {
-                    return (
-                      <Grid item xs={12} key={label}>
-                        <TextField
-                          fullWidth
-                          label={label}
-                          name={label.toLowerCase()}
-                          onChange={handleChange}
-                          value={produto[label.toLowerCase()] || ""}
-                          variant="outlined"
-                          multiline
-                          rows={2}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#F5F5F5",
-                              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-                              borderRadius: "20px",
-                            },
-                            "& .MuiOutlinedInput-root.Mui-focused": {
-                              backgroundColor: "#FFFFFF",
-                            },
-                          }}
-                        />
-                      </Grid>
-                    )
-                  } else {
-                    return (
-                      <Grid item xs={12} sm={6} md={4} key={label}>
-                        <TextField
-                          fullWidth
-                          label={label}
-                          name={label.toLowerCase()}
-                          onChange={handleChange}
-                          value={produto[label.toLowerCase()] || ""}
-                          variant="outlined"
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#F5F5F5",
-                              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-                              borderRadius: "20px",
-                            },
-                            "& .MuiOutlinedInput-root.Mui-focused": {
-                              backgroundColor: "#FFFFFF",
-                            },
-                          }}
-                        />
-                      </Grid>
-                    )
-                  }
-                })}
-
-                <Grid item xs={12}>
-                  <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      sx={{
-                        backgroundColor: "#FADADD",
-                        color: "black",
-                        boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-                        border: "2px solid #FADADD",
+                    sx={{
+                      textAlign: "center",
+                      "& input": {
+                        textAlign: "center",
                         fontWeight: "bold",
-                        fontSize: "17px",
-                        borderRadius: "60px",
-                        padding: "10px 0",
-                        width: { xs: "100%", sm: "300px" },
-                        height: "50px",
-                        textTransform: "none",
-                      }}
-                    >
-                      {loading ? "Salvando..." : "Salvar Edição"}
-                    </Button>
-                  </Box>
-                  {error && (
-                    <Typography color="error" sx={{ textAlign: "center", mt: 2 }}>
-                      {error}
-                    </Typography>
-                  )}
-                </Grid>
+                        fontSize: "16px",
+                      },
+                    }}
+                  />
+                </Paper>
               </Grid>
-            </CardContent>
-          </Card>
+              <Grid item xs={12} sm={4}>
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    borderRadius: "30px",
+                    textAlign: "center",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
+                    LOTE
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    name="lote"
+                    value={produto.lote}
+                    onChange={handleChange}
+                    variant="standard"
+                    placeholder="A321"
+                    InputProps={{
+                      disableUnderline: true,
+                    }}
+                    sx={{
+                      textAlign: "center",
+                      "& input": {
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                      },
+                    }}
+                  />
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    borderRadius: "30px",
+                    textAlign: "center",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
+                    ESTADO
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    name="estadoConservacao"
+                    value={produto.estadoConservacao}
+                    onChange={handleChange}
+                    variant="standard"
+                    placeholder="Ótimo"
+                    InputProps={{
+                      disableUnderline: true,
+                    }}
+                    sx={{
+                      textAlign: "center",
+                      "& input": {
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                      },
+                    }}
+                  />
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    borderRadius: "30px",
+                    textAlign: "center",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    mt: 2,
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
+                    FORNECEDOR
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    name="fornecedor"
+                    value={produto.fornecedor}
+                    onChange={handleChange}
+                    variant="standard"
+                    placeholder="Ana Lúcia Cardoso"
+                    InputProps={{
+                      disableUnderline: true,
+                    }}
+                    sx={{
+                      textAlign: "center",
+                      "& input": {
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                      },
+                    }}
+                  />
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    borderRadius: "30px",
+                    textAlign: "center",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    mt: 2,
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
+                    VALOR
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    name="preco"
+                    value={produto.preco}
+                    onChange={handleChange}
+                    variant="standard"
+                    placeholder="R$ 89,90"
+                    InputProps={{
+                      disableUnderline: true,
+                      startAdornment: produto.preco ? "R$ " : "",
+                    }}
+                    sx={{
+                      textAlign: "center",
+                      "& input": {
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                      },
+                    }}
+                  />
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    borderRadius: "30px",
+                    textAlign: "center",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    mt: 2,
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
+                    STATUS
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    name="status"
+                    value={produto.status}
+                    onChange={handleChange}
+                    variant="standard"
+                    placeholder="Disponível"
+                    InputProps={{
+                      disableUnderline: true,
+                    }}
+                    sx={{
+                      textAlign: "center",
+                      "& input": {
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                      },
+                    }}
+                  />
+                </Paper>
+              </Grid>
+            </Grid>
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mt: 4,
+              }}
+            >
+              <Button
+                type="submit"
+                disabled={loading}
+                sx={{
+                  bgcolor: "#FADADD",
+                  color: "black",
+                  borderRadius: "30px",
+                  px: 6,
+                  py: 1.5,
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  minWidth: "200px",
+                  "&:hover": {
+                    bgcolor: "#f8c8cc",
+                  },
+                }}
+              >
+                {loading ? <CircularProgress size={24} sx={{ color: "black" }} /> : "Salvar Alterações"}
+              </Button>
+            </Box>
+
+            {error && (
+              <Typography
+                color="error"
+                sx={{
+                  textAlign: "center",
+                  mt: 2,
+                  fontWeight: "medium",
+                }}
+              >
+                {error}
+              </Typography>
+            )}
+          </Paper>
         </form>
       </Box>
     </Box>
   )
 }
+

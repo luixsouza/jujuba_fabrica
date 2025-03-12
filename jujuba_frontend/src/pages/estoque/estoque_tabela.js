@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   Box,
   Card,
@@ -15,11 +15,14 @@ import {
   TablePagination,
   TextField,
   Button,
+  Autocomplete,
+  InputAdornment,
 } from "@mui/material"
 import Sidebar from "../../components/sidebar"
 import EditIcon from "@mui/icons-material/Edit"
 import DeleteIcon from "@mui/icons-material/Delete"
 import VisibilityIcon from "@mui/icons-material/Visibility"
+import SearchIcon from "@mui/icons-material/Search"
 import { useRouter } from "next/router"
 import axios from "axios"
 
@@ -50,15 +53,19 @@ const EstoquePage = () => {
   const fetchProdutos = async () => {
     try {
       const response = await axios.get(BASE_URL)
-      // Ajuste os dados da API para incluir campos padrão, se necessário
+
       const produtosAjustados = response.data.map((produto) => ({
         ...produto,
-        nome: produto.codigo_produto || "N/A", // Código ou nome do produto
-        data: produto.data || "N/A", // Data da venda
-        fornecedora: produto.fornecedora || "N/A", // Fornecedora
-        forma_pagamento: produto.forma_pagamento || "N/A", // Forma de pagamento
-        quantidade: produto.quantidade || 0, // Quantidade para cálculo do valor
-        preco: produto.preco || 0, 
+        descricao: produto.descricao || "N/A",
+        marca: produto.marca || "N/A",
+        tamanho: produto.tamanho || "N/A",
+        estadoConservacao: produto.estadoConservacao || "N/A",
+        genero: produto.genero || "N/A",
+        preco: produto.preco || 0,
+        quantidade: produto.quantidade || 1,
+        data: produto.data || new Date().toLocaleDateString(),
+        fornecedora: produto.fornecedora || "N/A",
+        forma_pagamento: produto.forma_pagamento || "N/A",
       }))
       setProdutos(produtosAjustados)
     } catch (error) {
@@ -88,9 +95,13 @@ const EstoquePage = () => {
     setPage(0)
   }
 
-  const produtosFiltrados = produtos.filter((produto) => 
-    produto.nome.toLowerCase().includes(search.toLowerCase())
-  )
+  const produtosFiltrados = useMemo(() => {
+    return produtos.filter((produto) => produto.descricao.toLowerCase().includes(search.toLowerCase()))
+  }, [produtos, search])
+
+  const descricaoOptions = useMemo(() => {
+    return [...new Set(produtos.map((produto) => produto.descricao))]
+  }, [produtos])
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
@@ -120,7 +131,7 @@ const EstoquePage = () => {
         </Typography>
 
         <SummaryCards valorExibido={valorExibido} />
-        <SearchField search={search} setSearch={setSearch} />
+        <SearchField search={search} setSearch={setSearch} options={descricaoOptions} />
         <ProductTable
           produtosFiltrados={produtosFiltrados}
           page={page}
@@ -128,6 +139,7 @@ const EstoquePage = () => {
           handleChangePage={handleChangePage}
           handleChangeRowsPerPage={handleChangeRowsPerPage}
           handleDeleteProduto={handleDeleteProduto}
+          router={router}
         />
         <AddProductButton handleNavigateToRegister={handleNavigateToRegister} />
       </Box>
@@ -191,7 +203,7 @@ const CadastrarLoteButton = () => (
   </Button>
 )
 
-const SearchField = ({ search, setSearch }) => (
+const SearchField = ({ search, setSearch, options }) => (
   <Box
     sx={{
       display: "flex",
@@ -200,49 +212,73 @@ const SearchField = ({ search, setSearch }) => (
       marginBottom: "30px",
     }}
   >
-    <TextField
-      label="Pesquisar"
-      variant="outlined"
-      size="medium"
+    <Autocomplete
+      freeSolo
+      options={options}
       value={search}
-      onChange={(e) => setSearch(e.target.value)}
+      onChange={(event, newValue) => {
+        setSearch(newValue || "")
+      }}
+      onInputChange={(event, newValue) => {
+        setSearch(newValue || "")
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Pesquisar produto"
+          variant="outlined"
+          size="medium"
+          InputProps={{
+            ...params.InputProps,
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            width: "100%",
+            maxWidth: "1800px",
+            backgroundColor: "#F5F5F5",
+            marginBottom: "50px",
+            marginTop: "50px",
+            "& .MuiOutlinedInput-root": {
+              backgroundColor: "#F5F5F5",
+              color: "#000000",
+              height: "80px",
+              "& fieldset": {
+                borderColor: "#CCCCCC",
+              },
+              "&:hover fieldset": {
+                borderColor: "#00509E",
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "#00509E",
+              },
+              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            },
+            "& .MuiInputBase-input": {
+              color: "#000000",
+              padding: "0 20px",
+              fontSize: "18px",
+            },
+            "& .MuiInputLabel-root": {
+              fontSize: "20px",
+              color: "#000000",
+              transform: "translate(20px, 28px)",
+            },
+            "& .MuiInputLabel-root.Mui-focused": {
+              color: "#00509E",
+            },
+            "& .MuiInputLabel-shrink": {
+              transform: "translate(20px, -6px) scale(0.75)",
+            },
+          }}
+        />
+      )}
       sx={{
         width: "100%",
         maxWidth: "1800px",
-        backgroundColor: "#F5F5F5",
-        marginBottom: "50px",
-        marginTop: "50px",
-        "& .MuiOutlinedInput-root": {
-          backgroundColor: "#F5F5F5",
-          color: "#000000",
-          height: "80px",
-          "& fieldset": {
-            borderColor: "#CCCCCC",
-          },
-          "&:hover fieldset": {
-            borderColor: "#00509E",
-          },
-          "&.Mui-focused fieldset": {
-            borderColor: "#00509E",
-          },
-          boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-        },
-        "& .MuiInputBase-input": {
-          color: "#000000",
-          padding: "0 20px",
-          fontSize: "18px",
-        },
-        "& .MuiInputLabel-root": {
-          fontSize: "20px",
-          color: "#000000",
-          transform: "translate(20px, 28px)",
-        },
-        "& .MuiInputLabel-root.Mui-focused": {
-          color: "#00509E",
-        },
-        "& .MuiInputLabel-shrink": {
-          transform: "translate(20px, -6px) scale(0.75)",
-        },
       }}
     />
   </Box>
@@ -255,6 +291,7 @@ const ProductTable = ({
   handleChangePage,
   handleChangeRowsPerPage,
   handleDeleteProduto,
+  router,
 }) => (
   <Card
     sx={{
@@ -277,44 +314,49 @@ const ProductTable = ({
         marginTop: "20px",
       }}
     >
-      Últimos itens vendidos
+      Produtos em Estoque
     </Typography>
 
     <TableContainer sx={{ maxHeight: "600px", borderRadius: "10px", overflow: "hidden" }}>
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            {["Código do produto", "Data da venda", "Fornecedora", "Forma de pagamento", "Valor da venda", "Ações"].map(
-              (header) => (
-                <TableCell
-                  key={header}
-                  sx={{
-                    fontSize: "18px",
-                    fontWeight: "normal",
-                    backgroundColor: "#FADADD",
-                    borderRight: "2px solid #F5F5F5",
-                    textAlign: "center",
-                  }}
-                >
-                  {header}
-                </TableCell>
-              ),
-            )}
+            {["Descrição", "Marca", "Tamanho", "Estado", "Gênero", "Preço", "Ações"].map((header) => (
+              <TableCell
+                key={header}
+                sx={{
+                  fontSize: "18px",
+                  fontWeight: "normal",
+                  backgroundColor: "#FADADD",
+                  borderRight: "2px solid #F5F5F5",
+                  textAlign: "center",
+                }}
+              >
+                {header}
+              </TableCell>
+            ))}
           </TableRow>
         </TableHead>
         <TableBody>
           {produtosFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((produto) => (
             <TableRow key={produto.id} hover>
-              <TableCell>{produto.codigo_produto}</TableCell> {/* Código do produto */}
-              <TableCell>{produto.data}</TableCell> {/* Data da venda */}
-              <TableCell>{produto.fornecedora}</TableCell> {/* Fornecedora */}
-              <TableCell>{produto.forma_pagamento}</TableCell> {/* Forma de pagamento */}
-              <TableCell>R$ {(produto.quantidade * produto.preco).toFixed(2)}</TableCell> {/* Valor da venda */}
+              <TableCell>{produto.descricao}</TableCell>
+              <TableCell>{produto.marca}</TableCell>
+              <TableCell>{produto.tamanho}</TableCell>
+              <TableCell>{produto.estadoConservacao}</TableCell>
+              <TableCell>{produto.genero}</TableCell>
+              <TableCell>R$ {produto.preco.toFixed(2)}</TableCell>
               <TableCell align="center">
-                <IconButton sx={{ marginRight: 1, color: "#00509E" }}>
+                <IconButton
+                  onClick={() => router.push(`./visualizar_produto?id=${produto.id}`)}
+                  sx={{ marginRight: 1, color: "#00509E" }}
+                >
                   <VisibilityIcon />
                 </IconButton>
-                <IconButton sx={{ marginRight: 1, color: "#00509E" }}>
+                <IconButton
+                  onClick={() => router.push(`./editar_produto?id=${produto.id}`)}
+                  sx={{ marginRight: 1, color: "#00509E" }}
+                >
                   <EditIcon />
                 </IconButton>
                 <IconButton onClick={() => handleDeleteProduto(produto.id)} sx={{ color: "#00509E" }}>
@@ -368,3 +410,4 @@ const AddProductButton = ({ handleNavigateToRegister }) => (
 )
 
 export default EstoquePage
+

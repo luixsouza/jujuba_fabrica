@@ -1,365 +1,412 @@
 "use client"
 
-import { useState, useRef } from "react"
-import Image from "next/image"
-import { ArrowLeft, Eye, Home, Pencil, Upload } from "lucide-react"
+import { useState } from "react"
+import { Box, Button, Card, CardContent, TextField, Typography, Grid, CircularProgress } from "@mui/material"
 import Sidebar from "../../components/sidebar"
+import axios from "axios"
+const BASE_URL = "http://localhost:8080/api/fornecedoras"
+import { ArrowBack, Home } from "@mui/icons-material"
 
-export default function NovoLotePage() {
-  const [items, setItems] = useState([
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Camisa Lacoste (Original) Tamanho 8 anos",
-      estadoConservacao: "Ótimo",
-      valor: 89.9,
-      codigo: "ALC222333",
-      genero: "Masc",
-    },
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Crocs Minnie Tamanho 19/20",
-      estadoConservacao: "Ótimo",
-      valor: 68.9,
-      codigo: "ALC352333",
-      genero: "Fem",
-    },
-  ])
+export default function FornecedoresCadastro() {
+  const [fornecedora, setFornecedora] = useState({
+    nome: "",
+    contato: "",
+    endereco: "",
+    chavePix: "",
+    contratoUrl: "",
+  })
 
-  const lotes = [
-    { codigo: "A321", data: "31/02/2025" },
-    { codigo: "B321", data: "03/08/2024" },
-    { codigo: "C123", data: "21/06/2024" },
-    { codigo: "K123", data: "12/04/2024" },
-    { codigo: "L569", data: "10/04/2024" },
-    { codigo: "M123", data: "07/03/2024" },
-  ]
+  const [loading, setLoading] = useState(false)
 
-  const fileInputRef = useRef(null)
-
-  const handleUploadClick = () => {
-    fileInputRef.current.click()
+  // atualiza o estado com os valores dos campos
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    setFornecedora((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      // Handle the file upload here
-      console.log("File selected:", file.name)
-      // You would typically upload the file to a server or process it here
+  const handleFileChange = (event) => {
+    const file = event.target.files[0]
+    setFornecedora((prev) => ({
+      ...prev,
+      contratoUrl: file || "",
+    }))
+  }
+
+  // função para criar um fornecedor na API
+  const createFornecedora = async (values) => {
+    try {
+      const formData = new FormData()
+
+      // serializa o objeto fornecedora como JSON
+      formData.append(
+        "fornecedora",
+        JSON.stringify({
+          nome: values.nome || "N/A",
+          contato: values.contato || "N/A",
+          endereco: values.endereco || "N/A",
+          chavePix: values.chavePix || "N/A",
+        }),
+      )
+
+      // adiciona o contrato ao FormData
+      const contrato = document.querySelector('input[name="contrato"]')?.files[0]
+      if (contrato) {
+        formData.append("contratoUrl", contrato)
+      } else {
+        throw new Error("O arquivo do contrato é obrigatório!")
+      }
+
+      // faz a requisição para o backend
+      const response = await axios.post(BASE_URL, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+
+      return response.data
+    } catch (error) {
+      console.error("Erro ao criar fornecedor:", error)
+      throw error
+    }
+  }
+
+  // envia os dados para a API
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setLoading(true)
+    try {
+      const data = await createFornecedora(fornecedora) // cria o fornecedor na API
+      console.log("Fornecedor criado com sucesso:", data)
+      alert("Fornecedor criado com sucesso!")
+      setFornecedora({
+        nome: "",
+        contato: "",
+        endereco: "",
+        chavePix: "",
+        contratoUrl: "",
+      })
+    } catch (error) {
+      console.error("Erro ao criar fornecedor:", error)
+      alert("Erro ao criar fornecedor.")
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <>
-      <style jsx>{`
-        .container {
-          display: flex;
-          min-height: 100vh;
-          font-family: Arial, sans-serif;
-        }
+    <Box
+      sx={{
+        display: "flex",
+        backgroundColor: "#9AE4FF",
+        minHeight: "100vh",
+        flexDirection: { xs: "column", md: "row" },
+      }}
+    >
+      <Box sx={{ width: { xs: "100%", md: "250px" } }}>
+        <Sidebar />
+      </Box>
 
-        .main-content {
-          flex: 1;
-          margin-left: 276px;
-          background-color: #a3e0f5;
-          padding: 32px;
-        }
+      <Box sx={{ flex: 1, p: 3 }}>
+        <Box sx={{ mb: 1, textAlign: "center", mt: { xs: 4, md: 8 } }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: "bold", marginBottom: "20px", fontSize: { xs: "30px", md: "40px" } }}
+          ></Typography>
+        </Box>
 
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 60px;
-        }
-
-        .header-title {
-          text-align: center;
-        }
-
-        .header-title h1 {
-          font-size: 40px;
-          font-weight: 800;
-          color: #333;
-          text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-          margin-bottom: 12px;
-        }
-
-        .header-title p {
-          color: #666;
-          font-size: 18px;
-        }
-
-        .nav-button {
-          background: transparent;
-          border-radius: 50%;
-          padding: 12px;
-          cursor: pointer;
-          border: none;
-          transition: all 0.2s ease;
-          color: #333;
-        }
-
-        .nav-button:hover {
-          transform: scale(1.1);
-          color: #000;
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-          margin-bottom: 32px;
-        }
-
-        .input, .select {
-          padding: 16px;
-          border-radius: 8px;
-          border: none;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          width: 100%;
-          font-size: 16px;
-          transition: all 0.3s ease;
-        }
-
-        .input:focus, .select:focus {
-          box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-          transform: translateY(-2px);
-        }
-
-        .select {
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 12px center;
-          background-size: 16px;
-        }
-
-        .upload-button {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          background: white;
-          border: none;
-          border-radius: 8px;
-          padding: 16px;
-          cursor: pointer;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          font-size: 16px;
-          font-weight: 500;
-          transition: all 0.3s ease;
-        }
-
-        .upload-button:hover {
-          background: #f8f8f8;
-          box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-          transform: translateY(-2px);
-        }
-
-        .table-container {
-          background: white;
-          border-radius: 16px;
-          padding: 24px;
-          margin-bottom: 32px;
-          box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-        }
-
-        table {
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 0;
-        }
-
-        th {
-          background: #ffd0e8;
-          text-align: left;
-          padding: 14px;
-          font-weight: 600;
-          font-size: 16px;
-          border-top: 1px solid #ffc0e0;
-          border-bottom: 1px solid #ffc0e0;
-        }
-
-        th:first-child {
-          border-top-left-radius: 8px;
-          border-left: 1px solid #ffc0e0;
-        }
-
-        th:last-child {
-          border-top-right-radius: 8px;
-          border-right: 1px solid #ffc0e0;
-        }
-
-        td {
-          padding: 14px;
-          border-bottom: 1px solid #eee;
-          font-size: 15px;
-        }
-
-        tr:last-child td {
-          border-bottom: none;
-        }
-
-        tr:hover td {
-          background-color: #f9f9f9;
-        }
-
-        .actions {
-          display: flex;
-          justify-content: center;
-          gap: 12px;
-        }
-
-        .action-button {
-          color: #2563eb;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 6px;
-          border-radius: 4px;
-          transition: all 0.2s ease;
-        }
-
-        .action-button:hover {
-          background: #f0f7ff;
-          transform: scale(1.1);
-        }
-
-        .bottom-buttons {
-          display: flex;
-          justify-content: space-between;
-        }
-
-        .yellow-button {
-          background: #ffd0e8;
-          border: none;
-          padding: 16px 40px;
-          border-radius: 9999px;
-          font-weight: 600;
-          font-size: 16px;
-          cursor: pointer;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          transition: all 0.3s ease;
-        }
-
-        .yellow-button:hover {
-          background: #ffb0d8;
-          box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-          transform: translateY(-3px);
-        }
-
-        .hidden-input {
-          display: none;
-        }
-      `}</style>
-
-      <div className="container">
-        {/* Import the Sidebar component instead of defining it inline */}
-        <Sidebar lotes={lotes} />
-
-        {/* Main Content */}
-        <div className="main-content">
-          <header className="header">
-            <button className="nav-button">
-              <ArrowLeft size={20} />
-            </button>
-            <div className="header-title">
-              <h1>NOVO LOTE: C123</h1>
-              <p>Adicionando item</p>
-            </div>
-            <button className="nav-button">
-              <Home size={20} />
-            </button>
-          </header>
-
-          <div className="form-grid">
-            <input type="text" placeholder="DESCRIÇÃO" className="input" />
-            <input type="text" placeholder="MARCA" className="input" />
-            <input type="text" placeholder="TAMANHO" className="input" />
-
-            <select className="select">
-              <option value="">ESTADO DE CONSERVAÇÃO</option>
-              <option value="otimo">Ótimo</option>
-              <option value="bom">Bom</option>
-              <option value="regular">Regular</option>
-            </select>
-
-            <input type="text" placeholder="VALOR" className="input" />
-            <input type="text" placeholder="FORNECEDOR" className="input" />
-
-            <select className="select">
-              <option value="">GÊNERO</option>
-              <option value="masc">Masculino</option>
-              <option value="fem">Feminino</option>
-              <option value="unisex">Unisex</option>
-            </select>
-
-            <button className="upload-button" onClick={handleUploadClick}>
-              <Upload size={20} />
-              ADICIONAR IMAGEM
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden-input"
-              accept="image/*"
-            />
-          </div>
-
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Imagem</th>
-                  <th>Descrição</th>
-                  <th>Estado de conservação</th>
-                  <th>Valor</th>
-                  <th>Código do Produto</th>
-                  <th>Genero</th>
-                  <th style={{ textAlign: "center" }}>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => (
-                  <tr key={index}>
-                    <td>
-                      <Image
-                        src={item.imagem || "/placeholder.svg"}
-                        alt={item.descricao}
-                        width={70}
-                        height={70}
-                        style={{ borderRadius: "8px" }}
+        <form autoComplete="off" onSubmit={handleSubmit}>
+          <Card
+            sx={{
+              borderRadius: 10,
+              backgroundColor: "#FADADD",
+              p: 3,
+              maxWidth: "150%",
+              mx: "auto",
+              mt: { xs: 4, md: 8 },
+              height: "auto",
+              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", mb: 2 }}></Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Grid container direction="column" alignItems="center" spacing={1}>
+                    <Grid item xs={12} display="flex" justifyContent="flex-start" width="100%" alignItems="center">
+                      <ArrowBack
+                        sx={{
+                          fontSize: "30px",
+                          cursor: "pointer",
+                          color: "black",
+                        }}
+                        onClick={() => {}}
                       />
-                    </td>
-                    <td>{item.descricao}</td>
-                    <td>{item.estadoConservacao}</td>
-                    <td>R$ {item.valor.toFixed(2).replace(".", ",")}</td>
-                    <td>{item.codigo}</td>
-                    <td>{item.genero}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="action-button">
-                          <Eye size={20} />
-                        </button>
-                        <button className="action-button">
-                          <Pencil size={20} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </Grid>
 
-          <div className="bottom-buttons">
-            <button className="yellow-button">Adicionar Item</button>
-            <button className="yellow-button">Finalizar Lote</button>
-          </div>
-        </div>
-      </div>
-    </>
+                    <Grid item xs={12} display="flex" justifyContent="flex-end" width="100%" alignItems="center">
+                      <Home
+                        sx={{
+                          fontSize: "30px",
+                          cursor: "pointer",
+                          color: "black",
+                          marginTop: "-40px",
+                        }}
+                        onClick={() => {}}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          mb: 4,
+                          fontSize: { xs: "35px", md: "45px" },
+                          fontWeight: "bold",
+                          textAlign: "center",
+                        }}
+                      >
+                        Cadastro de Fornecedor
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Grid>
+                <Grid item xs={12} sm={8} md={7}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                  >
+                    Nome
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label="Nome do Fornecedor"
+                    name="nome"
+                    onChange={handleChange}
+                    required
+                    value={fornecedora.nome}
+                    variant="outlined"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        backgroundColor: "#FFFFFF",
+                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                      },
+                      "& .MuiOutlinedInput-root.Mui-focused": {
+                        backgroundColor: "#FFFFFF",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={8} md={7}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                  >
+                    Contato
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label="Contato"
+                    name="contato"
+                    onChange={handleChange}
+                    required
+                    value={fornecedora.contato}
+                    variant="outlined"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        backgroundColor: "#FFFFFF",
+                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                      },
+                      "& .MuiOutlinedInput-root.Mui-focused": {
+                        backgroundColor: "#FFFFFF",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={8} md={7}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                  >
+                    Endereço
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label="Endereço"
+                    name="endereco"
+                    onChange={handleChange}
+                    required
+                    value={fornecedora.endereco}
+                    variant="outlined"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        backgroundColor: "#FFFFFF",
+                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                      },
+                      "& .MuiOutlinedInput-root.Mui-focused": {
+                        backgroundColor: "#FFFFFF",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={8} md={7}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                  >
+                    Chave Pix
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label="Chave Pix"
+                    name="chavePix"
+                    onChange={handleChange}
+                    value={fornecedora.chavePix}
+                    variant="outlined"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        backgroundColor: "#FFFFFF",
+                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                      },
+                      "& .MuiOutlinedInput-root.Mui-focused": {
+                        backgroundColor: "#FFFFFF",
+                      },
+                    }}
+                  />
+                </Grid>
+
+                {/* Botões alinhados horizontalmente no final da página */}
+                <Grid
+                  item
+                  xs={12}
+                  sx={{
+                    mt: 4,
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    justifyContent: "center",
+                    gap: { xs: 2, sm: 3 },
+                  }}
+                >
+                  <Button
+                    component="label"
+                    disabled={loading}
+                    sx={{
+                      color: "Black",
+                      backgroundColor: "#50abe4",
+                      textTransform: "none",
+                      width: { xs: "100%", sm: "250px" },
+                      fontWeight: "bold",
+                      fontSize: { xs: "16px", md: "18px" },
+                      borderRadius: "50px",
+                      padding: "10px 20px",
+                      height: "56px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      "&:hover": {
+                        backgroundColor: "#003B6F",
+                      },
+                      "&:disabled": {
+                        backgroundColor: "#cccccc",
+                        color: "#666666",
+                      },
+                    }}
+                  >
+                    {loading ? (
+                      <CircularProgress
+                        size={24}
+                        sx={{
+                          color: "#FFFFFF",
+                          marginRight: 1,
+                        }}
+                      />
+                    ) : (
+                      "Upload de Contrato"
+                    )}
+                    <input type="file" name="contrato" hidden onChange={handleFileChange} />
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    sx={{
+                      color: "Black",
+                      backgroundColor: "#50abe4",
+                      textTransform: "none",
+                      width: { xs: "100%", sm: "250px" },
+                      fontWeight: "bold",
+                      fontSize: { xs: "16px", md: "18px" },
+                      borderRadius: "50px",
+                      padding: "10px 20px",
+                      height: "56px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      "&:hover": {
+                        backgroundColor: "#003B6F",
+                      },
+                      "&:disabled": {
+                        backgroundColor: "#cccccc",
+                        color: "#666666",
+                      },
+                    }}
+                  >
+                    {loading ? (
+                      <CircularProgress
+                        size={24}
+                        sx={{
+                          color: "#FFFFFF",
+                          marginRight: 1,
+                        }}
+                      />
+                    ) : (
+                      "Cadastrar fornecedor"
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    disabled={loading}
+                    sx={{
+                      color: "Black",
+                      backgroundColor: "#50abe4",
+                      textTransform: "none",
+                      width: { xs: "100%", sm: "250px" },
+                      fontWeight: "bold",
+                      fontSize: { xs: "16px", md: "18px" },
+                      borderRadius: "50px",
+                      padding: "10px 20px",
+                      height: "56px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      "&:hover": {
+                        backgroundColor: "#003B6F",
+                      },
+                      "&:disabled": {
+                        backgroundColor: "#cccccc",
+                        color: "#666666",
+                      },
+                    }}
+                  >
+                    {loading ? (
+                      <CircularProgress
+                        size={24}
+                        sx={{
+                          color: "#FFFFFF",
+                          marginRight: 1,
+                        }}
+                      />
+                    ) : (
+                      "Cadastrar Lote"
+                    )}
+                  </Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </form>
+      </Box>
+    </Box>
   )
 }
 

@@ -21,19 +21,17 @@ import Sidebar from "../../components/sidebar"
 import EditIcon from "@mui/icons-material/Edit"
 import DeleteIcon from "@mui/icons-material/Delete"
 import VisibilityIcon from "@mui/icons-material/Visibility"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 import axios from "axios"
 
-const EstoquePage = () => {
-  const [produtos, setProdutos] = useState([])
+const LotesPage = () => {
+  const [lotes, setLotes] = useState([])
   const [loteCodes, setLoteCodes] = useState([])
 
   // URL da API de lotes
   const BASE_URL = "http://127.0.0.1:8000/lotes/"
 
   const [page, setPage] = useState(0)
-  const [quantidadeExibida, setQuantidadeExibida] = useState(0)
-  const [valorExibido, setValorExibido] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [search, setSearch] = useState("")
   const router = useRouter()
@@ -45,56 +43,63 @@ const EstoquePage = () => {
   }
 
   useEffect(() => {
-    const fetchlote= async () => {
+    const fetchLotes = async () => {
       try {
         const response = await axios.get(BASE_URL)
-        // Ajuste os dados da API para incluir 'data' se necessário
-        const lotes = response.data.map((lote) => ({
+        // Ajuste os dados da API para incluir 'dataCriacao' se necessário
+        const lotesData = response.data.map((lote) => ({
           ...lote,
-          data: lote.data || "2023-01-01", // Valor padrão se a API não fornecer 'data'
+          dataCriacao: lote.dataCriacao || "2023-01-01", // Valor padrão se a API não fornecer 'dataCriacao'
         }))
-        setlote(lotes)
+        setLotes(lotesData)
 
-        // Extract unique lot codes for autocomplete
-        const codes = lotes.map((lote) => lote.nome)
+        // Extract unique lot IDs for autocomplete
+        const codes = lotesData.map((lote) => lote.id.toString())
         setLoteCodes([...new Set(codes)])
       } catch (error) {
         console.error("Erro ao buscar lotes:", error.message)
-        setProdutos([]) // Define como array vazio em caso de erro
+        setLotes([]) // Define como array vazio em caso de erro
         setLoteCodes([])
       }
     }
-    fetchlote()
+    fetchLotes()
   }, [])
 
   // Função para excluir um lote
-  const handleDeleteProduto = async (id) => {
-    try {
-      await axios.delete(`${BASE_URL}${id}/`)
-      setProdutos((prev) => prev.filter((produto) => produto.id !== id))
-    } catch (error) {
-      console.error("Erro ao excluir lote:", error.message)
+  const handleDeleteLote = async (id) => {
+    if (window.confirm("Tem certeza que deseja excluir este lote?")) {
+      try {
+        await axios.delete(`${BASE_URL}${id}/`)
+        setLotes((prev) => prev.filter((lote) => lote.id !== id))
+        alert("Lote excluído com sucesso!")
+      } catch (error) {
+        console.error("Erro ao excluir lote:", error.message)
+        alert("Erro ao excluir lote. Tente novamente.")
+      }
     }
   }
 
   const handleNavigateToRegister = () => {
-    if (router) {
-      router.push("./cadastrar_lote")
-    }
+    router.push("./cadastrar_lote")
   }
 
-  useEffect(() => {
-    if (produtos.length > 0) {
-      // Calcula a quantidade total e o valor total dos lotes
-      const quantidade = produtos.reduce((acc, p) => acc + p.quantidade, 0)
-      const valor = produtos.reduce((acc, p) => acc + p.quantidade * p.preco, 0)
-      setQuantidadeExibida(quantidade)
-      setValorExibido(valor)
-    }
-  }, [produtos])
+  const handleViewLote = (id) => {
+    router.push(`./visualizar_lote?id=${id}`)
+  }
+
+  const handleEditLote = (id) => {
+    router.push(`./editar_lote?id=${id}`)
+  }
+
+  // Formatar data para exibição
+  const formatarData = (dataString) => {
+    if (!dataString) return "N/A"
+    const data = new Date(dataString)
+    return data.toLocaleDateString("pt-BR")
+  }
 
   // Filtra os lotes pelo campo de pesquisa
-  const produtosFiltrados = produtos.filter((produto) => produto.nome.toLowerCase().includes(search.toLowerCase()))
+  const lotesFiltrados = lotes.filter((lote) => search === "" || lote.id.toString().includes(search))
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
@@ -145,7 +150,7 @@ const EstoquePage = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Pesquisar por código do lote"
+                label="Pesquisar por ID do lote"
                 variant="outlined"
                 size="medium"
                 sx={{
@@ -232,7 +237,7 @@ const EstoquePage = () => {
                       textAlign: "center",
                     }}
                   >
-                    Lote
+                    ID
                   </TableCell>
                   <TableCell
                     sx={{
@@ -254,7 +259,7 @@ const EstoquePage = () => {
                       textAlign: "center",
                     }}
                   >
-                    Fornecedoras
+                    Fornecedora
                   </TableCell>
                   <TableCell
                     align="center"
@@ -271,43 +276,39 @@ const EstoquePage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {produtosFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((produto) => (
-                  <TableRow key={produto.id} hover>
-                    <TableCell>
-                      <img
-                        src={produto.imagem || "https://via.placeholder.com/50"}
-                        alt={produto.nome}
-                        style={{
-                          width: "50px",
-                          height: "50px",
-                          borderRadius: "5px",
-                          objectFit: "cover",
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>{produto.nome}</TableCell>
-                    <TableCell>{produto.data || "N/A"}</TableCell>
-                    <TableCell>{produto.fornecedora || "N/A"}</TableCell>
-                    <TableCell align="center">
-                      <IconButton sx={{ marginRight: 1, color: "#00509E" }}>
-                        <VisibilityIcon />
-                      </IconButton>
-                      <IconButton sx={{ marginRight: 1, color: "#00509E" }}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton onClick={() => handleDeleteProduto(produto.id)} sx={{ color: "#00509E" }}>
-                        <DeleteIcon />
-                      </IconButton>
+                {lotesFiltrados.length > 0 ? (
+                  lotesFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((lote) => (
+                    <TableRow key={lote.id} hover>
+                      <TableCell align="center">{lote.id}</TableCell>
+                      <TableCell align="center">{formatarData(lote.dataCriacao)}</TableCell>
+                      <TableCell align="center">{lote.fornecedora || "N/A"}</TableCell>
+                      <TableCell align="center">
+                        <IconButton sx={{ marginRight: 1, color: "#00509E" }} onClick={() => handleViewLote(lote.id)}>
+                          <VisibilityIcon />
+                        </IconButton>
+                        <IconButton sx={{ marginRight: 1, color: "#00509E" }} onClick={() => handleEditLote(lote.id)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleDeleteLote(lote.id)} sx={{ color: "#00509E" }}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">
+                      Nenhum lote encontrado
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </TableContainer>
 
           <TablePagination
             component="div"
-            count={produtosFiltrados.length}
+            count={lotesFiltrados.length}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
@@ -318,6 +319,8 @@ const EstoquePage = () => {
               bgcolor: "#F5F5F5",
               borderRadius: "10px",
             }}
+            labelRowsPerPage="Itens por página:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
           />
         </Card>
 
@@ -346,5 +349,5 @@ const EstoquePage = () => {
   )
 }
 
-export default EstoquePage
+export default LotesPage
 
