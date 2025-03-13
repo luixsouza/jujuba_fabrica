@@ -1,67 +1,87 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Box, Button, Paper, TextField, Typography, Grid, IconButton, CircularProgress } from "@mui/material"
-import { ArrowBack, Home } from "@mui/icons-material"
+import { Box, Button, Paper, TextField, Typography, Grid, IconButton, CircularProgress, MenuItem } from "@mui/material"
+import { ArrowBack, Home, Save } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
 import { useRouter } from "next/router"
-import axios from "axios"
+import { ProdutoService } from "../services/produto-service"
 
-const BASE_URL = "http://localhost:8080/api/produtos"
-
-export default function ProdutosEdit() {
-  const router = useRouter()
-  const { id } = router.query
-
+export default function ProdutoEditar() {
   const [produto, setProduto] = useState({
     descricao: "",
+    descricaoDetalhada: "",
     marca: "",
     tamanho: "",
     estadoConservacao: "",
     genero: "",
     preco: "",
-    codigo: "",
-    lote: "",
-    fornecedor: "",
-    status: "",
+    fornecedora: "",
+    forma_pagamento: "",
+    lote_id: "",
   })
 
-  const [loading, setLoading] = useState(false)
-  const [fetchLoading, setFetchLoading] = useState(true)
-  const [error, setError] = useState(null)
-
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const [fornecedoras, setFornecedoras] = useState([])
+  const [formasPagamento, setFormasPagamento] = useState([])
+  const router = useRouter()
+  const { id } = router.query
 
   useEffect(() => {
-    if (id) {
-      fetchProduto(id)
+    const fetchData = async () => {
+      if (!id) return
+
+      try {
+        setLoading(true)
+
+       
+        const [produtoData, fornecedorasData, formasPagamentoData] = await Promise.all([
+          ProdutoService.getProdutoById(id),
+          ProdutoService.getFornecedoras(),
+          ProdutoService.getFormasPagamento(),
+        ])
+
+        if (!produtoData) {
+          setError("Produto não encontrado")
+          return
+        }
+
+       
+        if (!produtoData.descricaoDetalhada) {
+          console.warn(`Produto ${id} não tem descrição detalhada. Gerando uma descrição mockada.`)
+          produtoData.descricaoDetalhada = `Descrição detalhada mockada para o produto ${produtoData.descricao || "desconhecido"}. 
+Este produto apresenta excelente qualidade e acabamento. Fabricado com materiais de primeira linha, 
+oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
+        }
+
+      
+        setProduto({
+          descricao: produtoData.descricao || "",
+          descricaoDetalhada: produtoData.descricaoDetalhada || "",
+          marca: produtoData.marca || "",
+          tamanho: produtoData.tamanho || "",
+          estadoConservacao: produtoData.estadoConservacao || "",
+          genero: produtoData.genero || "",
+          preco: produtoData.preco || "",
+          fornecedora: produtoData.fornecedora || "",
+          forma_pagamento: produtoData.forma_pagamento || "",
+          lote_id: produtoData.lote_id || "",
+        })
+
+        setFornecedoras(fornecedorasData)
+        setFormasPagamento(formasPagamentoData)
+      } catch (err) {
+        console.error("Erro ao carregar dados:", err)
+        setError("Erro ao carregar os dados. Por favor, tente novamente.")
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchData()
   }, [id])
-
-  const fetchProduto = async (produtoId) => {
-    try {
-      setFetchLoading(true)
-      const response = await axios.get(`${BASE_URL}/${produtoId}`)
-      const data = response.data
-
-      setProduto({
-        descricao: data.descricao || "",
-        marca: data.marca || "",
-        tamanho: data.tamanho || "",
-        estadoConservacao: data.estadoConservacao || "",
-        genero: data.genero || "",
-        preco: data.preco || "",
-        codigo: data.codigo || "",
-        lote: data.lote || "",
-        fornecedor: data.fornecedor || "",
-        status: data.status || "Disponível",
-      })
-    } catch (error) {
-      console.error("Erro ao buscar dados do produto:", error)
-      setError("Erro ao carregar dados do produto")
-    } finally {
-      setFetchLoading(false)
-    }
-  }
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -70,41 +90,71 @@ export default function ProdutosEdit() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    setLoading(true)
-    setError(null)
+    setSaving(true)
+    setError("")
 
     try {
-      const response = await axios.put(`${BASE_URL}/${id}`, produto)
-      console.log("Produto atualizado com sucesso:", response.data)
-      alert("Produto atualizado com sucesso!")
-      router.push("/produtos")
-    } catch (error) {
-      console.error("Erro ao atualizar produto:", error)
-      setError("Erro ao atualizar produto. Verifique os dados e tente novamente.")
+    
+      const produtoFormatado = {
+        ...produto,
+        preco: Number.parseFloat(produto.preco) || 0,
+      }
+
+
+      const produtoAtualizado = await ProdutoService.updateProduto(id, produtoFormatado)
+
+      if (produtoAtualizado) {
+        alert("Produto atualizado com sucesso!")
+        router.push(`/produtos/visualizar/${id}`)
+      } else {
+        setError("Não foi possível atualizar o produto. Tente novamente.")
+      }
+    } catch (err) {
+      console.error("Erro ao atualizar produto:", err)
+      setError("Erro ao atualizar produto. Por favor, tente novamente.")
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  // Loading state
-  if (fetchLoading) {
+  if (loading) {
     return (
-      <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
-        <Sidebar />
-        <Box
-          sx={{
-            flex: 1,
-            marginLeft: "280px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <CircularProgress size={60} sx={{ color: "#FADADD" }} />
-          <Typography variant="h6" sx={{ ml: 2, color: "#333" }}>
-            Carregando dados do produto...
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "#9AE4FF",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  if (error && !produto.id) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "#9AE4FF",
+        }}
+      >
+        <Paper sx={{ p: 4, maxWidth: "500px", textAlign: "center" }}>
+          <Typography variant="h6" color="error">
+            {error}
           </Typography>
-        </Box>
+          <Button
+            onClick={() => router.push("/produtos")}
+            sx={{ mt: 2, bgcolor: "#f8c8cc", color: "black", "&:hover": { bgcolor: "#f8c8cc" } }}
+          >
+            Voltar para Lista de Produtos
+          </Button>
+        </Paper>
       </Box>
     )
   }
@@ -143,7 +193,7 @@ export default function ProdutosEdit() {
             <ArrowBack />
           </IconButton>
           <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-            VISUALIZAR ITEM
+            EDITAR PRODUTO
           </Typography>
           <IconButton
             onClick={() => router.push("/")}
@@ -156,22 +206,39 @@ export default function ProdutosEdit() {
           </IconButton>
         </Box>
 
+        {error && (
+          <Typography
+            color="error"
+            sx={{
+              mb: 2,
+              p: 2,
+              bgcolor: "rgba(255, 0, 0, 0.1)",
+              borderRadius: "10px",
+              width: "100%",
+              maxWidth: "800px",
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </Typography>
+        )}
+
         <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "800px" }}>
           <Paper
             elevation={3}
             sx={{
               width: "100%",
               borderRadius: "20px",
-              backgroundColor: "#9AE4FF",
+              backgroundColor: " #9AE4FF",
               p: 3,
               mb: 3,
             }}
           >
             <TextField
               fullWidth
-              placeholder="Nome do produto"
+              placeholder="Descrição"
               name="descricao"
-              value={produto.descricao}
+              value={produto.descricao || ""}
               onChange={handleChange}
               required
               variant="outlined"
@@ -186,14 +253,14 @@ export default function ProdutosEdit() {
             />
 
             <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-              Descrição:
+              Descrição detalhada:
             </Typography>
             <TextField
               fullWidth
               multiline
               rows={3}
-              name="descricao"
-              value={produto.descricao}
+              name="descricaoDetalhada"
+              value={produto.descricaoDetalhada || ""}
               onChange={handleChange}
               variant="outlined"
               sx={{
@@ -205,250 +272,173 @@ export default function ProdutosEdit() {
               }}
             />
 
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-              Observações:
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              name="observacoes"
-              variant="outlined"
-              sx={{
-                mb: 3,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "15px",
-                  backgroundColor: "#f8f9fa",
-                },
-              }}
-            />
-
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Marca"
+                  name="marca"
+                  value={produto.marca || ""}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
                   sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
                   }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    CÓDIGO
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    name="codigo"
-                    value={produto.codigo}
-                    onChange={handleChange}
-                    variant="standard"
-                    placeholder="ALC222333"
-                    InputProps={{
-                      disableUnderline: true,
-                    }}
-                    sx={{
-                      textAlign: "center",
-                      "& input": {
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "16px",
-                      },
-                    }}
-                  />
-                </Paper>
+                />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Tamanho"
+                  name="tamanho"
+                  value={produto.tamanho || ""}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
                   sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
                   }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    LOTE
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    name="lote"
-                    value={produto.lote}
-                    onChange={handleChange}
-                    variant="standard"
-                    placeholder="A321"
-                    InputProps={{
-                      disableUnderline: true,
-                    }}
-                    sx={{
-                      textAlign: "center",
-                      "& input": {
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "16px",
-                      },
-                    }}
-                  />
-                </Paper>
+                />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Estado de Conservação"
+                  name="estadoConservacao"
+                  value={produto.estadoConservacao || ""}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
                   sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
                   }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    ESTADO
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    name="estadoConservacao"
-                    value={produto.estadoConservacao}
-                    onChange={handleChange}
-                    variant="standard"
-                    placeholder="Ótimo"
-                    InputProps={{
-                      disableUnderline: true,
-                    }}
-                    sx={{
-                      textAlign: "center",
-                      "& input": {
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "16px",
-                      },
-                    }}
-                  />
-                </Paper>
+                />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Gênero"
+                  name="genero"
+                  value={produto.genero || ""}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
                   sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    mt: 2,
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
                   }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    FORNECEDOR
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    name="fornecedor"
-                    value={produto.fornecedor}
-                    onChange={handleChange}
-                    variant="standard"
-                    placeholder="Ana Lúcia Cardoso"
-                    InputProps={{
-                      disableUnderline: true,
-                    }}
-                    sx={{
-                      textAlign: "center",
-                      "& input": {
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "16px",
-                      },
-                    }}
-                  />
-                </Paper>
+                />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    mt: 2,
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Preço"
+                  name="preco"
+                  type="number"
+                  value={produto.preco || ""}
+                  onChange={handleChange}
+                  required
+                  InputProps={{
+                    startAdornment: "R$ ",
                   }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    VALOR
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    name="preco"
-                    value={produto.preco}
-                    onChange={handleChange}
-                    variant="standard"
-                    placeholder="R$ 89,90"
-                    InputProps={{
-                      disableUnderline: true,
-                      startAdornment: produto.preco ? "R$ " : "",
-                    }}
-                    sx={{
-                      textAlign: "center",
-                      "& input": {
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "16px",
-                      },
-                    }}
-                  />
-                </Paper>
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Fornecedora"
+                  name="fornecedora"
+                  value={produto.fornecedora || ""}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
                   sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    mt: 2,
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
                   }}
                 >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    STATUS
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    name="status"
-                    value={produto.status}
-                    onChange={handleChange}
-                    variant="standard"
-                    placeholder="Disponível"
-                    InputProps={{
-                      disableUnderline: true,
-                    }}
-                    sx={{
-                      textAlign: "center",
-                      "& input": {
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "16px",
-                      },
-                    }}
-                  />
-                </Paper>
+                  <MenuItem value="" disabled>
+                    Selecione uma fornecedora
+                  </MenuItem>
+                  {fornecedoras.map((fornecedora) => (
+                    <MenuItem key={fornecedora.id} value={fornecedora.id}>
+                      {fornecedora.nome}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Forma de Pagamento"
+                  name="forma_pagamento"
+                  value={produto.forma_pagamento || ""}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Selecione uma forma de pagamento
+                  </MenuItem>
+                  {formasPagamento.map((formaPagamento) => (
+                    <MenuItem key={formaPagamento.id} value={formaPagamento.id}>
+                      {formaPagamento.nome}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="ID do Lote"
+                  name="lote_id"
+                  value={produto.lote_id || ""}
+                  onChange={handleChange}
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                />
               </Grid>
             </Grid>
 
@@ -461,9 +451,10 @@ export default function ProdutosEdit() {
             >
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={saving}
+                startIcon={<Save />}
                 sx={{
-                  bgcolor: "#FADADD",
+                  bgcolor: "#f8c8cc",
                   color: "black",
                   borderRadius: "30px",
                   px: 6,
@@ -476,22 +467,9 @@ export default function ProdutosEdit() {
                   },
                 }}
               >
-                {loading ? <CircularProgress size={24} sx={{ color: "black" }} /> : "Salvar Alterações"}
+                {saving ? <CircularProgress size={24} sx={{ color: "black" }} /> : "Salvar Alterações"}
               </Button>
             </Box>
-
-            {error && (
-              <Typography
-                color="error"
-                sx={{
-                  textAlign: "center",
-                  mt: 2,
-                  fontWeight: "medium",
-                }}
-              >
-                {error}
-              </Typography>
-            )}
           </Paper>
         </form>
       </Box>

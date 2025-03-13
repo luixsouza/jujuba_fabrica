@@ -17,6 +17,11 @@ import {
   Button,
   Autocomplete,
   InputAdornment,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material"
 import Sidebar from "../../components/sidebar"
 import EditIcon from "@mui/icons-material/Edit"
@@ -24,63 +29,65 @@ import DeleteIcon from "@mui/icons-material/Delete"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import SearchIcon from "@mui/icons-material/Search"
 import { useRouter } from "next/router"
-import axios from "axios"
-
-const BASE_URL = "http://localhost:8080/api/produtos"
+import { ProdutoService } from "../services/produto-service"
 
 const EstoquePage = () => {
   const [produtos, setProdutos] = useState([])
   const [page, setPage] = useState(0)
-  const [quantidadeExibida, setQuantidadeExibida] = useState(0)
-  const [valorExibido, setValorExibido] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [search, setSearch] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [produtoToDelete, setProdutoToDelete] = useState(null)
   const router = useRouter()
+
+  
+  const mockedData = {
+    totalVendasUltimoMes: 27850.75,
+    valorTotalHoje: 3450.25,
+  }
 
   useEffect(() => {
     fetchProdutos()
   }, [])
 
-  useEffect(() => {
-    if (produtos.length > 0) {
-      const quantidade = produtos.reduce((acc, p) => acc + (p.quantidade || 0), 0)
-      const valor = produtos.reduce((acc, p) => acc + (p.quantidade || 0) * (p.preco || 0), 0)
-      setQuantidadeExibida(quantidade)
-      setValorExibido(valor)
-    }
-  }, [produtos])
-
   const fetchProdutos = async () => {
+    setLoading(true)
     try {
-      const response = await axios.get(BASE_URL)
-
-      const produtosAjustados = response.data.map((produto) => ({
-        ...produto,
-        descricao: produto.descricao || "N/A",
-        marca: produto.marca || "N/A",
-        tamanho: produto.tamanho || "N/A",
-        estadoConservacao: produto.estadoConservacao || "N/A",
-        genero: produto.genero || "N/A",
-        preco: produto.preco || 0,
-        quantidade: produto.quantidade || 1,
-        data: produto.data || new Date().toLocaleDateString(),
-        fornecedora: produto.fornecedora || "N/A",
-        forma_pagamento: produto.forma_pagamento || "N/A",
-      }))
-      setProdutos(produtosAjustados)
+      const produtosData = await ProdutoService.getProdutos()
+      setProdutos(produtosData)
     } catch (error) {
-      console.error("Erro ao buscar produtos:", error.message)
-      setProdutos([]) // Define como array vazio em caso de erro
+      console.error("Erro ao buscar produtos:", error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleDeleteProduto = async (id) => {
-    try {
-      await axios.delete(`${BASE_URL}/${id}`)
-      setProdutos((prev) => prev.filter((produto) => produto.id !== id))
-    } catch (error) {
-      console.error("Erro ao excluir produto:", error.message)
+  const handleDeleteClick = (id) => {
+    setProdutoToDelete(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (produtoToDelete) {
+      try {
+        const success = await ProdutoService.deleteProduto(produtoToDelete)
+        if (success) {
+          setProdutos((prev) => prev.filter((produto) => produto.id !== produtoToDelete))
+        } else {
+          console.error("Falha ao excluir produto")
+        }
+      } catch (error) {
+        console.error("Erro ao excluir produto:", error)
+      }
     }
+    setDeleteDialogOpen(false)
+    setProdutoToDelete(null)
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false)
+    setProdutoToDelete(null)
   }
 
   const handleNavigateToRegister = () => {
@@ -89,7 +96,16 @@ const EstoquePage = () => {
     }
   }
 
+  const handleViewProduct = (id) => {
+    router.push(`./visualizar_produto?id=${id}`)
+  }
+
+  const handleEditProduct = (id) => {
+    router.push(`./editar_produto?id=${id}`)
+  }
+
   const handleChangePage = (event, newPage) => setPage(newPage)
+
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(Number.parseInt(event.target.value, 10))
     setPage(0)
@@ -109,7 +125,7 @@ const EstoquePage = () => {
       <Box
         sx={{
           flex: 1,
-          marginLeft: "250px",
+          marginLeft: "280px",
           padding: "20px",
           height: "150vh",
           overflow: "hidden",
@@ -130,27 +146,38 @@ const EstoquePage = () => {
           Controle de Estoque
         </Typography>
 
-        <SummaryCards valorExibido={valorExibido} />
+        <SummaryCards valorUltimoMes={mockedData.totalVendasUltimoMes} valorHoje={mockedData.valorTotalHoje} />
+
         <SearchField search={search} setSearch={setSearch} options={descricaoOptions} />
+
         <ProductTable
           produtosFiltrados={produtosFiltrados}
           page={page}
           rowsPerPage={rowsPerPage}
           handleChangePage={handleChangePage}
           handleChangeRowsPerPage={handleChangeRowsPerPage}
-          handleDeleteProduto={handleDeleteProduto}
-          router={router}
+          handleDeleteClick={handleDeleteClick}
+          handleViewProduct={handleViewProduct}
+          handleEditProduct={handleEditProduct}
+          loading={loading}
         />
+
         <AddProductButton handleNavigateToRegister={handleNavigateToRegister} />
+
+        <DeleteConfirmationDialog
+          open={deleteDialogOpen}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+        />
       </Box>
     </Box>
   )
 }
 
-const SummaryCards = ({ valorExibido }) => (
+const SummaryCards = ({ valorUltimoMes, valorHoje }) => (
   <Box sx={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
-    <SummaryCard title="TOTAL DE VENDAS NO ÚLTIMO MÊS" value={valorExibido} />
-    <SummaryCard title="VALOR TOTAL DE HOJE" value={valorExibido} />
+    <SummaryCard title="TOTAL DE VENDAS NO ÚLTIMO MÊS" value={valorUltimoMes} />
+    <SummaryCard title="VALOR TOTAL DE HOJE" value={valorHoje} />
     <CadastrarLoteButton />
   </Box>
 )
@@ -199,7 +226,7 @@ const CadastrarLoteButton = () => (
     }}
     variant="contained"
   >
-    Cadastar Lote
+    Cadastrar Lote
   </Button>
 )
 
@@ -290,8 +317,10 @@ const ProductTable = ({
   rowsPerPage,
   handleChangePage,
   handleChangeRowsPerPage,
-  handleDeleteProduto,
-  router,
+  handleDeleteClick,
+  handleViewProduct,
+  handleEditProduct,
+  loading,
 }) => (
   <Card
     sx={{
@@ -338,33 +367,41 @@ const ProductTable = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {produtosFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((produto) => (
-            <TableRow key={produto.id} hover>
-              <TableCell>{produto.descricao}</TableCell>
-              <TableCell>{produto.marca}</TableCell>
-              <TableCell>{produto.tamanho}</TableCell>
-              <TableCell>{produto.estadoConservacao}</TableCell>
-              <TableCell>{produto.genero}</TableCell>
-              <TableCell>R$ {produto.preco.toFixed(2)}</TableCell>
-              <TableCell align="center">
-                <IconButton
-                  onClick={() => router.push(`./visualizar_produto?id=${produto.id}`)}
-                  sx={{ marginRight: 1, color: "#00509E" }}
-                >
-                  <VisibilityIcon />
-                </IconButton>
-                <IconButton
-                  onClick={() => router.push(`./editar_produto?id=${produto.id}`)}
-                  sx={{ marginRight: 1, color: "#00509E" }}
-                >
-                  <EditIcon />
-                </IconButton>
-                <IconButton onClick={() => handleDeleteProduto(produto.id)} sx={{ color: "#00509E" }}>
-                  <DeleteIcon />
-                </IconButton>
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={7} align="center">
+                Carregando produtos...
               </TableCell>
             </TableRow>
-          ))}
+          ) : produtosFiltrados.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} align="center">
+                Nenhum produto encontrado
+              </TableCell>
+            </TableRow>
+          ) : (
+            produtosFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((produto) => (
+              <TableRow key={produto.id} hover>
+                <TableCell>{produto.descricao}</TableCell>
+                <TableCell>{produto.marca}</TableCell>
+                <TableCell>{produto.tamanho}</TableCell>
+                <TableCell>{produto.estadoConservacao}</TableCell>
+                <TableCell>{produto.genero}</TableCell>
+                <TableCell>R$ {produto.preco.toFixed(2)}</TableCell>
+                <TableCell align="center">
+                  <IconButton onClick={() => handleViewProduct(produto.id)} sx={{ marginRight: 1, color: "#00509E" }}>
+                    <VisibilityIcon />
+                  </IconButton>
+                  <IconButton onClick={() => handleEditProduct(produto.id)} sx={{ marginRight: 1, color: "#00509E" }}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton onClick={() => handleDeleteClick(produto.id)} sx={{ color: "#00509E" }}>
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </TableContainer>
@@ -377,6 +414,8 @@ const ProductTable = ({
       rowsPerPage={rowsPerPage}
       onRowsPerPageChange={handleChangeRowsPerPage}
       rowsPerPageOptions={[5, 10, 25]}
+      labelRowsPerPage="Itens por página"
+      labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
       sx={{
         marginTop: "10px",
         bgcolor: "#F5F5F5",
@@ -407,6 +446,30 @@ const AddProductButton = ({ handleNavigateToRegister }) => (
       Cadastrar produto
     </Button>
   </Box>
+)
+
+const DeleteConfirmationDialog = ({ open, onClose, onConfirm }) => (
+  <Dialog
+    open={open}
+    onClose={onClose}
+    aria-labelledby="alert-dialog-title"
+    aria-describedby="alert-dialog-description"
+  >
+    <DialogTitle id="alert-dialog-title">{"Confirmar exclusão"}</DialogTitle>
+    <DialogContent>
+      <DialogContentText id="alert-dialog-description">
+        Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.
+      </DialogContentText>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onClose} sx={{ color: "#00509E" }}>
+        Cancelar
+      </Button>
+      <Button onClick={onConfirm} sx={{ color: "#00509E" }} autoFocus>
+        Confirmar
+      </Button>
+    </DialogActions>
+  </Dialog>
 )
 
 export default EstoquePage

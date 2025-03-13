@@ -1,29 +1,30 @@
 "use client"
 
-import { useState } from "react"
-import { Box, Button, Paper, TextField, Typography, Grid, IconButton, CircularProgress } from "@mui/material"
+import { useState, useEffect } from "react"
+import { Box, Button, Paper, TextField, Typography, Grid, IconButton, CircularProgress, MenuItem } from "@mui/material"
 import { ArrowBack, Home } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
 import { useRouter } from "next/router"
-import axios from "axios"
-
-const BASE_URL = "http://localhost:8080/api/produtos"
+import { ProdutoService } from "../services/produto-service"
 
 export default function ProdutoCadastro() {
   const [produto, setProduto] = useState({
     descricao: "",
+    descricaoDetalhada: "", 
     marca: "",
     tamanho: "",
     estadoConservacao: "",
     genero: "",
     preco: "",
-    codigo: "",
-    lote: "",
-    fornecedor: "",
-    status: "",
+    fornecedora: "",
+    forma_pagamento: "",
+    lote_id: "",
   })
 
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [fornecedoras, setFornecedoras] = useState([])
+  const [formasPagamento, setFormasPagamento] = useState([])
   const router = useRouter()
 
   const handleChange = (event) => {
@@ -31,18 +32,72 @@ export default function ProdutoCadastro() {
     setProduto((prev) => ({ ...prev, [name]: value }))
   }
 
+  // Função para gerar uma descrição detalhada mockada com base na descrição principal
+  const gerarDescricaoDetalhada = (descricao) => {
+    if (!descricao) return ""
+
+    return `${descricao} com características premium. 
+Este item apresenta excelente qualidade e acabamento. Fabricado com materiais de primeira linha, 
+oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais. 
+Disponível em estoque para entrega imediata.`
+  }
+
+  // Atualiza a descrição detalhada quando a descrição principal mudar
+  useEffect(() => {
+    if (produto.descricao && !produto.descricaoDetalhada) {
+      setProduto((prev) => ({
+        ...prev,
+        descricaoDetalhada: gerarDescricaoDetalhada(produto.descricao),
+      }))
+    }
+  }, [produto.descricao])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [fornecedorasData, formasPagamentoData] = await Promise.all([
+          ProdutoService.getFornecedoras(),
+          ProdutoService.getFormasPagamento(),
+        ])
+
+        setFornecedoras(fornecedorasData)
+        setFormasPagamento(formasPagamentoData)
+      } catch (err) {
+        console.error("Erro ao carregar dados:", err)
+        setError("Não foi possível carregar alguns dados. Tente novamente.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     setLoading(true)
+    setError("")
 
     try {
-      const response = await axios.post(BASE_URL, produto)
-      console.log("Produto cadastrado com sucesso:", response.data)
-      alert("Produto cadastrado com sucesso!")
-      router.push("/produtos")
-    } catch (error) {
-      console.error("Erro ao cadastrar produto:", error)
-      alert("Erro ao cadastrar produto. Por favor, tente novamente.")
+      // Formatando o preço para número antes de enviar
+      const produtoFormatado = {
+        ...produto,
+        preco: Number.parseFloat(produto.preco) || 0,
+      }
+
+      // Usando o ProdutoService em vez de axios diretamente
+      const novoProduto = await ProdutoService.createProduto(produtoFormatado)
+
+      if (novoProduto) {
+        alert("Produto cadastrado com sucesso!")
+        router.push("/produtos")
+      } else {
+        setError("Não foi possível cadastrar o produto. Tente novamente.")
+      }
+    } catch (err) {
+      console.error("Erro ao cadastrar produto:", err)
+      setError("Erro ao cadastrar produto. Por favor, tente novamente.")
     } finally {
       setLoading(false)
     }
@@ -95,6 +150,23 @@ export default function ProdutoCadastro() {
           </IconButton>
         </Box>
 
+        {error && (
+          <Typography
+            color="error"
+            sx={{
+              mb: 2,
+              p: 2,
+              bgcolor: "rgba(255, 0, 0, 0.1)",
+              borderRadius: "10px",
+              width: "100%",
+              maxWidth: "800px",
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </Typography>
+        )}
+
         <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "800px" }}>
           <Paper
             elevation={3}
@@ -108,7 +180,7 @@ export default function ProdutoCadastro() {
           >
             <TextField
               fullWidth
-              placeholder="Nome do produto"
+              placeholder="Descrição"
               name="descricao"
               value={produto.descricao}
               onChange={handleChange}
@@ -125,14 +197,14 @@ export default function ProdutoCadastro() {
             />
 
             <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-              Descrição:
+              Descrição detalhada:
             </Typography>
             <TextField
               fullWidth
               multiline
               rows={3}
-              name="descricao"
-              value={produto.descricao}
+              name="descricaoDetalhada"
+              value={produto.descricaoDetalhada}
               onChange={handleChange}
               variant="outlined"
               sx={{
@@ -220,41 +292,6 @@ export default function ProdutoCadastro() {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Código"
-                  name="codigo"
-                  value={produto.codigo}
-                  onChange={handleChange}
-                  required
-                  variant="outlined"
-                  sx={{
-                    mb: 2,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "15px",
-                      backgroundColor: "#f8f9fa",
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Lote"
-                  name="lote"
-                  value={produto.lote}
-                  onChange={handleChange}
-                  variant="outlined"
-                  sx={{
-                    mb: 2,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "15px",
-                      backgroundColor: "#f8f9fa",
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
                   label="Preço"
                   name="preco"
                   type="number"
@@ -276,12 +313,67 @@ export default function ProdutoCadastro() {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
+                  select
                   fullWidth
-                  label="Fornecedor"
-                  name="fornecedor"
-                  value={produto.fornecedor}
+                  label="Fornecedora"
+                  name="fornecedora"
+                  value={produto.fornecedora}
                   onChange={handleChange}
                   required
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Selecione uma fornecedora
+                  </MenuItem>
+                  {fornecedoras.map((fornecedora) => (
+                    <MenuItem key={fornecedora.id} value={fornecedora.id}>
+                      {fornecedora.nome}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Forma de Pagamento"
+                  name="forma_pagamento"
+                  value={produto.forma_pagamento}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Selecione uma forma de pagamento
+                  </MenuItem>
+                  {formasPagamento.map((formaPagamento) => (
+                    <MenuItem key={formaPagamento.id} value={formaPagamento.id}>
+                      {formaPagamento.nome}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="ID do Lote"
+                  name="lote_id"
+                  value={produto.lote_id}
+                  onChange={handleChange}
                   variant="outlined"
                   sx={{
                     mb: 2,

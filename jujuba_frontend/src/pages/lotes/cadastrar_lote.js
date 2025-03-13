@@ -1,435 +1,386 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import Image from "next/image"
-import { ArrowLeft, Eye, Home, Pencil, Upload } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Box, Button, Paper, TextField, Typography, Grid, IconButton, CircularProgress } from "@mui/material"
+import { ArrowBack, Home } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
+import { useRouter } from "next/router"
+import { ProdutoService } from "../../service/produto-service"
+import { FornecedoraService } from "../../service/fornecedora-service"
 
-export default function NovoLotePage() {
-  const [items, setItems] = useState([])
-  const [lotes, setLotes] = useState([])
-  const [loading, setLoading] = useState({
-    items: false,
-    lotes: false,
+export default function ProdutoCadastro() {
+  const [produto, setProduto] = useState({
+    descricao: "",
+    marca: "",
+    tamanho: "",
+    estadoConservacao: "",
+    genero: "",
+    preco: "",
+    fornecedora: "",
+    lote_id: "",
   })
-  const [error, setError] = useState(null)
-  const fileInputRef = useRef(null)
 
-  
-  const fetchItems = async () => {
-    try {
-      setLoading((prev) => ({ ...prev, items: true }))
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/items`)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const router = useRouter()
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch items")
-      }
-
-      const data = await response.json()
-      setItems(data)
-    } catch (err) {
-      console.error("Error fetching items:", err)
-      setError("Failed to load items. Please try again.")
-      setItems([]) // Set empty array instead of mock data
-    } finally {
-      setLoading((prev) => ({ ...prev, items: false }))
-    }
+  const generateMockedCodigo = () =>
+    `PROD-${Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0")}`
+  const generateMockedStatus = () => {
+    const statusOptions = ["Disponível", "Em estoque", "Novo"]
+    return statusOptions[Math.floor(Math.random() * statusOptions.length)]
   }
 
-  // Fetch lotes data from API
-  const fetchLotes = async () => {
-    try {
-      setLoading((prev) => ({ ...prev, lotes: true }))
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lotes`)
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch lotes")
-      }
-
-      const data = await response.json()
-      setLotes(data)
-    } catch (err) {
-      console.error("Error fetching lotes:", err)
-      setError("Failed to load lotes. Please try again.")
-      setLotes([]) // Set empty array instead of mock data
-    } finally {
-      setLoading((prev) => ({ ...prev, lotes: false }))
-    }
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    setProduto((prev) => ({ ...prev, [name]: value }))
   }
 
-  // Fetch data when component mounts
   useEffect(() => {
-    fetchItems()
-    fetchLotes()
+    const fetchFornecedoras = async () => {
+      try {
+        setLoading(true)
+        const data = await FornecedoraService.getFornecedoras()
+        setFornecedoras(data)
+      } catch (err) {
+        console.error("Erro ao carregar fornecedoras:", err)
+        setError("Não foi possível carregar a lista de fornecedoras.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFornecedoras()
   }, [])
 
-  const handleUploadClick = () => {
-    fileInputRef.current.click()
-  }
+  const [fornecedoras, setFornecedoras] = useState([])
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      try {
-        const formData = new FormData()
-        formData.append("image", file)
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setLoading(true)
+    setError("")
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
-          method: "POST",
-          body: formData,
-        })
-
-        if (!response.ok) {
-          throw new Error("Failed to upload image")
-        }
-
-
-        fetchItems()
-      } catch (err) {
-        console.error("Error uploading image:", err)
-        setError("Failed to upload image. Please try again.")
+    try {
+      // Formatando o preço para número antes de enviar
+      const produtoFormatado = {
+        ...produto,
+        preco: Number.parseFloat(produto.preco) || 0,
+        codigo: generateMockedCodigo(), // Mocked codigo
+        status: generateMockedStatus(), // Mocked status
+        fornecedora_id: Number(produto.fornecedora), // Ensure fornecedora is stored as ID
       }
-    }
-  }
 
- 
-  const handleAddItem = async () => {
-    
+      // Usando o ProdutoService em vez de axios diretamente
+      const novoProduto = await ProdutoService.createProduto(produtoFormatado)
+
+      if (novoProduto) {
+        alert("Produto cadastrado com sucesso!")
+        router.push("/produtos")
+      } else {
+        setError("Não foi possível cadastrar o produto. Tente novamente.")
+      }
+    } catch (err) {
+      console.error("Erro ao cadastrar produto:", err)
+      setError("Erro ao cadastrar produto. Por favor, tente novamente.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="container">
-      {/* Import the Sidebar component */}
-      <Sidebar lotes={lotes} />
+    <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
+      <Sidebar />
 
-      {/* Main Content */}
-      <div className="main-content">
-        <header className="header">
-          <button className="nav-button">
-            <ArrowLeft size={20} />
-          </button>
-          <div className="header-title">
-            <h1>NOVO LOTE: C123</h1>
-            <p>Adicionando item</p>
-          </div>
-          <button className="nav-button">
-            <Home size={20} />
-          </button>
-        </header>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          marginLeft: "280px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
+        >
+          <IconButton
+            onClick={() => router.back()}
+            sx={{
+              backgroundColor: "#9AE4FF",
+              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.9)" },
+            }}
+          >
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+            CADASTRAR PRODUTO
+          </Typography>
+          <IconButton
+            onClick={() => router.push("/")}
+            sx={{
+              backgroundColor: "#9AE4FF",
+              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.9)" },
+            }}
+          >
+            <Home />
+          </IconButton>
+        </Box>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <Typography
+            color="error"
+            sx={{
+              mb: 2,
+              p: 2,
+              bgcolor: "rgba(255, 0, 0, 0.1)",
+              borderRadius: "10px",
+              width: "100%",
+              maxWidth: "800px",
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </Typography>
+        )}
 
-        <div className="form-grid">
-          <input type="text" placeholder="DESCRIÇÃO" className="input" />
-          <input type="text" placeholder="MARCA" className="input" />
-          <input type="text" placeholder="TAMANHO" className="input" />
+        <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "800px" }}>
+          <Paper
+            elevation={3}
+            sx={{
+              width: "100%",
+              borderRadius: "20px",
+              backgroundColor: " #9AE4FF",
+              p: 3,
+              mb: 3,
+            }}
+          >
+            <TextField
+              fullWidth
+              placeholder="Descrição"
+              name="descricao"
+              value={produto.descricao}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "30px",
+                  backgroundColor: "#f8f9fa",
+                  fontSize: "18px",
+                },
+              }}
+            />
 
-          <select className="select">
-            <option value="">ESTADO DE CONSERVAÇÃO</option>
-            <option value="otimo">Ótimo</option>
-            <option value="bom">Bom</option>
-            <option value="regular">Regular</option>
-          </select>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Descrição detalhada:
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              name="descricaoDetalhada"
+              value={produto.descricaoDetalhada || ""}
+              onChange={handleChange}
+              variant="outlined"
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                },
+              }}
+            />
 
-          <input type="text" placeholder="VALOR" className="input" />
-          <input type="text" placeholder="FORNECEDOR" className="input" />
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Marca"
+                  name="marca"
+                  value={produto.marca}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Tamanho"
+                  name="tamanho"
+                  value={produto.tamanho}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Estado de Conservação"
+                  name="estadoConservacao"
+                  value={produto.estadoConservacao}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Gênero"
+                  name="genero"
+                  value={produto.genero}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Preço"
+                  name="preco"
+                  type="number"
+                  value={produto.preco}
+                  onChange={handleChange}
+                  required
+                  InputProps={{
+                    startAdornment: "R$ ",
+                  }}
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Fornecedora"
+                  name="fornecedora"
+                  value={produto.fornecedora}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="ID do Lote"
+                  name="lote_id"
+                  value={produto.lote_id}
+                  onChange={handleChange}
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f8f9fa",
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Status (Gerado automaticamente)"
+                  value={generateMockedStatus()}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "15px",
+                      backgroundColor: "#f0f0f0",
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
 
-          <select className="select">
-            <option value="">GÊNERO</option>
-            <option value="masc">Masculino</option>
-            <option value="fem">Feminino</option>
-            <option value="unisex">Unisex</option>
-          </select>
-
-          <button className="upload-button" onClick={handleUploadClick}>
-            <Upload size={20} />
-            ADICIONAR IMAGEM
-          </button>
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden-input" accept="image/*" />
-        </div>
-
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Imagem</th>
-                <th>Descrição</th>
-                <th>Estado de conservação</th>
-                <th>Valor</th>
-                <th>Código do Produto</th>
-                <th>Genero</th>
-                <th style={{ textAlign: "center" }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading.items ? (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: "center", padding: "20px" }}>
-                    Carregando itens...
-                  </td>
-                </tr>
-              ) : items.length > 0 ? (
-                items.map((item, index) => (
-                  <tr key={index}>
-                    <td>
-                      <Image
-                        src={item.imagem || "/placeholder.svg?height=80&width=80"}
-                        alt={item.descricao}
-                        width={70}
-                        height={70}
-                        style={{ borderRadius: "8px" }}
-                      />
-                    </td>
-                    <td>{item.descricao}</td>
-                    <td>{item.estadoConservacao}</td>
-                    <td>R$ {item.valor.toFixed(2).replace(".", ",")}</td>
-                    <td>{item.codigo}</td>
-                    <td>{item.genero}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="action-button">
-                          <Eye size={20} />
-                        </button>
-                        <button className="action-button">
-                          <Pencil size={20} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: "center", padding: "20px" }}>
-                    Nenhum item encontrado
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="bottom-buttons">
-          <button className="yellow-button" onClick={handleAddItem}>
-            Adicionar Item
-          </button>
-          <button className="yellow-button">Finalizar Lote</button>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .container {
-          display: flex;
-          min-height: 100vh;
-          width: 100%;
-          font-family: Arial, sans-serif;
-          background-color: #a3e0f5;
-        }
-
-        .main-content {
-          flex: 1;
-          margin-left: 276px;
-          background-color: #a3e0f5;
-          padding: 32px;
-          min-height: 100vh;
-        }
-
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 60px;
-        }
-
-        .header-title {
-          text-align: center;
-        }
-
-        .header-title h1 {
-          font-size: 40px;
-          font-weight: 800;
-          color: #333;
-          text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-          margin-bottom: 12px;
-        }
-
-        .header-title p {
-          color: #666;
-          font-size: 18px;
-        }
-
-        .nav-button {
-          background: transparent;
-          border-radius: 50%;
-          padding: 12px;
-          cursor: pointer;
-          border: none;
-          transition: all 0.2s ease;
-          color: #333;
-        }
-
-        .nav-button:hover {
-          transform: scale(1.1);
-          color: #000;
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-          margin-bottom: 32px;
-        }
-
-        .input, .select {
-          padding: 16px;
-          border-radius: 8px;
-          border: none;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          width: 100%;
-          font-size: 16px;
-          transition: all 0.3s ease;
-        }
-
-        .input:focus, .select:focus {
-          box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-          transform: translateY(-2px);
-        }
-
-        .select {
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 12px center;
-          background-size: 16px;
-        }
-
-        .upload-button {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          background: white;
-          border: none;
-          border-radius: 8px;
-          padding: 16px;
-          cursor: pointer;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          font-size: 16px;
-          font-weight: 500;
-          transition: all 0.3s ease;
-        }
-
-        .upload-button:hover {
-          background: #f8f8f8;
-          box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-          transform: translateY(-2px);
-        }
-
-        .table-container {
-          background: white;
-          border-radius: 16px;
-          padding: 24px;
-          margin-bottom: 32px;
-          box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-        }
-
-        table {
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 0;
-        }
-
-        th {
-          background: #ffd0e8;
-          text-align: left;
-          padding: 14px;
-          font-weight: 600;
-          font-size: 16px;
-          border-top: 1px solid #ffc0e0;
-          border-bottom: 1px solid #ffc0e0;
-        }
-
-        th:first-child {
-          border-top-left-radius: 8px;
-          border-left: 1px solid #ffc0e0;
-        }
-
-        th:last-child {
-          border-top-right-radius: 8px;
-          border-right: 1px solid #ffc0e0;
-        }
-
-        td {
-          padding: 14px;
-          border-bottom: 1px solid #eee;
-          font-size: 15px;
-        }
-
-        tr:last-child td {
-          border-bottom: none;
-        }
-
-        tr:hover td {
-          background-color: #f9f9f9;
-        }
-
-        .actions {
-          display: flex;
-          justify-content: center;
-          gap: 12px;
-        }
-
-        .action-button {
-          color: #2563eb;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 6px;
-          border-radius: 4px;
-          transition: all 0.2s ease;
-        }
-
-        .action-button:hover {
-          background: #f0f7ff;
-          transform: scale(1.1);
-        }
-
-        .bottom-buttons {
-          display: flex;
-          justify-content: space-between;
-        }
-
-        .yellow-button {
-          background: #ffd0e8;
-          border: none;
-          padding: 16px 40px;
-          border-radius: 9999px;
-          font-weight: 600;
-          font-size: 16px;
-          cursor: pointer;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          transition: all 0.3s ease;
-        }
-
-        .yellow-button:hover {
-          background: #ffb0d8;
-          box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-          transform: translateY(-3px);
-        }
-
-        .hidden-input {
-          display: none;
-        }
-
-        .error-message {
-          background-color: #fee2e2;
-          color: #b91c1c;
-          padding: 12px;
-          border-radius: 8px;
-          margin-bottom: 16px;
-          font-weight: 500;
-        }
-      `}</style>
-    </div>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mt: 4,
+              }}
+            >
+              <Button
+                type="submit"
+                disabled={loading}
+                sx={{
+                  bgcolor: "#f8c8cc",
+                  color: "black",
+                  borderRadius: "30px",
+                  px: 6,
+                  py: 1.5,
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  minWidth: "200px",
+                  "&:hover": {
+                    bgcolor: "#f8c8cc",
+                  },
+                }}
+              >
+                {loading ? <CircularProgress size={24} sx={{ color: "black" }} /> : "Cadastrar"}
+              </Button>
+            </Box>
+          </Paper>
+        </form>
+      </Box>
+    </Box>
   )
 }
 

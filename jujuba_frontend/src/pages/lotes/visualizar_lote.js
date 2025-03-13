@@ -1,10 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ArrowLeft, Eye, Home, Pencil, User, Package, ShoppingCart, List } from "lucide-react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { ArrowLeft, Home, User, Package, ShoppingCart, List } from "lucide-react"
 
 export default function VisualizarLotePage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [loteInfo, setLoteInfo] = useState(null)
+
+  // Mock items for the selected lot
   const [items, setItems] = useState([
     {
       imagem: "/placeholder.svg?height=80&width=80",
@@ -24,14 +30,59 @@ export default function VisualizarLotePage() {
     },
   ])
 
+  // Mock list of lots for the sidebar
   const lotes = [
     { codigo: "A321", data: "31/02/2025" },
-    { codigo: "B321", data: "03/08/2024" },
-    { codigo: "C123", data: "21/06/2024" },
-    { codigo: "K123", data: "12/04/2024" },
-    { codigo: "L569", data: "10/04/2024" },
-    { codigo: "M123", data: "07/03/2024" },
   ]
+
+  useEffect(() => {
+    // Get lote data from URL parameters
+    const id = searchParams.get("id")
+    const data = searchParams.get("data")
+    const fornecedora = searchParams.get("fornecedora")
+
+    if (id && data && fornecedora) {
+      // Format the date for display
+      const formattedDate = new Date(data).toLocaleDateString("pt-BR")
+
+      setLoteInfo({
+        id,
+        data: formattedDate,
+        fornecedora,
+        // You could add more mock data here if needed
+        descricao: "Camisa Lacoste (Original)",
+        marca: "Lacoste",
+        tamanho: "Tamanho 8 anos",
+        estado: "Ótimo",
+        valor: "R$ 89,90",
+        genero: "Masculino",
+      })
+    }
+  }, [searchParams])
+
+  const handleGoBack = () => {
+    router.push("./lotes_geral")
+  }
+
+  const handleGoHome = () => {
+    router.push("../fornecedores/fornecedores_tabela")
+  }
+
+  if (!loteInfo) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "#a3e0f5",
+        }}
+      >
+        <p style={{ fontSize: "18px" }}>Carregando detalhes do lote...</p>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -53,6 +104,7 @@ export default function VisualizarLotePage() {
           flex-direction: column;
           padding: 20px;
           box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+          z-index: 10;
         }
 
         .logo-container {
@@ -285,6 +337,38 @@ export default function VisualizarLotePage() {
           box-shadow: 0 12px 24px rgba(0,0,0,0.2); /* Enhanced shadow on hover */
           transform: translateY(-4px); /* More pronounced lift */
         }
+
+        /* Responsive styles */
+        @media (max-width: 1024px) {
+          .sidebar {
+            width: 220px;
+          }
+          .main-content {
+            margin-left: 220px;
+          }
+          .form-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .sidebar {
+            display: none;
+          }
+          .main-content {
+            margin-left: 0;
+            padding: 20px;
+          }
+          .header-title h1 {
+            font-size: 30px;
+          }
+          .form-grid {
+            grid-template-columns: 1fr;
+          }
+          .table-container {
+            overflow-x: auto;
+          }
+        }
       `}</style>
 
       <div className="container">
@@ -329,26 +413,26 @@ export default function VisualizarLotePage() {
         {/* Main Content */}
         <div className="main-content">
           <header className="header">
-            <button className="nav-button">
+            <button className="nav-button" onClick={handleGoBack}>
               <ArrowLeft size={20} />
             </button>
             <div className="header-title">
               <h1>VISUALIZAR LOTE</h1>
-              <p>Lote:123</p>
+              <p>Lote: {loteInfo.id}</p>
             </div>
-            <button className="nav-button">
+            <button className="nav-button" onClick={handleGoHome}>
               <Home size={20} />
             </button>
           </header>
 
           <div className="form-grid">
-            <div className="input-readonly">Camisa Lacoste (Original)</div>
-            <div className="input-readonly">Lacoste</div>
-            <div className="input-readonly">Tamanho 8 anos</div>
-            <div className="input-readonly">Ótimo</div>
-            <div className="input-readonly">R$ 89,90</div>
-            <div className="input-readonly">Fornecedor ABC</div>
-            <div className="input-readonly">Masculino</div>
+            <div className="input-readonly">{loteInfo.descricao}</div>
+            <div className="input-readonly">{loteInfo.marca}</div>
+            <div className="input-readonly">{loteInfo.tamanho}</div>
+            <div className="input-readonly">{loteInfo.estado}</div>
+            <div className="input-readonly">{loteInfo.valor}</div>
+            <div className="input-readonly">{loteInfo.fornecedora}</div>
+            <div className="input-readonly">{loteInfo.genero}</div>
           </div>
 
           <div className="table-container">
@@ -361,7 +445,6 @@ export default function VisualizarLotePage() {
                   <th>Valor</th>
                   <th>Código do Produto</th>
                   <th>Genero</th>
-                  <th style={{ textAlign: "center" }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -381,16 +464,6 @@ export default function VisualizarLotePage() {
                     <td>R$ {item.valor.toFixed(2).replace(".", ",")}</td>
                     <td>{item.codigo}</td>
                     <td>{item.genero}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="action-button">
-                          <Eye size={22} />
-                        </button>
-                        <button className="action-button">
-                          <Pencil size={22} />
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 ))}
               </tbody>

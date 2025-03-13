@@ -1,102 +1,107 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Box, Paper, Typography, Grid, IconButton, CircularProgress } from "@mui/material"
-import { ArrowBack, Home } from "@mui/icons-material"
-import Sidebar from "../../../components/sidebar"
-import { useRouter } from "next/navigation"
-import axios from "axios"
+import { Box, Button, Paper, Typography, Grid, IconButton, CircularProgress } from "@mui/material"
+import { ArrowBack, Home, Edit } from "@mui/icons-material"
+import Sidebar from "../../components/sidebar"
+import { useRouter } from "next/router"
+import { ProdutoService } from "../services/produto-service"
 
-const BASE_URL = "http://localhost:8080/api/produtos"
-
-export default function ProdutosView({ params }) {
+export default function ProdutoVisualizacao() {
+  const [produto, setProduto] = useState(null)
+  const [fornecedora, setFornecedora] = useState(null)
+  const [formaPagamento, setFormaPagamento] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
   const router = useRouter()
-  const { id } = params
-
-  const [produto, setProduto] = useState({
-    descricao: "",
-    marca: "",
-    tamanho: "",
-    estadoConservacao: "",
-    genero: "",
-    preco: "",
-    codigo: "",
-    lote: "",
-    fornecedor: "",
-    status: "",
-    observacoes: "",
-  })
-
-  const [fetchLoading, setFetchLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { id } = router.query
 
   useEffect(() => {
-    if (id) {
-      fetchProduto(id)
-    }
-  }, [id])
+    const fetchProduto = async () => {
+      if (!id) return
 
-  const fetchProduto = async (produtoId) => {
-    try {
-      setFetchLoading(true)
-      const response = await axios.get(`${BASE_URL}/${produtoId}`)
-      const data = response.data
-
-      setProduto({
-        descricao: data.descricao || "",
-        marca: data.marca || "",
-        tamanho: data.tamanho || "",
-        estadoConservacao: data.estadoConservacao || "",
-        genero: data.genero || "",
-        preco: data.preco || "",
-        codigo: data.codigo || "",
-        lote: data.lote || "",
-        fornecedor: data.fornecedor || "",
-        status: data.status || "Disponível",
-        observacoes: data.observacoes || "",
-      })
-    } catch (error) {
-      console.error("Erro ao buscar dados do produto:", error)
-      setError("Erro ao carregar dados do produto")
-    } finally {
-      setFetchLoading(false)
-    }
-  }
-
-  const handleDelete = async () => {
-    if (window.confirm("Tem certeza que deseja excluir este produto?")) {
       try {
-        setFetchLoading(true)
-        await axios.delete(`${BASE_URL}/${id}`)
-        alert("Produto excluído com sucesso!")
-        router.push("/produtos")
-      } catch (error) {
-        console.error("Erro ao excluir produto:", error)
-        setError("Erro ao excluir produto")
-        setFetchLoading(false)
+        setLoading(true)
+        const produtoData = await ProdutoService.getProdutoById(id)
+
+        if (!produtoData) {
+          setError("Produto não encontrado")
+          return
+        }
+
+       
+        if (!produtoData.descricaoDetalhada) {
+          console.warn(`Produto ${id} não tem descrição detalhada. Gerando uma descrição mockada.`)
+          produtoData.descricaoDetalhada = `Descrição detalhada mockada para o produto ${produtoData.descricao || "desconhecido"}. 
+Este produto apresenta excelente qualidade e acabamento. Fabricado com materiais de primeira linha, 
+oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
+        }
+
+        setProduto(produtoData)
+
+       
+        if (produtoData.fornecedora) {
+          const fornecedoraData = await ProdutoService.getFornecedoraById(produtoData.fornecedora)
+          setFornecedora(fornecedoraData)
+        }
+
+        if (produtoData.forma_pagamento) {
+          const formaPagamentoData = await ProdutoService.getFormaPagamentoById(produtoData.forma_pagamento)
+          setFormaPagamento(formaPagamentoData)
+        }
+      } catch (err) {
+        console.error("Erro ao buscar produto:", err)
+        setError("Erro ao carregar os dados do produto. Por favor, tente novamente.")
+      } finally {
+        setLoading(false)
       }
     }
+
+    fetchProduto()
+  }, [id])
+
+  const handleEditClick = () => {
+    router.push(`./editar_produto/${id}`)
   }
 
-  // Loading state
-  if (fetchLoading) {
+  if (loading) {
     return (
-      <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
-        <Sidebar />
-        <Box
-          sx={{
-            flex: 1,
-            marginLeft: "280px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <CircularProgress size={60} sx={{ color: "#FADADD" }} />
-          <Typography variant="h6" sx={{ ml: 2, color: "#333" }}>
-            Carregando dados do produto...
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "#9AE4FF",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  if (error || !produto) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "#9AE4FF",
+        }}
+      >
+        <Paper sx={{ p: 4, maxWidth: "500px", textAlign: "center" }}>
+          <Typography variant="h6" color="error">
+            {error || "Produto não encontrado"}
           </Typography>
-        </Box>
+          <Button
+            onClick={() => router.push("/produtos")}
+            sx={{ mt: 2, bgcolor: "#f8c8cc", color: "black", "&:hover": { bgcolor: "#f8c8cc" } }}
+          >
+            Voltar para Lista de Produtos
+          </Button>
+        </Paper>
       </Box>
     )
   }
@@ -135,7 +140,7 @@ export default function ProdutosView({ params }) {
             <ArrowBack />
           </IconButton>
           <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-            VISUALIZAR ITEM
+            VISUALIZAR PRODUTO
           </Typography>
           <IconButton
             onClick={() => router.push("/")}
@@ -148,259 +153,201 @@ export default function ProdutosView({ params }) {
           </IconButton>
         </Box>
 
-        <Box style={{ width: "100%", maxWidth: "800px" }}>
-          <Paper
-            elevation={3}
-            sx={{
-              width: "100%",
-              borderRadius: "20px",
-              backgroundColor: "#9AE4FF",
-              p: 3,
-              mb: 3,
-            }}
-          >
-            {/* Product Name */}
-            <Box
+        <Paper
+          elevation={3}
+          sx={{
+            width: "100%",
+            maxWidth: "800px",
+            borderRadius: "20px",
+            backgroundColor: " #9AE4FF",
+            p: 3,
+            mb: 3,
+          }}
+        >
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Descrição:
+            </Typography>
+            <Paper
               sx={{
-                mb: 3,
                 p: 2,
                 borderRadius: "30px",
                 backgroundColor: "#f8f9fa",
                 fontSize: "18px",
-                fontWeight: "bold",
-                textAlign: "center",
               }}
             >
-              {produto.descricao}
-            </Box>
+              <Typography>{produto.descricao || "N/A"}</Typography>
+            </Paper>
+          </Box>
 
-            {/* Description */}
+          <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-              Descrição:
+              Descrição detalhada:
             </Typography>
-            <Box
+            <Paper
               sx={{
-                mb: 3,
                 p: 2,
                 borderRadius: "15px",
                 backgroundColor: "#f8f9fa",
-                minHeight: "80px",
+                minHeight: "100px",
               }}
             >
-              {produto.descricao}
-            </Box>
+              <Typography>{produto.descricaoDetalhada || "N/A"}</Typography>
+            </Paper>
+          </Box>
 
-            {/* Observations */}
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-              Observações:
-            </Typography>
-            <Box
-              sx={{
-                mb: 3,
-                p: 2,
-                borderRadius: "15px",
-                backgroundColor: "#f8f9fa",
-                minHeight: "60px",
-              }}
-            >
-              {produto.observacoes || "Sem observações"}
-            </Box>
-
-            <Grid container spacing={2}>
-              {/* Code */}
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    CÓDIGO
-                  </Typography>
-                  <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>{produto.codigo || "N/A"}</Typography>
-                </Paper>
-              </Grid>
-
-              {/* Lot */}
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    LOTE
-                  </Typography>
-                  <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>{produto.lote || "N/A"}</Typography>
-                </Paper>
-              </Grid>
-
-              {/* State */}
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    ESTADO
-                  </Typography>
-                  <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
-                    {produto.estadoConservacao || "N/A"}
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              {/* Supplier */}
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    mt: 2,
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    FORNECEDOR
-                  </Typography>
-                  <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>{produto.fornecedor || "N/A"}</Typography>
-                </Paper>
-              </Grid>
-
-              {/* Price */}
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    mt: 2,
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    VALOR
-                  </Typography>
-                  <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
-                    {produto.preco ? `R$ ${produto.preco}` : "N/A"}
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              {/* Status */}
-              <Grid item xs={12} sm={4}>
-                <Paper
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    borderRadius: "30px",
-                    textAlign: "center",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    mt: 2,
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
-                    STATUS
-                  </Typography>
-                  <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>{produto.status || "N/A"}</Typography>
-                </Paper>
-              </Grid>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                Marca:
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                  mb: 2,
+                }}
+              >
+                <Typography>{produto.marca || "N/A"}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                Tamanho:
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                  mb: 2,
+                }}
+              >
+                <Typography>{produto.tamanho || "N/A"}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                Estado de Conservação:
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                  mb: 2,
+                }}
+              >
+                <Typography>{produto.estadoConservacao || "N/A"}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                Gênero:
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                  mb: 2,
+                }}
+              >
+                <Typography>{produto.genero || "N/A"}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                Preço:
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                  mb: 2,
+                }}
+              >
+                <Typography>R$ {produto.preco?.toFixed(2) || "0.00"}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                Fornecedora:
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                  mb: 2,
+                }}
+              >
+                <Typography>{fornecedora?.nome || "N/A"}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                Forma de Pagamento:
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                  mb: 2,
+                }}
+              >
+                <Typography>{formaPagamento?.nome || "N/A"}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                ID do Lote:
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                  mb: 2,
+                }}
+              >
+                <Typography>{produto.lote_id || "N/A"}</Typography>
+              </Paper>
             </Grid>
 
-            {error && (
-              <Typography
-                color="error"
-                sx={{
-                  textAlign: "center",
-                  mt: 2,
-                  fontWeight: "medium",
-                }}
-              >
-                {error}
-              </Typography>
-            )}
+          </Grid>
 
-            {/* Add Edit and Delete buttons */}
-            <Box
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mt: 4,
+            }}
+          >
+            <Button
+              onClick={handleEditClick}
+              startIcon={<Edit />}
               sx={{
-                display: "flex",
-                justifyContent: "center",
-                gap: 3,
-                mt: 4,
+                bgcolor: "#f8c8cc",
+                color: "black",
+                borderRadius: "30px",
+                px: 6,
+                py: 1.5,
+                fontSize: "18px",
+                fontWeight: "bold",
+                minWidth: "200px",
+                "&:hover": {
+                  bgcolor: "#f8c8cc",
+                },
               }}
             >
-              <IconButton
-                onClick={() => router.push(`/produtos/${id}/editar_produto`)}
-                sx={{
-                  bgcolor: "#FADADD",
-                  color: "black",
-                  borderRadius: "30px",
-                  px: 4,
-                  py: 1,
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                  "&:hover": {
-                    bgcolor: "#f8c8cc",
-                  },
-                }}
-              >
-                <Typography sx={{ mx: 1 }}>Editar</Typography>
-              </IconButton>
-
-              <IconButton
-                onClick={handleDelete}
-                sx={{
-                  bgcolor: "#ff6b6b",
-                  color: "white",
-                  borderRadius: "30px",
-                  px: 4,
-                  py: 1,
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                  "&:hover": {
-                    bgcolor: "#ff5252",
-                  },
-                }}
-              >
-                <Typography sx={{ mx: 1 }}>Excluir</Typography>
-              </IconButton>
-            </Box>
-          </Paper>
-        </Box>
+              Editar Produto
+            </Button>
+          </Box>
+        </Paper>
       </Box>
     </Box>
   )

@@ -6,7 +6,7 @@ import Sidebar from "../../components/sidebar"
 import axios from "axios"
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
 import { ArrowBack, Home } from "@mui/icons-material"
-
+import { useRouter } from "next/router"
 export default function FornecedoresCadastro() {
   const [fornecedora, setFornecedora] = useState({
     nome: "",
@@ -15,10 +15,10 @@ export default function FornecedoresCadastro() {
     chavePix: "",
     contratoUrl: "",
   })
-
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
-
-  // atualiza o estado com os valores dos campos
+  
+ 
   const handleChange = (event) => {
     const { name, value } = event.target
     setFornecedora((prev) => ({ ...prev, [name]: value }))
@@ -56,7 +56,7 @@ export default function FornecedoresCadastro() {
         throw new Error("O arquivo do contrato é obrigatório!")
       }
 
-      // faz a requisição para o backend
+
       const response = await axios.post(BASE_URL, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -139,7 +139,7 @@ export default function FornecedoresCadastro() {
                           cursor: "pointer",
                           color: "black",
                         }}
-                        onClick={() => {}}
+                        onClick={() => router.back()}
                       />
                     </Grid>
 
@@ -151,7 +151,7 @@ export default function FornecedoresCadastro() {
                           color: "black",
                           marginTop: "-40px",
                         }}
-                        onClick={() => {}}
+                        onClick={() => router.push("/")}
                       />
                     </Grid>
 
