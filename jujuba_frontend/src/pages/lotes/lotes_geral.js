@@ -17,6 +17,13 @@ import {
   Button,
   Autocomplete,
   InputAdornment,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Snackbar,
+  Alert,
 } from "@mui/material"
 import Sidebar from "../../components/sidebar"
 import EditIcon from "@mui/icons-material/Edit"
@@ -24,64 +31,168 @@ import DeleteIcon from "@mui/icons-material/Delete"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import SearchIcon from "@mui/icons-material/Search"
 import { useRouter } from "next/router"
-import { ProdutoService } from "../services/produto-service"
+
+// Dados mockados para lotes
+const mockLotes = [
+  {
+    id: 1,
+    numero: "L001",
+    data: "2023-03-15",
+    fornecedora: "Fornecedora ABC Ltda",
+  },
+  {
+    id: 2,
+    numero: "L002",
+    data: "2023-04-20",
+    fornecedora: "Distribuidora XYZ S.A.",
+  },
+  {
+    id: 3,
+    numero: "L003",
+    data: "2023-05-10",
+    fornecedora: "Indústria Têxtil Nacional",
+  },
+  {
+    id: 4,
+    numero: "L004",
+    data: "2023-06-05",
+    fornecedora: "Confecções Moda Brasil",
+  },
+  {
+    id: 5,
+    numero: "L005",
+    data: "2023-07-12",
+    fornecedora: "Tecidos & Cia",
+  },
+  {
+    id: 6,
+    numero: "L006",
+    data: "2023-08-18",
+    fornecedora: "Fornecedora ABC Ltda",
+  },
+  {
+    id: 7,
+    numero: "L007",
+    data: "2023-09-22",
+    fornecedora: "Distribuidora XYZ S.A.",
+  },
+  {
+    id: 8,
+    numero: "L008",
+    data: "2023-10-30",
+    fornecedora: "Indústria Têxtil Nacional",
+  },
+]
+
+// Serviço mockado para lotes
+const LoteService = {
+  getLotes: () => Promise.resolve(mockLotes),
+  deleteLote: (id) => {
+    return Promise.resolve(true)
+  },
+}
 
 const EstoquePage = () => {
-  const [produtos, setProdutos] = useState([])
+  const [lotes, setLotes] = useState([])
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
+  const [openDialog, setOpenDialog] = useState(false)
+  const [loteToDelete, setLoteToDelete] = useState(null)
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  })
+
+  // Initialize useRouter outside of conditional block
   const router = useRouter()
 
-  // Dados mocados conforme solicitado
-  const mockedData = {
-    totalVendasUltimoMes: 27850.75,
-    valorTotalHoje: 3450.25,
-    dataCriacao: new Date().toLocaleDateString("pt-BR"),
-    formasPagamento: ["Cartão de Crédito", "Cartão de Débito", "Pix", "Dinheiro", "Boleto"],
-  }
-
-  // Estatísticas calculadas a partir dos produtos
-  const estatisticas = useMemo(() => {
-    return ProdutoService.calcularEstatisticas(produtos)
-  }, [produtos])
-
   useEffect(() => {
-    fetchProdutos()
+    fetchLotes()
   }, [])
 
-  const fetchProdutos = async () => {
+  const fetchLotes = async () => {
     setLoading(true)
     try {
-      const produtosData = await ProdutoService.getProdutos()
-      setProdutos(produtosData)
+      // Usando o serviço mockado
+      const lotesData = await LoteService.getLotes()
+      setLotes(lotesData)
     } catch (error) {
-      console.error("Erro ao buscar produtos:", error)
+      console.error("Erro ao buscar lotes:", error)
+      setSnackbar({
+        open: true,
+        message: "Erro ao carregar lotes",
+        severity: "error",
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  // Corrigido o erro removendo o await desnecessário
-  const handleDeleteProduto = (id) => {
+  const handleDeleteClick = (id) => {
+    setLoteToDelete(id)
+    setOpenDialog(true)
+  }
+
+  const handleConfirmDelete = async () => {
     try {
-      // Usando Promise.then em vez de await
-      ProdutoService.deleteProduto(id).then((success) => {
-        if (success) {
-          setProdutos((prev) => prev.filter((produto) => produto.id !== id))
-        } else {
-          console.error("Falha ao excluir produto")
-        }
+      await LoteService.deleteLote(loteToDelete)
+      setLotes((prev) => prev.filter((lote) => lote.id !== loteToDelete))
+      setSnackbar({
+        open: true,
+        message: "Lote excluído com sucesso",
+        severity: "success",
       })
     } catch (error) {
-      console.error("Erro ao excluir produto:", error)
+      console.error("Erro ao excluir lote:", error)
+      setSnackbar({
+        open: true,
+        message: "Falha ao excluir lote",
+        severity: "error",
+      })
+    } finally {
+      setOpenDialog(false)
+      setLoteToDelete(null)
     }
   }
 
+  const handleCancelDelete = () => {
+    setOpenDialog(false)
+    setLoteToDelete(null)
+  }
+
   const handleNavigateToRegister = () => {
-    if (router) {
-      router.push("./cadastro_produto")
+    try {
+      router.push("./cadastrar_lote")
+    } catch (error) {
+      console.error("Erro ao navegar:", error)
+      // Fallback navigation
+      window.location.href = "./cadastrar_lote"
+    }
+  }
+
+  const handleNavigateToView = (lote) => {
+    try {
+L
+      router.push(
+        `./visualizar_lote?id=${lote.numero}&data=${lote.data}&fornecedora=${encodeURIComponent(lote.fornecedora)}`,
+      )
+    } catch (error) {
+      console.error("Erro ao navegar:", error)
+
+      window.location.href = `./visualizar_lote?id=${lote.numero}&data=${lote.data}&fornecedora=${encodeURIComponent(lote.fornecedora)}`
+    }
+  }
+
+  const handleNavigateToEdit = (id) => {
+    try {
+      router.push(`./editar_lote?id=${id}`)
+    } catch (error) {
+      console.error("Erro ao navegar:", error)
+      // Fallback navigation
+      window.location.href = `./editar_lote?id=${id}`
     }
   }
 
@@ -92,13 +203,21 @@ const EstoquePage = () => {
     setPage(0)
   }
 
-  const produtosFiltrados = useMemo(() => {
-    return produtos.filter((produto) => produto.descricao.toLowerCase().includes(search.toLowerCase()))
-  }, [produtos, search])
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false })
+  }
 
-  const descricaoOptions = useMemo(() => {
-    return [...new Set(produtos.map((produto) => produto.descricao))]
-  }, [produtos])
+  const lotesFiltrados = useMemo(() => {
+    return lotes.filter(
+      (lote) =>
+        lote.numero.toString().toLowerCase().includes(search.toLowerCase()) ||
+        lote.fornecedora.toLowerCase().includes(search.toLowerCase()),
+    )
+  }, [lotes, search])
+
+  const searchOptions = useMemo(() => {
+    return [...new Set(lotes.map((lote) => lote.numero.toString()))]
+  }, [lotes])
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
@@ -127,82 +246,75 @@ const EstoquePage = () => {
           Controle de Estoque
         </Typography>
 
-        <SummaryCards valorUltimoMes={mockedData.totalVendasUltimoMes} valorHoje={mockedData.valorTotalHoje} />
+        <SearchField search={search} setSearch={setSearch} options={searchOptions} />
 
-        <SearchField search={search} setSearch={setSearch} options={descricaoOptions} />
-
-        <ProductTable
-          produtosFiltrados={produtosFiltrados}
+        <LotesTable
+          lotesFiltrados={lotesFiltrados}
           page={page}
           rowsPerPage={rowsPerPage}
           handleChangePage={handleChangePage}
           handleChangeRowsPerPage={handleChangeRowsPerPage}
-          handleDeleteProduto={handleDeleteProduto}
-          router={router}
+          handleDeleteClick={handleDeleteClick}
+          handleNavigateToView={handleNavigateToView}
+          handleNavigateToEdit={handleNavigateToEdit}
           loading={loading}
         />
 
-        <AddProductButton handleNavigateToRegister={handleNavigateToRegister} />
+        <Box sx={{ display: "flex", justifyContent: "center", marginTop: "30px" }}>
+          <Button
+            sx={{
+              backgroundColor: "#FADADD",
+              color: "black",
+              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+              border: "2px solid #FADADD",
+              fontWeight: "bold",
+              fontSize: "20px",
+              borderRadius: "60px",
+              padding: "10px 0",
+              width: "300px",
+              height: "50px",
+              textTransform: "none",
+            }}
+            onClick={handleNavigateToRegister}
+            variant="contained"
+          >
+            Cadastrar Lote
+          </Button>
+        </Box>
+
+        {/* Diálogo de confirmação para exclusão */}
+        <Dialog
+          open={openDialog}
+          onClose={handleCancelDelete}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">{"Confirmar exclusão"}</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              Tem certeza que deseja excluir este lote? Esta ação não pode ser desfeita.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelDelete} color="primary">
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmDelete} color="error" autoFocus>
+              Excluir
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar para feedback */}
+        <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
     </Box>
   )
 }
-
-const SummaryCards = ({ valorUltimoMes, valorHoje }) => (
-  <Box sx={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
-    <SummaryCard title="TOTAL DE VENDAS NO ÚLTIMO MÊS" value={valorUltimoMes} />
-    <SummaryCard title="VALOR TOTAL DE HOJE" value={valorHoje} />
-    <CadastrarLoteButton />
-  </Box>
-)
-
-const SummaryCard = ({ title, value }) => (
-  <Card
-    sx={{
-      flex: 0.5,
-      height: "180px",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "20px",
-      borderRadius: "50px",
-      boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-      textAlign: "center",
-      backgroundColor: "#F5F5F5",
-    }}
-  >
-    <Typography variant="h6" sx={{ marginBottom: "10px" }}>
-      {title}
-    </Typography>
-    <Typography variant="h4">R$ {value.toFixed(2)}</Typography>
-  </Card>
-)
-
-const CadastrarLoteButton = () => (
-  <Button
-    sx={{
-      marginLeft: "40px",
-      alignSelf: "center",
-      boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-      width: "300px",
-      height: "120px",
-      borderRadius: "70px",
-      backgroundColor: "#FADADD",
-      textAlign: "center",
-      display: "flex",
-      color: "black",
-      fontSize: "20px",
-      fontWeight: "bold",
-      justifyContent: "center",
-      alignItems: "center",
-      padding: "0 20px",
-    }}
-    variant="contained"
-  >
-    Cadastrar Lote
-  </Button>
-)
 
 const SearchField = ({ search, setSearch, options }) => (
   <Box
@@ -226,7 +338,7 @@ const SearchField = ({ search, setSearch, options }) => (
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Pesquisar produto"
+          label="Pesquisar lote"
           variant="outlined"
           size="medium"
           InputProps={{
@@ -285,14 +397,15 @@ const SearchField = ({ search, setSearch, options }) => (
   </Box>
 )
 
-const ProductTable = ({
-  produtosFiltrados,
+const LotesTable = ({
+  lotesFiltrados,
   page,
   rowsPerPage,
   handleChangePage,
   handleChangeRowsPerPage,
-  handleDeleteProduto,
-  router,
+  handleDeleteClick,
+  handleNavigateToView,
+  handleNavigateToEdit,
   loading,
 }) => (
   <Card
@@ -316,14 +429,14 @@ const ProductTable = ({
         marginTop: "20px",
       }}
     >
-      Produtos em Estoque
+      Lotes em Estoque
     </Typography>
 
     <TableContainer sx={{ maxHeight: "600px", borderRadius: "10px", overflow: "hidden" }}>
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            {["Descrição", "Marca", "Tamanho", "Estado", "Gênero", "Preço", "Ações"].map((header) => (
+            {["Lotes", "Data", "Fornecedoras", "Ação"].map((header) => (
               <TableCell
                 key={header}
                 sx={{
@@ -342,39 +455,30 @@ const ProductTable = ({
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={7} align="center">
-                Carregando produtos...
+              <TableCell colSpan={4} align="center">
+                Carregando lotes...
               </TableCell>
             </TableRow>
-          ) : produtosFiltrados.length === 0 ? (
+          ) : lotesFiltrados.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} align="center">
-                Nenhum produto encontrado
+              <TableCell colSpan={4} align="center">
+                Nenhum lote encontrado
               </TableCell>
             </TableRow>
           ) : (
-            produtosFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((produto) => (
-              <TableRow key={produto.id} hover>
-                <TableCell>{produto.descricao}</TableCell>
-                <TableCell>{produto.marca}</TableCell>
-                <TableCell>{produto.tamanho}</TableCell>
-                <TableCell>{produto.estadoConservacao}</TableCell>
-                <TableCell>{produto.genero}</TableCell>
-                <TableCell>R$ {produto.preco.toFixed(2)}</TableCell>
+            lotesFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((lote) => (
+              <TableRow key={lote.id} hover>
+                <TableCell align="center">{lote.numero}</TableCell>
+                <TableCell align="center">{new Date(lote.data).toLocaleDateString("pt-BR")}</TableCell>
+                <TableCell align="center">{lote.fornecedora}</TableCell>
                 <TableCell align="center">
-                  <IconButton
-                    onClick={() => router.push(`./visualizar_produto?id=${produto.id}`)}
-                    sx={{ marginRight: 1, color: "#00509E" }}
-                  >
+                  <IconButton onClick={() => handleNavigateToView(lote)} sx={{ marginRight: 1, color: "#00509E" }}>
                     <VisibilityIcon />
                   </IconButton>
-                  <IconButton
-                    onClick={() => router.push(`./editar_produto?id=${produto.id}`)}
-                    sx={{ marginRight: 1, color: "#00509E" }}
-                  >
+                  <IconButton onClick={() => handleNavigateToEdit(lote.id)} sx={{ marginRight: 1, color: "#00509E" }}>
                     <EditIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleDeleteProduto(produto.id)} sx={{ color: "#00509E" }}>
+                  <IconButton onClick={() => handleDeleteClick(lote.id)} sx={{ color: "#00509E" }}>
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
@@ -387,7 +491,7 @@ const ProductTable = ({
 
     <TablePagination
       component="div"
-      count={produtosFiltrados.length}
+      count={lotesFiltrados.length}
       page={page}
       onPageChange={handleChangePage}
       rowsPerPage={rowsPerPage}
@@ -403,29 +507,5 @@ const ProductTable = ({
     />
   </Card>
 )
-
-const AddProductButton = ({ handleNavigateToRegister }) => (
-  <Box sx={{ display: "flex", justifyContent: "center", marginTop: "30px" }}>
-    <Button
-      sx={{
-        backgroundColor: "#FADADD",
-        color: "black",
-        boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-        border: "2px solid #FADADD",
-        fontWeight: "bold",
-        fontSize: "20px",
-        borderRadius: "60px",
-        padding: "10px 0",
-        width: "300px",
-        height: "50px",
-        textTransform: "none",
-      }}
-      onClick={handleNavigateToRegister}
-    >
-      Cadastrar produto
-    </Button>
-  </Box>
-)
-
 export default EstoquePage
 

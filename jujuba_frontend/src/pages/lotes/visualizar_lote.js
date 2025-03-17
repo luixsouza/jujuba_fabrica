@@ -5,13 +5,9 @@ import Image from "next/image"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ArrowLeft, Home, User, Package, ShoppingCart, List } from "lucide-react"
 
-export default function VisualizarLotePage() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [loteInfo, setLoteInfo] = useState(null)
 
-  // Mock items for the selected lot
-  const [items, setItems] = useState([
+const mockLoteItems = {
+  L001: [
     {
       imagem: "/placeholder.svg?height=80&width=80",
       descricao: "Camisa Lacoste (Original) Tamanho 8 anos",
@@ -28,37 +24,152 @@ export default function VisualizarLotePage() {
       codigo: "ALC352333",
       genero: "Fem",
     },
-  ])
+  ],
+  L002: [
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Tênis Nike Air Max Tamanho 42",
+      estadoConservacao: "Bom",
+      valor: 129.9,
+      codigo: "ANK123456",
+      genero: "Masc",
+    },
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Calça Jeans Levis Tamanho 40",
+      estadoConservacao: "Ótimo",
+      valor: 79.9,
+      codigo: "ALV789012",
+      genero: "Masc",
+    },
+  ],
+  L003: [
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Vestido Infantil Lilica Ripilica Tamanho 6",
+      estadoConservacao: "Ótimo",
+      valor: 59.9,
+      codigo: "VLR345678",
+      genero: "Fem",
+    },
+  ],
+  L004: [
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Jaqueta de Couro Tamanho M",
+      estadoConservacao: "Bom",
+      valor: 149.9,
+      codigo: "JCR901234",
+      genero: "Unisex",
+    },
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Blusa de Lã Tamanho P",
+      estadoConservacao: "Ótimo",
+      valor: 45.9,
+      codigo: "BLA567890",
+      genero: "Fem",
+    },
+  ],
+  L005: [
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Sapato Social Tamanho 41",
+      estadoConservacao: "Ótimo",
+      valor: 89.9,
+      codigo: "SSC123789",
+      genero: "Masc",
+    },
+  ],
+  L006: [
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Bolsa de Couro Feminina",
+      estadoConservacao: "Ótimo",
+      valor: 119.9,
+      codigo: "BCF456123",
+      genero: "Fem",
+    },
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Cinto de Couro Tamanho Único",
+      estadoConservacao: "Bom",
+      valor: 39.9,
+      codigo: "CCU789456",
+      genero: "Unisex",
+    },
+  ],
+  L007: [
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Bermuda Jeans Tamanho 38",
+      estadoConservacao: "Ótimo",
+      valor: 49.9,
+      codigo: "BJN123456",
+      genero: "Masc",
+    },
+  ],
+  L008: [
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Vestido de Festa Tamanho 42",
+      estadoConservacao: "Ótimo",
+      valor: 159.9,
+      codigo: "VFT789012",
+      genero: "Fem",
+    },
+    {
+      imagem: "/placeholder.svg?height=80&width=80",
+      descricao: "Sandália Feminina Tamanho 37",
+      estadoConservacao: "Bom",
+      valor: 69.9,
+      codigo: "SFM345678",
+      genero: "Fem",
+    },
+  ],
+}
 
-  // Mock list of lots for the sidebar
-  const lotes = [
-    { codigo: "A321", data: "31/02/2025" },
-  ]
+
+const mockLotesSidebar = [
+  { codigo: "L001", data: "15/03/2023" },
+  { codigo: "L002", data: "20/04/2023" },
+  { codigo: "L003", data: "10/05/2023" },
+]
+
+export default function VisualizarLotePage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [loteInfo, setLoteInfo] = useState(null)
+  const [items, setItems] = useState([])
 
   useEffect(() => {
-    // Get lote data from URL parameters
     const id = searchParams.get("id")
     const data = searchParams.get("data")
     const fornecedora = searchParams.get("fornecedora")
 
     if (id && data && fornecedora) {
-      // Format the date for display
       const formattedDate = new Date(data).toLocaleDateString("pt-BR")
 
       setLoteInfo({
         id,
         data: formattedDate,
         fornecedora,
-        // You could add more mock data here if needed
-        descricao: "Camisa Lacoste (Original)",
-        marca: "Lacoste",
-        tamanho: "Tamanho 8 anos",
-        estado: "Ótimo",
-        valor: "R$ 89,90",
-        genero: "Masculino",
+        descricao: `Lote ${id}`,
+        marca: "Diversos",
+        tamanho: "Variados",
+        estado: "Bom/Ótimo",
+        valor: `R$ ${calcularValorTotal(mockLoteItems[id] || [])
+          .toFixed(2)
+          .replace(".", ",")}`,
+        genero: "Diversos",
       })
+      setItems(mockLoteItems[id] || [])
     }
   }, [searchParams])
+
+  const calcularValorTotal = (items) => {
+    return items.reduce((total, item) => total + item.valor, 0)
+  }
 
   const handleGoBack = () => {
     router.push("./lotes_geral")
@@ -305,7 +416,6 @@ export default function VisualizarLotePage() {
           cursor: pointer;
           padding: 8px; /* Larger padding */
           border-radius: 6px; /* More rounded */
-          transition: all 0.2s ease;
         }
 
         .action-button:hover {
@@ -401,7 +511,7 @@ export default function VisualizarLotePage() {
 
           <div className="lotes-list">
             <h3>Lista de Lotes</h3>
-            {lotes.map((lote) => (
+            {mockLotesSidebar.map((lote) => (
               <div key={lote.codigo} className="lote-item">
                 <span>{lote.codigo}</span>
                 <span>{lote.data}</span>

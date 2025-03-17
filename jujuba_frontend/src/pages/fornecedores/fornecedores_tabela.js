@@ -24,7 +24,7 @@ import EditIcon from "@mui/icons-material/Edit"
 import axios from "axios"
 import { useRouter } from "next/router"
 import SearchIcon from "@mui/icons-material/Search"
-import { Suspense, lazy } from "react"
+import Sidebar from "../../components/sidebar"
 
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
 
@@ -35,7 +35,6 @@ const FornecedoresPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [search, setSearch] = useState("")
   const router = useRouter()
-  const Sidebar = lazy(() => import("../../components/sidebar"))
   const [values, setValues] = useState({
     nome: "",
     contato: "",
@@ -114,9 +113,7 @@ const FornecedoresPage = () => {
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#50abe4", minHeight: "100vh", backgroundColor: "#9AE4FF" }}>
-      <Suspense fallback={<div>Carregando...</div>}>
         <Sidebar />
-      </Suspense>
       <Box
         sx={{
           flex: 1,
