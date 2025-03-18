@@ -1,4 +1,5 @@
 version: '3.7'
+
 services:
   db:
     image: mysql:8.0
@@ -10,18 +11,24 @@ services:
       - "3307:3306"
     networks:
       - app-network
-  
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: jujuba_backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/jujuba_brecho
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/jujuba_brecho?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8080:8080"
     networks:
