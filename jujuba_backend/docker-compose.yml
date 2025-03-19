@@ -1,35 +1,6 @@
-version: "3.7"
+version: '3.7'
 
 services:
-  frontend:
-    build: .
-    container_name: jujuba_frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8080
-    networks:
-      - app-network
-
-  backend:
-    build:
-      context: ../backend 
-      dockerfile: Dockerfile
-    container_name: jujuba_backend
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/jujuba_brecho?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8080:8080"
-    networks:
-      - app-network
-
   db:
     image: mysql:8.0
     container_name: jujuba_bd
@@ -45,6 +16,23 @@ services:
       interval: 10s
       retries: 5
       timeout: 5s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jujuba_backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/jujuba_brecho?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
 
 networks:
   app-network:
