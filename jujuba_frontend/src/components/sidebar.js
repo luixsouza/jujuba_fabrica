@@ -39,7 +39,7 @@ export default function Sidebar({ lotes = [] }) {
     <div className="sidebar">
       <div className="logo-container">
         <div className="logo">
-          <Image src="/placeholder.svg?height=80&width=80" alt="Jujuba Logo" width={100} height={40} />
+          <Image src="/jujba2.png" alt="Jujuba Logo" width={140} height={140} priority />
         </div>
       </div>
 
@@ -129,15 +129,7 @@ export default function Sidebar({ lotes = [] }) {
         </Tooltip>
       </List>
 
-      <div className="lotes-list">
-        <h3>Lista de Lotes</h3>
-        {lotes.map((lote) => (
-          <div key={lote.codigo} className="lote-item">
-            <span>{lote.codigo}</span>
-            <span>{lote.data}</span>
-          </div>
-        ))}
-      </div>
+      
 
       <style jsx>{`
         .sidebar {

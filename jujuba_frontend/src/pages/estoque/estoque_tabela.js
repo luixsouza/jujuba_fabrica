@@ -41,7 +41,6 @@ const EstoquePage = () => {
   const [produtoToDelete, setProdutoToDelete] = useState(null)
   const router = useRouter()
 
-  
   const mockedData = {
     totalVendasUltimoMes: 27850.75,
     valorTotalHoje: 3450.25,
@@ -71,12 +70,8 @@ const EstoquePage = () => {
   const handleConfirmDelete = async () => {
     if (produtoToDelete) {
       try {
-        const success = await ProdutoService.deleteProduto(produtoToDelete)
-        if (success) {
-          setProdutos((prev) => prev.filter((produto) => produto.id !== produtoToDelete))
-        } else {
-          console.error("Falha ao excluir produto")
-        }
+        await ProdutoService.deleteProduto(produtoToDelete)
+        setProdutos((prev) => prev.filter((produto) => produto.id !== produtoToDelete))
       } catch (error) {
         console.error("Erro ao excluir produto:", error)
       }
@@ -88,12 +83,6 @@ const EstoquePage = () => {
   const handleCancelDelete = () => {
     setDeleteDialogOpen(false)
     setProdutoToDelete(null)
-  }
-
-  const handleNavigateToRegister = () => {
-    if (router) {
-      router.push("./cadastro_produto")
-    }
   }
 
   const handleViewProduct = (id) => {
@@ -146,7 +135,11 @@ const EstoquePage = () => {
           Controle de Estoque
         </Typography>
 
-        <SummaryCards valorUltimoMes={mockedData.totalVendasUltimoMes} valorHoje={mockedData.valorTotalHoje} />
+        <SummaryCards
+          valorUltimoMes={mockedData.totalVendasUltimoMes}
+          valorHoje={mockedData.valorTotalHoje}
+          router={router}
+        />
 
         <SearchField search={search} setSearch={setSearch} options={descricaoOptions} />
 
@@ -162,8 +155,6 @@ const EstoquePage = () => {
           loading={loading}
         />
 
-        <AddProductButton handleNavigateToRegister={handleNavigateToRegister} />
-
         <DeleteConfirmationDialog
           open={deleteDialogOpen}
           onClose={handleCancelDelete}
@@ -174,11 +165,11 @@ const EstoquePage = () => {
   )
 }
 
-const SummaryCards = ({ valorUltimoMes, valorHoje }) => (
+const SummaryCards = ({ valorUltimoMes, valorHoje, router }) => (
   <Box sx={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
     <SummaryCard title="TOTAL DE VENDAS NO ÚLTIMO MÊS" value={valorUltimoMes} />
     <SummaryCard title="VALOR TOTAL DE HOJE" value={valorHoje} />
-    <CadastrarLoteButton />
+    <CadastrarLoteButton router={router} />
   </Box>
 )
 
@@ -205,8 +196,9 @@ const SummaryCard = ({ title, value }) => (
   </Card>
 )
 
-const CadastrarLoteButton = () => (
+const CadastrarLoteButton = ({ router }) => (
   <Button
+    onClick={() => router.push("../lotes/cadastrar_lote")}
     sx={{
       marginLeft: "40px",
       alignSelf: "center",
@@ -426,26 +418,7 @@ const ProductTable = ({
 )
 
 const AddProductButton = ({ handleNavigateToRegister }) => (
-  <Box sx={{ display: "flex", justifyContent: "center", marginTop: "30px" }}>
-    <Button
-      sx={{
-        backgroundColor: "#FADADD",
-        color: "black",
-        boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-        border: "2px solid #FADADD",
-        fontWeight: "bold",
-        fontSize: "20px",
-        borderRadius: "60px",
-        padding: "10px 0",
-        width: "300px",
-        height: "50px",
-        textTransform: "none",
-      }}
-      onClick={handleNavigateToRegister}
-    >
-      Cadastrar produto
-    </Button>
-  </Box>
+  <Box sx={{ display: "flex", justifyContent: "center", marginTop: "30px" }}></Box>
 )
 
 const DeleteConfirmationDialog = ({ open, onClose, onConfirm }) => (

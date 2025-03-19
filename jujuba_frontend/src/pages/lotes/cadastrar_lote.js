@@ -437,6 +437,20 @@ export default function CadastroLotePage() {
             width: 100%;
           }
         }
+
+        .menu-container {
+          background-color: rgba(255, 255, 255, 0.2);
+          border-radius: 12px;
+          padding: 10px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .lotes-card {
+          background-color: rgba(255, 255, 255, 0.2);
+          border-radius: 12px;
+          padding: 10px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
       `}</style>
 
       <div className="container">
@@ -444,24 +458,24 @@ export default function CadastroLotePage() {
         <div className="sidebar">
           <div className="logo-container">
             <div className="logo">
-              <Image src="/placeholder.svg?height=80&width=80" alt="Jujuba Logo" width={100} height={40} />
+              <Image src="/jujba2.png"  alt="Jujuba Logo" width={140} height={140} priority />
             </div>
           </div>
 
-          <div>
-            <div className="menu-item">
+          <div className="menu-container">
+            <div className="menu-item" onClick={() => router.push("../../fornecedores/fornecedores_tabela")}>
               <User size={20} />
               <span>Fornecedores</span>
             </div>
-            <div className="menu-item">
+            <div className="menu-item" onClick={() => router.push("../../estoque/estoque_tabela")}>
               <Package size={20} />
               <span>Estoque</span>
             </div>
-            <div className="menu-item">
+            <div className="menu-item" onClick={() => router.push("/Caixa")}>
               <ShoppingCart size={20} />
               <span>Vendas</span>
             </div>
-            <div className="menu-item">
+            <div className="menu-item" onClick={() => router.push("../../lotes/lotes_geral")}>
               <List size={20} />
               <span>Lotes</span>
             </div>
@@ -469,15 +483,16 @@ export default function CadastroLotePage() {
 
           <div className="lotes-list">
             <h3>Lista de Lotes</h3>
-            {mockLotesSidebar.map((lote) => (
-              <div key={lote.codigo} className="lote-item">
-                <span>{lote.codigo}</span>
-                <span>{lote.data}</span>
-              </div>
-            ))}
+            <div className="lotes-card">
+              {mockLotesSidebar.map((lote) => (
+                <div key={lote.codigo} className="lote-item">
+                  <span>{lote.codigo}</span>
+                  <span>{lote.data}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-
 
         <div className="main-content">
           <header className="header">
