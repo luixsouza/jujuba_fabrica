@@ -7,9 +7,7 @@ import com.jujuba.mapper.FornecedoraMapper;
 import com.jujuba.model.Fornecedora;
 import com.jujuba.service.ArquivoService;
 import com.jujuba.service.FornecedoraService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,24 +29,18 @@ public class FornecedoraController {
     @PostMapping
     public ResponseEntity<FornecedoraResponseDTO> cadastrarFornecedora(
             @RequestParam("fornecedora") String fornecedoraJson,
-            @RequestParam(value = "contrato", required = false) MultipartFile contrato) {
-        try {
-            FornecedoraCreateDTO dto = objectMapper.readValue(fornecedoraJson, FornecedoraCreateDTO.class);
-            Fornecedora fornecedora = FornecedoraMapper.toFornecedora(dto);
-            Fornecedora fornecedoraSalva = fornecedoraService.salvar(fornecedora);
+            @RequestParam(value = "contrato", required = false) MultipartFile contrato) throws IOException {
+        FornecedoraCreateDTO dto = objectMapper.readValue(fornecedoraJson, FornecedoraCreateDTO.class);
+        Fornecedora fornecedora = FornecedoraMapper.toFornecedora(dto);
+        Fornecedora fornecedoraSalva = fornecedoraService.salvar(fornecedora);
 
-            if (contrato != null && !contrato.isEmpty()) {
-                String contratoUrl = arquivoService.salvarContrato(contrato);
-                fornecedoraSalva.setContratoUrl(contratoUrl);
-                fornecedoraSalva = fornecedoraService.salvar(fornecedoraSalva);
-            }
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(FornecedoraMapper.toDTO(fornecedoraSalva));
-
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(null);
+        if (contrato != null && !contrato.isEmpty()) {
+            String contratoUrl = arquivoService.salvarContrato(contrato);
+            fornecedoraSalva.setContratoUrl(contratoUrl);
+            fornecedoraSalva = fornecedoraService.salvar(fornecedoraSalva);
         }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(FornecedoraMapper.toDTO(fornecedoraSalva));
     }
 
     @GetMapping
@@ -62,38 +54,26 @@ public class FornecedoraController {
     @GetMapping("/{id}")
     public ResponseEntity<FornecedoraResponseDTO> buscarPorId(@PathVariable Long id) {
         Fornecedora fornecedora = fornecedoraService.buscarPorId(id);
-        return fornecedora != null
-                ? ResponseEntity.ok(FornecedoraMapper.toDTO(fornecedora))
-                : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(FornecedoraMapper.toDTO(fornecedora));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<FornecedoraResponseDTO> atualizarFornecedora(
             @PathVariable Long id,
             @RequestParam("fornecedora") String fornecedoraJson,
-            @RequestParam(value = "contrato", required = false) MultipartFile contrato) {
-        try {
-            FornecedoraCreateDTO dto = objectMapper.readValue(fornecedoraJson, FornecedoraCreateDTO.class);
-            Fornecedora fornecedora = FornecedoraMapper.toFornecedora(dto);
-            Fornecedora fornecedoraAtualizada = fornecedoraService.atualizar(id, fornecedora);
-    
-            if (fornecedoraAtualizada == null) {
-                return ResponseEntity.notFound().build();
-            }
-    
-            if (contrato != null && !contrato.isEmpty()) {
-                String contratoUrl = arquivoService.salvarContrato(contrato);
-                fornecedoraAtualizada.setContratoUrl(contratoUrl);
-                fornecedoraAtualizada = fornecedoraService.salvar(fornecedoraAtualizada);
-            }
-    
-            return ResponseEntity.ok(FornecedoraMapper.toDTO(fornecedoraAtualizada));
-    
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            @RequestParam(value = "contrato", required = false) MultipartFile contrato) throws IOException {
+        FornecedoraCreateDTO dto = objectMapper.readValue(fornecedoraJson, FornecedoraCreateDTO.class);
+        Fornecedora fornecedora = FornecedoraMapper.toFornecedora(dto);
+        Fornecedora fornecedoraAtualizada = fornecedoraService.atualizar(id, fornecedora);
+
+        if (contrato != null && !contrato.isEmpty()) {
+            String contratoUrl = arquivoService.salvarContrato(contrato);
+            fornecedoraAtualizada.setContratoUrl(contratoUrl);
+            fornecedoraAtualizada = fornecedoraService.salvar(fornecedoraAtualizada);
         }
+
+        return ResponseEntity.ok(FornecedoraMapper.toDTO(fornecedoraAtualizada));
     }
-    
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluirFornecedora(@PathVariable Long id) {
