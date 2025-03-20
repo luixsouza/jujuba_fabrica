@@ -11,24 +11,12 @@ import {
   CircularProgress,
   useMediaQuery,
   useTheme,
-  IconButton,
   Snackbar,
   Alert,
   Chip,
-  Paper,
+  TextField,
 } from "@mui/material"
-import {
-  ArrowBack,
-  Home,
-  Edit,
-  Download,
-  Person,
-  Phone,
-  LocationOn,
-  Payments,
-  CalendarMonth,
-  Description,
-} from "@mui/icons-material"
+import { ArrowBack, Home, Download } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
 import { useRouter } from "next/router"
 import axios from "axios"
@@ -95,10 +83,6 @@ export default function FornecedoresVisualizar() {
     setSnackbar({ ...snackbar, open: false })
   }
 
-  const handleEditClick = () => {
-    router.push(`/fornecedores/fornecedores_edicao?id=${id}`)
-  }
-
   const handleDownloadContrato = () => {
     if (fornecedora.contratoUrl) {
       window.open(fornecedora.contratoUrl, "_blank")
@@ -116,19 +100,12 @@ export default function FornecedoresVisualizar() {
       <Box
         sx={{
           display: "flex",
-          flexDirection: isMobile ? "column" : "row",
           backgroundColor: "#9AE4FF",
           minHeight: "100vh",
+          flexDirection: { xs: "column", md: "row" },
         }}
       >
-        <Box
-          sx={{
-            width: isMobile ? "100%" : "250px",
-            position: isMobile ? "static" : "sticky",
-            top: 0,
-            height: isMobile ? "auto" : "100vh",
-          }}
-        >
+        <Box sx={{ width: { xs: "100%", md: "250px" } }}>
           <Sidebar />
         </Box>
         <Box
@@ -153,214 +130,252 @@ export default function FornecedoresVisualizar() {
     <Box
       sx={{
         display: "flex",
-        flexDirection: isMobile ? "column" : "row",
         backgroundColor: "#9AE4FF",
         minHeight: "100vh",
+        flexDirection: { xs: "column", md: "row" },
       }}
     >
-      <Box
-        sx={{
-          width: isMobile ? "100%" : "250px",
-          position: isMobile ? "static" : "sticky",
-          top: 0,
-          height: isMobile ? "auto" : "100vh",
-        }}
-      >
+      <Box sx={{ width: { xs: "100%", md: "250px" } }}>
         <Sidebar />
       </Box>
 
-      <Box
-        sx={{
-          flex: 1,
-          p: isMobile ? 2 : 3,
-          width: "100%",
-        }}
-      >
+      <Box sx={{ flex: 1, p: 3 }}>
+        <Box sx={{ mb: 1, textAlign: "center", mt: { xs: 4, md: 8 } }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: "bold", marginBottom: "20px", fontSize: { xs: "30px", md: "40px" } }}
+          ></Typography>
+        </Box>
+
         <Card
           sx={{
             borderRadius: 10,
             backgroundColor: "#FADADD",
-            p: { xs: 2, sm: 3, md: 4 },
-            width: "100%",
-            maxWidth: "800px",
+            p: 3,
+            maxWidth: "150%",
             mx: "auto",
-            mt: { xs: 2, sm: 4, md: 8 },
+            mt: { xs: 4, md: 8 },
             height: "auto",
             boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
           }}
         >
           <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", mb: 2 }}></Typography>
             <Grid container spacing={3}>
-              <Grid item xs={12} container alignItems="center" justifyContent="space-between">
-                <Grid item>
-                  <IconButton onClick={() => router.back()}>
+              <Grid item xs={12}>
+                <Grid container direction="column" alignItems="center" spacing={1}>
+                  <Grid item xs={12} display="flex" justifyContent="flex-start" width="100%" alignItems="center">
                     <ArrowBack
                       sx={{
                         fontSize: "30px",
                         cursor: "pointer",
                         color: "black",
                       }}
+                      onClick={() => router.back()}
                     />
-                  </IconButton>
-                </Grid>
-                <Grid item>
-                  <IconButton onClick={() => router.push("/")}>
+                  </Grid>
+
+                  <Grid item xs={12} display="flex" justifyContent="flex-end" width="100%" alignItems="center">
                     <Home
                       sx={{
                         fontSize: "30px",
                         cursor: "pointer",
                         color: "black",
+                        marginTop: "-40px",
                       }}
+                      onClick={() => router.push("/")}
                     />
-                  </IconButton>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        mb: 4,
+                        fontSize: { xs: "35px", md: "45px" },
+                        fontWeight: "bold",
+                        textAlign: "center",
+                      }}
+                    >
+                      Visualizar Fornecedor
+                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+                      <Chip
+                        label={`ID: ${id}`}
+                        color="primary"
+                        sx={{
+                          backgroundColor: "rgba(154, 228, 255, 0.8)",
+                          color: "#333",
+                          fontWeight: "bold",
+                        }}
+                      />
+                    </Box>
+                  </Grid>
                 </Grid>
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={8} md={7}>
                 <Typography
-                  variant="h4"
-                  sx={{
-                    mb: 2,
-                    fontSize: isMobile ? "28px" : isTablet ? "35px" : "45px",
-                    fontWeight: "bold",
-                    textAlign: "center",
-                  }}
+                  variant="body2"
+                  sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                 >
-                  Visualizar Fornecedor
+                  Nome
                 </Typography>
-
-                <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-                  <Chip
-                    label={`ID: ${id}`}
-                    color="primary"
-                    sx={{
-                      backgroundColor: "rgba(154, 228, 255, 0.8)",
-                      color: "#333",
-                      fontWeight: "bold",
-                    }}
-                  />
-                </Box>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 3,
-                    backgroundColor: "rgba(255, 255, 255, 0.8)",
-                    borderRadius: "16px",
+                <TextField
+                  fullWidth
+                  label="Nome do Fornecedor"
+                  name="nome"
+                  value={fornecedora.nome}
+                  variant="outlined"
+                  InputProps={{
+                    readOnly: true,
                   }}
-                >
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <Person sx={{ color: "#50abe4", mr: 1 }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
-                          Nome
-                        </Typography>
-                      </Box>
-                      <Typography variant="body1" sx={{ ml: 4, mb: 3 }}>
-                        {fornecedora.nome || "Não informado"}
-                      </Typography>
-
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <Phone sx={{ color: "#50abe4", mr: 1 }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
-                          Contato
-                        </Typography>
-                      </Box>
-                      <Typography variant="body1" sx={{ ml: 4, mb: 3 }}>
-                        {fornecedora.contato || "Não informado"}
-                      </Typography>
-
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <LocationOn sx={{ color: "#50abe4", mr: 1 }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
-                          Endereço
-                        </Typography>
-                      </Box>
-                      <Typography variant="body1" sx={{ ml: 4, mb: 3 }}>
-                        {fornecedora.endereco || "Não informado"}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <Payments sx={{ color: "#50abe4", mr: 1 }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
-                          Chave Pix
-                        </Typography>
-                      </Box>
-                      <Typography variant="body1" sx={{ ml: 4, mb: 3 }}>
-                        {fornecedora.chavePix || "Não informado"}
-                      </Typography>
-
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <CalendarMonth sx={{ color: "#50abe4", mr: 1 }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
-                          Data de Nascimento
-                        </Typography>
-                      </Box>
-                      <Typography variant="body1" sx={{ ml: 4, mb: 3 }}>
-                        {fornecedora.dataDeNascimento || "Não informado"}
-                      </Typography>
-
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <Description sx={{ color: "#50abe4", mr: 1 }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
-                          Contrato
-                        </Typography>
-                      </Box>
-                      {fornecedora.contratoUrl ? (
-                        <Box sx={{ ml: 4 }}>
-                          <Button
-                            variant="outlined"
-                            startIcon={<Download />}
-                            onClick={handleDownloadContrato}
-                            sx={{
-                              borderColor: "#50abe4",
-                              color: "#333",
-                              "&:hover": {
-                                borderColor: "#003B6F",
-                                backgroundColor: "rgba(80, 171, 228, 0.1)",
-                              },
-                            }}
-                          >
-                            Visualizar Contrato
-                          </Button>
-                        </Box>
-                      ) : (
-                        <Typography variant="body1" sx={{ ml: 4 }}>
-                          Contrato não disponível
-                        </Typography>
-                      )}
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
-                <Button
-                  variant="contained"
-                  startIcon={<Edit />}
-                  onClick={handleEditClick}
                   sx={{
-                    color: "Black",
-                    backgroundColor: "#50abe4",
-                    textTransform: "none",
-                    fontWeight: "bold",
-                    fontSize: "16px",
-                    borderRadius: "50px",
-                    padding: "10px 20px",
-                    height: "56px",
-                    width: { xs: "100%", sm: "250px" },
-                    "&:hover": {
-                      backgroundColor: "#003B6F",
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "#FFFFFF",
+                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
                     },
                   }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={8} md={7}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                 >
-                  Editar Fornecedor
-                </Button>
+                  Contato
+                </Typography>
+                <TextField
+                  fullWidth
+                  label="Contato"
+                  name="contato"
+                  value={fornecedora.contato}
+                  variant="outlined"
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "#FFFFFF",
+                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={8} md={7}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                >
+                  Endereço
+                </Typography>
+                <TextField
+                  fullWidth
+                  label="Endereço"
+                  name="endereco"
+                  value={fornecedora.endereco}
+                  variant="outlined"
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "#FFFFFF",
+                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={8} md={7}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                >
+                  Chave Pix
+                </Typography>
+                <TextField
+                  fullWidth
+                  label="Chave Pix"
+                  name="chavePix"
+                  value={fornecedora.chavePix}
+                  variant="outlined"
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "#FFFFFF",
+                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={8} md={7}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                >
+                  Data de Nascimento
+                </Typography>
+                <TextField
+                  fullWidth
+                  label="Data de Nascimento"
+                  name="dataDeNascimento"
+                  value={fornecedora.dataDeNascimento}
+                  variant="outlined"
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "#FFFFFF",
+                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={8} md={7}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                >
+                  Contrato
+                </Typography>
+                {fornecedora.contratoUrl ? (
+                  <Button
+                    component="label"
+                    onClick={handleDownloadContrato}
+                    sx={{
+                      color: "Black",
+                      backgroundColor: "#50abe4",
+                      textTransform: "none",
+                      width: { xs: "100%", sm: "250px" },
+                      fontWeight: "bold",
+                      fontSize: { xs: "16px", md: "18px" },
+                      borderRadius: "50px",
+                      padding: "10px 20px",
+                      height: "56px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      "&:hover": {
+                        backgroundColor: "#003B6F",
+                      },
+                    }}
+                    startIcon={<Download />}
+                  >
+                    Visualizar Contrato
+                  </Button>
+                ) : (
+                  <Typography variant="body1" sx={{ ml: 1 }}>
+                    Contrato não disponível
+                  </Typography>
+                )}
               </Grid>
             </Grid>
           </CardContent>
