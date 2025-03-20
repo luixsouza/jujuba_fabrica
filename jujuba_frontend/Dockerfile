@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 
-ENV NEXT_PUBLIC_API_URL=http://backend:8080
+ENV NEXT_PUBLIC_API_URL=http://backend:8080/
 
 
 EXPOSE 3000
