@@ -1,0 +1,427 @@
+{
+	"info": {
+		"_postman_id": "7f6f6b27-83a1-456a-bc49-9012e93f05f8",
+		"name": "jujuba_fabrica",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "35373196",
+		"_collection_link": "https://jujuba-brech.postman.co/workspace/jujuba~30ad6169-b047-46c0-8910-68dee738f20a/collection/35373196-7f6f6b27-83a1-456a-bc49-9012e93f05f8?action=share&source=collection_link&creator=35373196"
+	},
+	"item": [
+		{
+			"name": "CRUD - Fornecedoras",
+			"item": [
+				{
+					"name": "Cadastrar Fornecedora",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "220302",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "luis",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "fornecedora\n",
+									"value": "{\n  \"nome\": \"teste1\",\n  \"contato\": \"62993876543\",\n  \"endereco\": \"Aldeia da Folha\",\n  \"chavePix\": \"luis@email.com\"\n}",
+									"type": "text"
+								},
+								{
+									"key": "contrato",
+									"type": "file",
+									"src": "postman-cloud:///1efa910a-a3e5-4f80-a2fc-d998be032fce",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/fornecedoras",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"fornecedoras"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Fornecedoras",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "220302",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "luis",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/fornecedoras/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"fornecedoras",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Fornecedora",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "220302",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "luis",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "fornecedora",
+									"value": "    {\n        \"id\": 2,\n        \"nome\": \"Luis Eduardo Souza\",\n        \"contato\": \"40028925\",\n        \"endereco\": \"Aldeia da Folha\",\n        \"chavePix\": \"luis@email.com\",\n        \"creditoLoja\": \"300\"\n    }",
+									"type": "text"
+								},
+								{
+									"key": "contrato",
+									"type": "file",
+									"src": "postman-cloud:///1efab295-6a7e-4fb0-aff3-10888e9adcc7"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/fornecedoras/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"fornecedoras",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Fornecedora",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "220302",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "luis",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/fornecedoras/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"fornecedoras",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Fornecedoras por ID",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "220302",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "luis",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "fornecedora",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "contrato",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/fornecedoras/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"fornecedoras",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CRUD - Lotes",
+			"item": [
+				{
+					"name": "Cadastrar Lote",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fornecedora\": {\r\n    \"id\": 2\r\n  },\r\n  \"produtos\": [\r\n    {\r\n      \"descricao\": \"Camisa do SANTOS FUTEBOL CLUBE\",\r\n      \"estadoConservacao\": \"EXCELENTE\",\r\n      \"genero\": \"MASCULINO\",\r\n      \"marca\": \"Umbro\",\r\n      \"preco\": 350,\r\n      \"tamanho\": \"P\"\r\n    }\r\n  ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/lotes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"lotes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Lotes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/lotes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"lotes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Lote",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/lotes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"lotes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Lote",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/lotes/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"lotes",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CRUD - Produtos",
+			"item": [
+				{
+					"name": "Listar Produtos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/produtos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"produtos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Produtos por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/produtos/21",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"produtos",
+								"21"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Produto",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/produtos/2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"produtos",
+								"2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
