@@ -1,5 +1,6 @@
 package com.jujuba.model;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -36,7 +37,7 @@ public class Fornecedora {
     private String chavePix;
 
     @Column(name = "credito_loja")
-    private Double creditoLoja;
+    private BigDecimal creditoLoja;
 
     @Column(name = "contrato_url")
     private String contratoUrl;
