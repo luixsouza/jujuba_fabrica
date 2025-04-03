@@ -1,16 +1,15 @@
 package com.jujuba.service;
 
+import com.jujuba.mapper.VendaMapper;
 import com.jujuba.model.Fornecedora;
 import com.jujuba.model.Venda;
 import com.jujuba.repository.FornecedoraRepository;
 import com.jujuba.repository.VendaRepository;
-import com.jujuba.utils.enums.TipoVenda;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -23,15 +22,9 @@ public class VendaService {
 
     public Venda finalizarVendaSimples() {
         BigDecimal totalVenda = carrinhoService.calcularTotal();
-
-        Venda venda = new Venda();
-        venda.setTipoVenda(TipoVenda.VENDA_SIMPLES);
-        venda.setTotal(totalVenda);
-        venda.setValorBrecho(totalVenda);
-        venda.setValorFornecedora(BigDecimal.ZERO);
+        Venda venda = VendaMapper.mapearVendaSimples(totalVenda);
 
         carrinhoService.limparCarrinho();
-
         return vendaRepository.save(venda);
     }
 
@@ -44,21 +37,19 @@ public class VendaService {
         }
 
         Fornecedora fornecedora = fornecedoraOptional.get();
-        BigDecimal valorFornecedora = totalVenda.multiply(new BigDecimal("0.60"));
-        BigDecimal valorBrecho = totalVenda.multiply(new BigDecimal("0.40"));
-
-        fornecedora.setCreditoLoja(fornecedora.getCreditoLoja().add(valorFornecedora));
-
-        Venda venda = new Venda();
-        venda.setTipoVenda(TipoVenda.VENDA_FORNECEDOR);
-        venda.setTotal(totalVenda);
-        venda.setValorBrecho(valorBrecho);
-        venda.setValorFornecedora(valorFornecedora);
-        venda.setFornecedora(fornecedora);
+        Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora);
 
         fornecedoraRepository.save(fornecedora);
         carrinhoService.limparCarrinho();
-
         return vendaRepository.save(venda);
+    }
+
+    public List<Venda> listarTodas() {
+        return vendaRepository.findAll();
+    }
+
+    public Venda buscarPorId(Long id) {
+        return vendaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Venda não encontrada!"));
     }
 }
