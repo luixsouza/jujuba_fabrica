@@ -2,6 +2,7 @@ package com.jujuba.service;
 
 import com.jujuba.mapper.VendaMapper;
 import com.jujuba.model.Fornecedora;
+import com.jujuba.model.Produto;
 import com.jujuba.model.Venda;
 import com.jujuba.repository.FornecedoraRepository;
 import com.jujuba.repository.VendaRepository;
@@ -22,7 +23,13 @@ public class VendaService {
 
     public Venda finalizarVendaSimples() {
         BigDecimal totalVenda = carrinhoService.calcularTotal();
-        Venda venda = VendaMapper.mapearVendaSimples(totalVenda);
+        List<Produto> produtosCarrinho = carrinhoService.listarProdutos();
+
+        if (produtosCarrinho.isEmpty()) {
+            throw new RuntimeException("O carrinho está vazio!");
+        }
+
+        Venda venda = VendaMapper.mapearVendaSimples(totalVenda, produtosCarrinho);
 
         carrinhoService.limparCarrinho();
         return vendaRepository.save(venda);
@@ -30,6 +37,12 @@ public class VendaService {
 
     public Venda finalizarVendaFornecedora(Long fornecedoraId) {
         BigDecimal totalVenda = carrinhoService.calcularTotal();
+        List<Produto> produtosCarrinho = carrinhoService.listarProdutos();
+
+        if (produtosCarrinho.isEmpty()) {
+            throw new RuntimeException("O carrinho está vazio!");
+        }
+
         Optional<Fornecedora> fornecedoraOptional = fornecedoraRepository.findById(fornecedoraId);
 
         if (fornecedoraOptional.isEmpty()) {
@@ -37,9 +50,8 @@ public class VendaService {
         }
 
         Fornecedora fornecedora = fornecedoraOptional.get();
-        Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora);
+        Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora, produtosCarrinho);
 
-        fornecedoraRepository.save(fornecedora);
         carrinhoService.limparCarrinho();
         return vendaRepository.save(venda);
     }
@@ -51,5 +63,5 @@ public class VendaService {
     public Venda buscarPorId(Long id) {
         return vendaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Venda não encontrada!"));
-    }
+    }    
 }

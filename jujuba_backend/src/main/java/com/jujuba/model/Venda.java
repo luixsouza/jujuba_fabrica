@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.jujuba.utils.enums.TipoVenda;
 
 @Entity
@@ -15,10 +16,12 @@ import com.jujuba.utils.enums.TipoVenda;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Venda {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, updatable = false)
     private LocalDateTime dataVenda;
 
     @Enumerated(EnumType.STRING)
@@ -32,6 +35,12 @@ public class Venda {
     @ManyToOne
     private Fornecedora fornecedora;
 
-    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<ItemVenda> itens;
+
+    @PrePersist
+    public void prePersist() {
+        this.dataVenda = LocalDateTime.now();
+    }
 }

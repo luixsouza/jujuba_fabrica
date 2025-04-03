@@ -18,9 +18,9 @@ public class CarrinhoController {
         this.carrinhoService = carrinhoService;
     }
 
-    @PostMapping("/adicionar")
-    public ResponseEntity<Void> adicionarProduto(@RequestBody Produto produto) {
-        carrinhoService.adicionarProduto(produto);
+    @PostMapping("/adicionar/{produtoId}")
+    public ResponseEntity<Void> adicionarProduto(@PathVariable Long produtoId) {
+        carrinhoService.adicionarProduto(produtoId);
         return ResponseEntity.ok().build();
     }
 

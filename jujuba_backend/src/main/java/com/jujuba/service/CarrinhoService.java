@@ -1,6 +1,8 @@
 package com.jujuba.service;
 
 import com.jujuba.model.Produto;
+import com.jujuba.repository.ProdutoRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -8,11 +10,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CarrinhoService {
 
+    private final ProdutoRepository produtoRepository;
     private final List<Produto> carrinho = new ArrayList<>();
 
-    public void adicionarProduto(Produto produto) {
+    public void adicionarProduto(Long produtoId) {
+        Produto produto = produtoRepository.findById(produtoId)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
         carrinho.add(produto);
     }
 

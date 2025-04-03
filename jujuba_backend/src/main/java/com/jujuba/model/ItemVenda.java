@@ -2,6 +2,8 @@ package com.jujuba.model;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,6 +22,7 @@ public class ItemVenda {
 
     @ManyToOne
     @JoinColumn(name = "venda_id", nullable = false)
+    @JsonBackReference
     private Venda venda;
 
     @Column(name = "quantidade", nullable = false)
