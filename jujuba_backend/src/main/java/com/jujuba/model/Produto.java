@@ -49,9 +49,8 @@ public class Produto {
     @Column(name = "preco", nullable = false)
     private BigDecimal preco;
     
-    @Size(max = 300)
-    @Column(name = "imagem_url", length = 300)
-    private String imagemUrl;
+    @Column(nullable = false)
+    private Integer quantidade = 1;
     
     @ManyToOne
     @JoinColumn(name = "lote_id", nullable = false)

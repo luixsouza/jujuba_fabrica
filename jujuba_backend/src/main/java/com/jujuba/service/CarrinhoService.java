@@ -19,8 +19,13 @@ public class CarrinhoService {
     public void adicionarProduto(Long produtoId) {
         Produto produto = produtoRepository.findById(produtoId)
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
+    
+        if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
+            throw new RuntimeException("Produto indisponível ou com estoque zerado!");
+        }
+    
         carrinho.add(produto);
-    }
+    }    
 
     public void removerProduto(Long produtoId) {
         carrinho.removeIf(produto -> produto.getId().equals(produtoId));
