@@ -1,5 +1,9 @@
 package com.jujuba.service;
 
+import com.jujuba.exception.EmptyCartException;
+import com.jujuba.exception.FornecedoraNotFoundException;
+import com.jujuba.exception.ProductUnavailableException;
+import com.jujuba.exception.SaleNotFoundException;
 import com.jujuba.mapper.VendaMapper;
 import com.jujuba.model.Fornecedora;
 import com.jujuba.model.Produto;
@@ -26,56 +30,55 @@ public class VendaService {
     public Venda finalizarVendaSimples() {
         BigDecimal totalVenda = carrinhoService.calcularTotal();
         List<Produto> produtosCarrinho = carrinhoService.listarProdutos();
-    
+
         if (produtosCarrinho.isEmpty()) {
-            throw new RuntimeException("O carrinho está vazio!");
+            throw new EmptyCartException();
         }
-    
+
         for (Produto produto : produtosCarrinho) {
             if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
-                throw new RuntimeException("Produto '" + produto.getDescricao() + "' está indisponível no estoque!");
+                throw new ProductUnavailableException(produto.getDescricao());
             }
         }
-    
+
         Venda venda = VendaMapper.mapearVendaSimples(totalVenda, produtosCarrinho);
-    
+
         for (Produto produto : produtosCarrinho) {
             produto.setQuantidade(produto.getQuantidade() - 1);
             produtoRepository.save(produto);
         }
-    
+
         carrinhoService.limparCarrinho();
         return vendaRepository.save(venda);
-    }    
+    }
 
     public Venda finalizarVendaFornecedora(Long fornecedoraId) {
         BigDecimal totalVenda = carrinhoService.calcularTotal();
         List<Produto> produtosCarrinho = carrinhoService.listarProdutos();
-    
+
         if (produtosCarrinho.isEmpty()) {
-            throw new RuntimeException("O carrinho está vazio!");
+            throw new EmptyCartException();
         }
-    
+
         for (Produto produto : produtosCarrinho) {
             if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
-                throw new RuntimeException("Produto '" + produto.getDescricao() + "' está indisponível no estoque!");
+                throw new ProductUnavailableException(produto.getDescricao());
             }
         }
-    
+
         Optional<Fornecedora> fornecedoraOptional = fornecedoraRepository.findById(fornecedoraId);
-    
         if (fornecedoraOptional.isEmpty()) {
-            throw new RuntimeException("Fornecedora não encontrada!");
+            throw new FornecedoraNotFoundException();
         }
-    
+
         Fornecedora fornecedora = fornecedoraOptional.get();
         Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora, produtosCarrinho);
-    
+
         for (Produto produto : produtosCarrinho) {
             produto.setQuantidade(produto.getQuantidade() - 1);
             produtoRepository.save(produto);
         }
-    
+
         carrinhoService.limparCarrinho();
         return vendaRepository.save(venda);
     }
@@ -85,7 +88,10 @@ public class VendaService {
     }
 
     public Venda buscarPorId(Long id) {
-        return vendaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Venda não encontrada!"));
+        Optional<Venda> vendaOptional = vendaRepository.findById(id);
+        if (vendaOptional.isEmpty()) {
+            throw new SaleNotFoundException();
+        }
+        return vendaOptional.get();
     }    
 }
