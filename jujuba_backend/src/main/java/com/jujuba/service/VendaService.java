@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,58 +27,49 @@ public class VendaService {
     private final ProdutoRepository produtoRepository;
 
     public Venda finalizarVendaSimples() {
-        BigDecimal totalVenda = carrinhoService.calcularTotal();
         List<Produto> produtosCarrinho = carrinhoService.listarProdutos();
 
         if (produtosCarrinho.isEmpty()) {
-            throw new EmptyCartException();
+            throw new EmptyCartException("O carrinho está vazio. Adicione produtos antes de finalizar a venda.");
         }
 
         for (Produto produto : produtosCarrinho) {
             if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
-                throw new ProductUnavailableException(produto.getDescricao());
+                throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produto.getDescricao());
             }
         }
 
+        BigDecimal totalVenda = carrinhoService.calcularTotal();
         Venda venda = VendaMapper.mapearVendaSimples(totalVenda, produtosCarrinho);
 
-        for (Produto produto : produtosCarrinho) {
-            produto.setQuantidade(produto.getQuantidade() - 1);
-            produtoRepository.save(produto);
-        }
-
+        atualizarEstoque(produtosCarrinho);
         carrinhoService.limparCarrinho();
+
         return vendaRepository.save(venda);
     }
 
     public Venda finalizarVendaFornecedora(Long fornecedoraId) {
-        BigDecimal totalVenda = carrinhoService.calcularTotal();
         List<Produto> produtosCarrinho = carrinhoService.listarProdutos();
 
         if (produtosCarrinho.isEmpty()) {
-            throw new EmptyCartException();
+            throw new EmptyCartException("O carrinho está vazio. Adicione produtos antes de finalizar a venda.");
         }
 
         for (Produto produto : produtosCarrinho) {
             if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
-                throw new ProductUnavailableException(produto.getDescricao());
+                throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produto.getDescricao());
             }
         }
 
-        Optional<Fornecedora> fornecedoraOptional = fornecedoraRepository.findById(fornecedoraId);
-        if (fornecedoraOptional.isEmpty()) {
-            throw new FornecedoraNotFoundException();
-        }
+        Fornecedora fornecedora = fornecedoraRepository.findById(fornecedoraId)
+                .orElseThrow(() -> new FornecedoraNotFoundException("Fornecedora com ID " + fornecedoraId + " não encontrada."));
 
-        Fornecedora fornecedora = fornecedoraOptional.get();
+        BigDecimal totalVenda = carrinhoService.calcularTotal();
         Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora, produtosCarrinho);
 
-        for (Produto produto : produtosCarrinho) {
-            produto.setQuantidade(produto.getQuantidade() - 1);
-            produtoRepository.save(produto);
-        }
-
+        atualizarEstoque(produtosCarrinho);
         carrinhoService.limparCarrinho();
+
         return vendaRepository.save(venda);
     }
 
@@ -88,10 +78,14 @@ public class VendaService {
     }
 
     public Venda buscarPorId(Long id) {
-        Optional<Venda> vendaOptional = vendaRepository.findById(id);
-        if (vendaOptional.isEmpty()) {
-            throw new SaleNotFoundException();
+        return vendaRepository.findById(id)
+                .orElseThrow(() -> new SaleNotFoundException("Venda com ID " + id + " não encontrada."));
+    }
+
+    private void atualizarEstoque(List<Produto> produtos) {
+        for (Produto produto : produtos) {
+            produto.setQuantidade(produto.getQuantidade() - 1);
+            produtoRepository.save(produto);
         }
-        return vendaOptional.get();
-    }    
+    }
 }
