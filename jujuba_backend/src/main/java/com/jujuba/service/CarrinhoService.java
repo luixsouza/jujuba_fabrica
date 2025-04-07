@@ -1,5 +1,7 @@
 package com.jujuba.service;
 
+import com.jujuba.exception.ProductUnavailableException;
+import com.jujuba.exception.ResourceNotFoundException;
 import com.jujuba.model.Produto;
 import com.jujuba.repository.ProdutoRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,17 +20,20 @@ public class CarrinhoService {
 
     public void adicionarProduto(Long produtoId) {
         Produto produto = produtoRepository.findById(produtoId)
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
-    
+                .orElseThrow(() -> new ResourceNotFoundException("Produto com ID " + produtoId + " não encontrado."));
+
         if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
-            throw new RuntimeException("Produto indisponível ou com estoque zerado!");
+            throw new ProductUnavailableException("Produto com ID " + produtoId + " está indisponível ou com estoque zerado.");
         }
-    
+
         carrinho.add(produto);
-    }    
+    }
 
     public void removerProduto(Long produtoId) {
-        carrinho.removeIf(produto -> produto.getId().equals(produtoId));
+        boolean removido = carrinho.removeIf(produto -> produto.getId().equals(produtoId));
+        if (!removido) {
+            throw new ResourceNotFoundException("Produto com ID " + produtoId + " não está no carrinho.");
+        }
     }
 
     public List<Produto> listarProdutos() {
