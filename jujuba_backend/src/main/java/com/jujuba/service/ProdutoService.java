@@ -1,10 +1,9 @@
 package com.jujuba.service;
 
+import com.jujuba.exception.ProductNotFoundException;
 import com.jujuba.model.Produto;
 import com.jujuba.repository.ProdutoRepository;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,10 +19,12 @@ public class ProdutoService {
     }
 
     public Produto buscarPorId(Long id) {
-        return produtoRepository.findById(id).orElse(null);
+        return produtoRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
     }
 
     public void excluir(Long id) {
-        produtoRepository.deleteById(id);
+        Produto produto = buscarPorId(id);
+        produtoRepository.delete(produto);
     }
 }
