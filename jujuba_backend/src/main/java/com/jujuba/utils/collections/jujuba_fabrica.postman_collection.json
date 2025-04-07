@@ -44,14 +44,13 @@
 							"formdata": [
 								{
 									"key": "fornecedora\n",
-									"value": "{\n  \"nome\": \"teste1\",\n  \"contato\": \"62993876543\",\n  \"endereco\": \"Aldeia da Folha\",\n  \"chavePix\": \"luis@email.com\"\n}",
+									"value": "{\n  \"nome\": \"Luis Eduardo\",\n  \"contato\": \"62993876543\",\n  \"endereco\": \"Aldeia da Folha\",\n  \"chavePix\": \"luis@email.com\"\n}",
 									"type": "text"
 								},
 								{
 									"key": "contrato",
 									"type": "file",
-									"src": "postman-cloud:///1efa910a-a3e5-4f80-a2fc-d998be032fce",
-									"disabled": true
+									"src": "postman-cloud:///1efa910a-a3e5-4f80-a2fc-d998be032fce"
 								}
 							]
 						},
@@ -91,7 +90,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/fornecedoras/1",
+							"raw": "http://localhost:8080/api/fornecedoras",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -99,8 +98,7 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"fornecedoras",
-								"1"
+								"fornecedoras"
 							]
 						}
 					},
@@ -271,7 +269,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"fornecedora\": {\r\n    \"id\": 2\r\n  },\r\n  \"produtos\": [\r\n    {\r\n      \"descricao\": \"Camisa do SANTOS FUTEBOL CLUBE\",\r\n      \"estadoConservacao\": \"EXCELENTE\",\r\n      \"genero\": \"MASCULINO\",\r\n      \"marca\": \"Umbro\",\r\n      \"preco\": 350,\r\n      \"tamanho\": \"P\"\r\n    }\r\n  ]\r\n}\r\n",
+							"raw": "{\r\n  \"fornecedora\": {\r\n    \"id\": 1\r\n  },\r\n  \"produtos\": [\r\n    {\r\n      \"descricao\": \"Camisa do PEIXÃO\",\r\n      \"estadoConservacao\": \"BOM\",\r\n      \"genero\": \"UNISSEX\",\r\n      \"marca\": \"Umbro\",\r\n      \"preco\": 125.00,\r\n      \"tamanho\": \"P\"\r\n    }\r\n  ]\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -385,7 +383,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/produtos/21",
+							"raw": "http://localhost:8080/api/produtos/1",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -394,7 +392,7 @@
 							"path": [
 								"api",
 								"produtos",
-								"21"
+								"1"
 							]
 						}
 					},
@@ -416,6 +414,174 @@
 								"api",
 								"produtos",
 								"2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CRUD - Vendas",
+			"item": [
+				{
+					"name": "Venda Simples",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/vendas/finalizar/simples",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"vendas",
+								"finalizar",
+								"simples"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Venda Fornecedora",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/vendas/finalizar/fornecedora/5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"vendas",
+								"finalizar",
+								"fornecedora",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar vendas finalizadas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/vendas",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"vendas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar venda por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/vendas/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"vendas",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CRUD - Carrinho",
+			"item": [
+				{
+					"name": "Adicionar Produto no Carrinho",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/carrinho/adicionar/2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"carrinho",
+								"adicionar",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Produtos no Carrinho",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/carrinho",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"carrinho"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Calcular valor total do Carrinho",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Remover produto do carrinho",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/carrinho/remover/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"carrinho",
+								"remover",
+								""
 							]
 						}
 					},
