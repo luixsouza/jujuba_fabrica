@@ -5,6 +5,8 @@ import com.jujuba.service.VendaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,13 +14,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/vendas")
+@RequiredArgsConstructor
+@Tag(name = "Vendas", description = "API para gerenciamento de Vendas")
 public class VendaController {
 
     private final VendaService vendaService;
-
-    public VendaController(VendaService vendaService) {
-        this.vendaService = vendaService;
-    }
 
     @Operation(summary = "Finaliza uma venda simples")
     @ApiResponses(value = {
@@ -51,8 +51,7 @@ public class VendaController {
     })
     @GetMapping
     public ResponseEntity<List<Venda>> listarTodasVendas() {
-        List<Venda> vendas = vendaService.listarTodas();
-        return ResponseEntity.ok(vendas);
+        return ResponseEntity.ok(vendaService.listarTodas());
     }
 
     @Operation(summary = "Busca uma venda por ID")
