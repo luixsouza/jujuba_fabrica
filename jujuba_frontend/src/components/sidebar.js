@@ -89,7 +89,7 @@ export default function Sidebar({ lotes = [] }) {
         </Tooltip>
 
         <Tooltip title="Acessar Caixa" placement="right" arrow>
-          <ListItem button sx={getMenuItemStyle("caixa")} onClick={() => handleNavigation("/Caixa", "caixa")}>
+          <ListItem button sx={getMenuItemStyle("caixa")} onClick={() => handleNavigation("../../vendas/vendas", "caixa")}>
             <ListItemIcon sx={{ minWidth: "40px" }}>
               <DollarSign {...iconStyle} color="black" />
             </ListItemIcon>

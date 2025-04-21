@@ -1,35 +1,17 @@
 "use client"
 
-import Head from "next/head"
-import { useFormik } from "formik"
-import * as Yup from "yup"
 import { useState } from "react"
-import {
-  Box,
-  Typography,
-  Button,
-  TextField,
-  InputAdornment,
-  IconButton,
-  Container,
-  Paper,
-  Avatar,
-  Divider,
-} from "@mui/material"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Box, Typography, Button, TextField, Container, Paper, InputAdornment, IconButton } from "@mui/material"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff"
-import LoginIcon from "@mui/icons-material/Login"
-import Link from "next/link"
 
-const Login = () => {
-  const [invalidEmail, setInvalidEmail] = useState("")
+export default function Login() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
-
-  const buildResetPasswordConfirmUrl = (email) => {
-    return `/auth/reset-password/${encodeURIComponent(email)}`
-  }
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -40,375 +22,293 @@ const Login = () => {
     setShowPassword(!showPassword)
   }
 
-  const formik = useFormik({
-    initialValues: {
-      email: "",
-      password: "",
-    },
-    validationSchema: Yup.object({
-      email: Yup.string()
-        .email("Email inválido")
-        .required("Email é obrigatório")
-        .matches(
-          /^[\w._%+-]+@(gmail\.com|hotmail\.com|yahoo\.com|outlook\.com)$/,
-          "O e-mail deve ser de um dos domínios permitidos: gmail.com, hotmail.com, yahoo.com, outlook.com",
-        ),
-      password: Yup.string().required("Senha é obrigatória").min(8, "A senha deve ter pelo menos 8 caracteres"),
-    }),
-    onSubmit: async (values) => {
-      setInvalidEmail("")
-      try {
-        const resetPasswordConfirmUrl = buildResetPasswordConfirmUrl(values.email)
-
-        console.log("URL de confirmação:", resetPasswordConfirmUrl)
-        alert("Login realizado com sucesso!")
-        router.push("/fornecedores/fornecedores_tabela")
-      } catch (error) {
-        console.error("Erro ao fazer login:", error)
-        formik.setErrors({ submit: "Ocorreu um erro ao fazer login. Tente novamente." })
-        setInvalidEmail(values.email)
-      }
-    },
-    validateOnChange: false,
-    validateOnBlur: true,
-  })
-
   return (
-    <>
-      <Head>
-        <title>Login - Brechó da Jujuba</title>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </Head>
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          background: "linear-gradient(135deg, #FADADD 0%, #9AE4FF 100%)",
-        }}
-      >
-        <Container maxWidth="sm">
-          <Paper
-            elevation={3}
+    <Box
+      sx={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "linear-gradient(135deg, #FADADD 0%, #9AE4FF 100%)",
+      }}
+    >
+      <Container maxWidth="md">
+        <Paper
+          elevation={3}
+          sx={{
+            display: "flex",
+            borderRadius: "24px",
+            overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+            height: "450px",
+            width: "100%",
+            maxWidth: "800px",
+            margin: "0 auto",
+          }}
+        >
+          {/* Left side - Logo and clouds */}
+          <Box
             sx={{
-              padding: { xs: "1.5rem", sm: "2.5rem" },
-              borderRadius: "16px",
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              backdropFilter: "blur(10px)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-              transition: "transform 0.3s ease-in-out",
-              "&:hover": {
-                transform: "translateY(-5px)",
-              },
-              overflow: "hidden",
+              width: "50%",
+              backgroundColor: "#9AE4FF",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
               position: "relative",
+              padding: 4,
             }}
           >
-            {/* Decorative elements */}
+            {/* Clouds */}
             <Box
               sx={{
                 position: "absolute",
-                top: -50,
-                right: -50,
-                width: 150,
-                height: 150,
-                borderRadius: "50%",
-                background: "linear-gradient(45deg, rgba(154, 228, 255, 0.2), rgba(250, 218, 221, 0.2))",
-                zIndex: 0,
+                top: "15%",
+                left: "15%",
+                width: "60px",
+                height: "30px",
+                backgroundColor: "white",
+                borderRadius: "30px",
               }}
             />
             <Box
               sx={{
                 position: "absolute",
-                bottom: -30,
-                left: -30,
-                width: 100,
-                height: 100,
-                borderRadius: "50%",
-                background: "linear-gradient(45deg, rgba(250, 218, 221, 0.2), rgba(154, 228, 255, 0.2))",
-                zIndex: 0,
+                bottom: "20%",
+                right: "20%",
+                width: "80px",
+                height: "40px",
+                backgroundColor: "white",
+                borderRadius: "40px",
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                top: "70%",
+                left: "25%",
+                width: "50px",
+                height: "25px",
+                backgroundColor: "white",
+                borderRadius: "25px",
               }}
             />
 
-            <Box sx={{ position: "relative", zIndex: 1 }}>
-              <Box sx={{ textAlign: "center", mb: 4 }}>
-                <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-                  <Avatar
-                    sx={{
-                      width: 70,
-                      height: 70,
-                      backgroundColor: "rgba(250, 218, 221, 0.8)",
-                      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-                    }}
-                  >
-                    <LoginIcon sx={{ fontSize: 40, color: "#fff" }} />
-                  </Avatar>
-                </Box>
+            {/* Logo */}
+            <Box
+              sx={{
+                width: "180px",
+                height: "180px",
+                borderRadius: "50%",
+                backgroundColor: "#FFD700",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  width: "160px",
+                  height: "160px",
+                  borderRadius: "50%",
+                  backgroundColor: "#9AE4FF",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  border: "4px solid white",
+                }}
+              >
                 <Typography
-                  variant="h4"
                   sx={{
-                    fontSize: { xs: "1.5rem", sm: "1.8rem" },
-                    fontWeight: 700,
-                    color: "#333",
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    mb: 1,
+                    fontFamily: "'Comic Sans MS', cursive",
+                    fontSize: "24px",
+                    color: "#FF69B4",
+                    fontWeight: "bold",
                   }}
                 >
-                  Brechó da Jujuba
+                  jujuba
                 </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontSize: "0.9rem",
-                    color: "#666",
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    mb: 1,
-                  }}
-                >
-                  Entre com suas credenciais para acessar o sistema
-                </Typography>
-                <Divider sx={{ width: "60%", margin: "1rem auto", opacity: 0.6 }} />
               </Box>
+            </Box>
 
-              <form onSubmit={formik.handleSubmit}>
-                <Box sx={{ mb: 3 }}>
-                  <TextField
-                    fullWidth
-                    id="email"
-                    name="email"
-                    label="Email"
-                    variant="outlined"
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.email && Boolean(formik.errors.email)}
-                    helperText={formik.touched.email && formik.errors.email}
-                    sx={{
-                      mb: 2,
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#9AE4FF",
-                          borderWidth: "2px",
-                        },
-                        "&:hover fieldset": {
-                          borderColor: "#FADADD",
-                        },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": {
-                        color: "#9AE4FF",
-                      },
-                    }}
-                  />
-                  <TextField
-                    fullWidth
-                    id="password"
-                    name="password"
-                    label="Senha"
-                    type={showPassword ? "text" : "password"}
-                    variant="outlined"
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.password && Boolean(formik.errors.password)}
-                    helperText={formik.touched.password && formik.errors.password}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={togglePasswordVisibility}
-                            edge="end"
-                            sx={{
-                              color: "#666",
-                              "&:hover": {
-                                color: "#9AE4FF",
-                                background: "rgba(154, 228, 255, 0.1)",
-                              },
-                            }}
-                          >
-                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#9AE4FF",
-                          borderWidth: "2px",
-                        },
-                        "&:hover fieldset": {
-                          borderColor: "#FADADD",
-                        },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": {
-                        color: "#9AE4FF",
-                      },
-                    }}
-                  />
-                </Box>
+            {/* Circular rings around the logo */}
+            {[1, 2, 3, 4].map((i) => (
+              <Box
+                key={i}
+                sx={{
+                  position: "absolute",
+                  width: `${180 + i * 20}px`,
+                  height: `${180 + i * 20}px`,
+                  borderRadius: "50%",
+                  border: "1px solid rgba(255, 255, 255, 0.5)",
+                  zIndex: 0,
+                }}
+              />
+            ))}
+          </Box>
 
-                <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-                  <Link href="/reset_password/reset_password" passHref>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#9AE4FF",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        "&:hover": {
-                          textDecoration: "underline",
-                        },
-                      }}
-                    >
-                      Esqueceu sua senha?
-                    </Typography>
-                  </Link>
-                </Box>
+          {/* Right side - Login form */}
+          <Box
+            sx={{
+              width: "50%",
+              backgroundColor: "#FADADD",
+              padding: 4,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+            }}
+          >
+            <Typography
+              variant="h4"
+              sx={{
+                textAlign: "center",
+                fontWeight: "bold",
+                color: "#333",
+                mb: 1,
+              }}
+            >
+              Login
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                textAlign: "center",
+                color: "#555",
+                mb: 4,
+              }}
+            >
+              Entre com seus dados
+            </Typography>
 
+            <form onSubmit={handleSubmit}>
+              <TextField
+                fullWidth
+                id="email"
+                name="email"
+                label="Email"
+                variant="outlined"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                sx={{
+                  mb: 2,
+                  backgroundColor: "white",
+                  borderRadius: "4px",
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: "#E0E0E0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#9AE4FF",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#9AE4FF",
+                    },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "#9AE4FF",
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                id="password"
+                name="password"
+                label="Senha"
+                type={showPassword ? "text" : "password"}
+                variant="outlined"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={togglePasswordVisibility}
+                        edge="end"
+                        sx={{
+                          color: "#666",
+                          "&:hover": {
+                            color: "#9AE4FF",
+                          },
+                        }}
+                      >
+                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  mb: 3,
+                  backgroundColor: "white",
+                  borderRadius: "4px",
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: "#E0E0E0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#9AE4FF",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#9AE4FF",
+                    },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "#9AE4FF",
+                  },
+                }}
+              />
+
+              <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
                 <Button
                   type="submit"
-                  fullWidth
                   sx={{
-                    py: 1.5,
-                    background: "linear-gradient(90deg, #FADADD 0%, #9AE4FF 100%)",
+                    py: 1,
+                    px: 4,
+                    backgroundColor: "#9AE4FF",
                     color: "#333",
                     fontWeight: 600,
-                    borderRadius: "10px",
+                    borderRadius: "20px",
                     textTransform: "none",
                     fontSize: "1rem",
                     boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",
-                    transition: "all 0.3s ease",
                     "&:hover": {
-                      background: "linear-gradient(90deg, #f8c8cb 0%, #7bc8ff 100%)",
-                      boxShadow: "0 6px 15px rgba(0, 0, 0, 0.1)",
-                      transform: "translateY(-2px)",
+                      backgroundColor: "#7bc8ff",
                     },
-                    "&:active": {
-                      transform: "translateY(0)",
-                    },
+                    transition: "all 0.3s ease",
+                    minWidth: "120px",
                   }}
                 >
                   Entrar
                 </Button>
-
-                <Box sx={{ mt: 3, textAlign: "center" }}>
-                  <Divider sx={{ width: "100%", margin: "1rem auto", opacity: 0.6 }}>
-                    <Typography variant="body2" sx={{ color: "#666", px: 1, fontSize: "0.8rem" }}>
-                      OU
-                    </Typography>
-                  </Divider>
-                  <Typography variant="body2" sx={{ color: "#666", mb: 1, mt: 2 }}>
-                    Não tem uma conta?
-                  </Typography>
-                  <Link href="../singup/singup" passHref>
-                    <Button
-                      fullWidth
-                      sx={{
-                        py: 1.5,
-                        background: "linear-gradient(90deg, #9AE4FF 0%, #FADADD 100%)",
-                        color: "#333",
-                        fontWeight: 600,
-                        borderRadius: "10px",
-                        textTransform: "none",
-                        fontSize: "1rem",
-                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          background: "linear-gradient(90deg, #7bc8ff 0%, #f8c8cb 100%)",
-                          boxShadow: "0 6px 15px rgba(0, 0, 0, 0.1)",
-                          transform: "translateY(-2px)",
-                        },
-                        "&:active": {
-                          transform: "translateY(0)",
-                        },
-                      }}
-                    >
-                      Criar Conta
-                    </Button>
-                  </Link>
-                </Box>
-              </form>
-
-              {formik.errors.submit && (
-                <Typography
-                  color="error"
-                  sx={{
-                    mt: 3,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    textAlign: "center",
-                  }}
-                  variant="body2"
-                >
-                  {formik.errors.submit}
-                </Typography>
-              )}
-
-              <Box sx={{ mt: 4, textAlign: "center" }}>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "#888",
-                    fontSize: "0.75rem",
-                  }}
-                >
-                  © 2024 Brechó da Jujuba. Todos os direitos reservados.
-                </Typography>
               </Box>
-            </Box>
-          </Paper>
-        </Container>
 
-        {/* Animated dots */}
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            gap: "8px",
-          }}
-        >
-          {[0, 1, 2].map((i) => (
-            <Box
-              key={i}
-              sx={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                backgroundColor: i === 0 ? "#FADADD" : i === 1 ? "#f8c8cb" : "#9AE4FF",
-                animation: "bounce 1.5s infinite",
-                animationDelay: `${i * 0.15}s`,
-                "@keyframes bounce": {
-                  "0%, 100%": {
-                    transform: "translateY(0)",
-                  },
-                  "50%": {
-                    transform: "translateY(-10px)",
-                  },
-                },
-              }}
-            />
-          ))}
-        </Box>
-      </Box>
-    </>
+              <Box sx={{ textAlign: "center", mt: 2 }}>
+                <Link href="/reset_password/reset_password" passHref>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "#555",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Esqueceu a senha?
+                  </Typography>
+                </Link>
+              </Box>
+            </form>
+          </Box>
+        </Paper>
+      </Container>
+    </Box>
   )
 }
-
-export default Login
-

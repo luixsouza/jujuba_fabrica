@@ -19,6 +19,12 @@ import {
   Autocomplete,
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogActions,
+  Grid,
+  Divider,
+  Chip,
+  DialogContentText,
 } from "@mui/material"
 import {
   Search as SearchIcon,
@@ -26,6 +32,14 @@ import {
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
   Home as HomeIcon,
+  Close as CloseIcon,
+  CheckCircle as CheckCircleIcon,
+  AttachMoney as AttachMoneyIcon,
+  Inventory as InventoryIcon,
+  QrCode as QrCodeIcon,
+  Category as CategoryIcon,
+  CalendarMonth as CalendarMonthIcon,
+  Warning as WarningIcon,
 } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
 
@@ -33,18 +47,24 @@ export default function CarrinhoPage() {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [openSellModal, setOpenSellModal] = useState(false)
-
-  // Opções de pesquisa (simuladas)
-  const options = ["Crocs Minnie", "Camiseta Lacoste", "Tênis Nike", "Vestido Lilica"]
-
-  // Dados dos itens no carrinho
-  const cartItems = [
+  const [openViewModal, setOpenViewModal] = useState(false)
+  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false)
+  const [selectedItem, setSelectedItem] = useState(null)
+  const [itemToDelete, setItemToDelete] = useState(null)
+  const [cartItems, setCartItems] = useState([
     {
       id: 1,
       descricao: "Crocs Minnie Tamanho 19/20",
       estado: "Ótimo",
       valor: 47.5,
       lote: "B321",
+      codigo: "ALC352333",
+      categoria: "Calçados Infantis",
+      marca: "Crocs",
+      cor: "Rosa",
+      dataEntrada: "15/04/2023",
+      fornecedor: "Bazar Infantil",
+      observacoes: "Produto em excelente estado, sem marcas de uso. Acompanha todos os adesivos originais.",
     },
     {
       id: 2,
@@ -52,8 +72,18 @@ export default function CarrinhoPage() {
       estado: "Ótimo",
       valor: 68.9,
       lote: "B321",
+      codigo: "ALC123456",
+      categoria: "Roupas Infantis",
+      marca: "Lacoste",
+      cor: "Verde",
+      dataEntrada: "10/04/2023",
+      fornecedor: "Bazar Infantil",
+      observacoes: "Produto original em ótimo estado de conservação.",
     },
-  ]
+  ])
+
+  // Opções de pesquisa (simuladas)
+  const options = ["Crocs Minnie", "Camiseta Lacoste", "Tênis Nike", "Vestido Lilica"]
 
   const totalValue = cartItems.reduce((total, item) => total + item.valor, 0)
 
@@ -63,6 +93,44 @@ export default function CarrinhoPage() {
 
   const handleCloseSellModal = () => {
     setOpenSellModal(false)
+  }
+
+  const handleVenderParaFornecedor = () => {
+    router.push("/vendas/vender_fornecedor")
+  }
+
+  const handleConfirmDeleteItem = (id) => {
+    // Find the item to delete for showing in the confirmation dialog
+    const item = cartItems.find((item) => item.id === id)
+    setItemToDelete(item)
+    setOpenDeleteConfirmation(true)
+  }
+
+  const handleDeleteItem = () => {
+    if (itemToDelete) {
+      setCartItems(cartItems.filter((item) => item.id !== itemToDelete.id))
+
+      // If the item being deleted is also the selected item in the view modal, close the modal
+      if (selectedItem && selectedItem.id === itemToDelete.id) {
+        setOpenViewModal(false)
+      }
+    }
+    setOpenDeleteConfirmation(false)
+    setItemToDelete(null)
+  }
+
+  const handleCancelDelete = () => {
+    setOpenDeleteConfirmation(false)
+    setItemToDelete(null)
+  }
+
+  const handleViewItem = (item) => {
+    setSelectedItem(item)
+    setOpenViewModal(true)
+  }
+
+  const handleCloseViewModal = () => {
+    setOpenViewModal(false)
   }
 
   return (
@@ -337,16 +405,23 @@ export default function CarrinhoPage() {
                       }}
                     >
                       <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                        <IconButton size="small" sx={{ p: 0.5 }}>
+                        <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleViewItem(item)}>
                           <VisibilityIcon fontSize="small" />
                         </IconButton>
-                        <IconButton size="small" sx={{ p: 0.5 }}>
+                        <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleConfirmDeleteItem(item.id)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Box>
                     </TableCell>
                   </TableRow>
                 ))}
+                {cartItems.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} sx={{ textAlign: "center", py: 3 }}>
+                      Nenhum item no carrinho
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
 
@@ -370,6 +445,7 @@ export default function CarrinhoPage() {
             <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
               <Button
                 variant="contained"
+                onClick={handleVenderParaFornecedor}
                 sx={{
                   bgcolor: "#ffc1cc",
                   color: "black",
@@ -389,6 +465,7 @@ export default function CarrinhoPage() {
               <Button
                 variant="contained"
                 onClick={handleOpenSellModal}
+                disabled={cartItems.length === 0}
                 sx={{
                   bgcolor: "#ffc1cc",
                   color: "black",
@@ -401,6 +478,10 @@ export default function CarrinhoPage() {
                   boxShadow: "none",
                   fontSize: "1rem",
                   minWidth: "140px",
+                  "&.Mui-disabled": {
+                    bgcolor: "#f5f5f5",
+                    color: "#999",
+                  },
                 }}
               >
                 Vender
@@ -508,7 +589,7 @@ export default function CarrinhoPage() {
                     border: "1px solid #e0e0e0",
                   }}
                 >
-                  R$ 137,80
+                  R$ {totalValue.toFixed(2).replace(".", ",")}
                 </TableCell>
               </TableRow>
             </TableBody>
@@ -556,6 +637,265 @@ export default function CarrinhoPage() {
             </Button>
           </Box>
         </DialogContent>
+      </Dialog>
+
+      {/* Modal de Visualização do Produto */}
+      <Dialog
+        open={openViewModal}
+        onClose={handleCloseViewModal}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+          },
+        }}
+      >
+        {selectedItem && (
+          <>
+            <DialogTitle
+              sx={{
+                bgcolor: "#ffccd5",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                p: 2,
+              }}
+            >
+              <Typography variant="h5" sx={{ fontWeight: 700, color: "#333" }}>
+                Detalhes do Produto
+              </Typography>
+              <IconButton onClick={handleCloseViewModal} size="large" sx={{ color: "#333" }}>
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+
+            <DialogContent sx={{ p: 4 }}>
+              <Grid container spacing={4}>
+                {/* Imagem do Produto */}
+                <Grid item xs={12} md={4}>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      height: 250,
+                      bgcolor: "#f5f5f5",
+                      borderRadius: 2,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                      mb: 2,
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Imagem do Produto
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 3 }}>
+                    <Chip
+                      icon={<CheckCircleIcon />}
+                      label={selectedItem.estado}
+                      color="success"
+                      sx={{ fontWeight: 600, fontSize: "1rem", py: 2.5, px: 1 }}
+                    />
+                  </Box>
+                </Grid>
+
+                {/* Informações do Produto */}
+                <Grid item xs={12} md={8}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: "#333" }}>
+                    {selectedItem.descricao}
+                  </Typography>
+
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <AttachMoneyIcon sx={{ color: "#00509E", mr: 1 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: "#00509E" }}>
+                      R$ {selectedItem.valor.toFixed(2).replace(".", ",")}
+                    </Typography>
+                  </Box>
+
+                  <Grid container spacing={3} sx={{ mb: 3 }}>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <QrCodeIcon sx={{ color: "#666", mr: 1 }} />
+                        <Typography variant="body1">
+                          <strong>Código:</strong> {selectedItem.codigo}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <InventoryIcon sx={{ color: "#666", mr: 1 }} />
+                        <Typography variant="body1">
+                          <strong>Lote:</strong> {selectedItem.lote}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <CategoryIcon sx={{ color: "#666", mr: 1 }} />
+                        <Typography variant="body1">
+                          <strong>Categoria:</strong> {selectedItem.categoria}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <CalendarMonthIcon sx={{ color: "#666", mr: 1 }} />
+                        <Typography variant="body1">
+                          <strong>Data de Entrada:</strong> {selectedItem.dataEntrada}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                    Detalhes Adicionais
+                  </Typography>
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Marca:</strong> {selectedItem.marca}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Cor:</strong> {selectedItem.cor}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Fornecedor:</strong> {selectedItem.fornecedor}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+
+                  <Box sx={{ mt: 3, bgcolor: "#f5f5f5", p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                      Observações
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {selectedItem.observacoes}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </DialogContent>
+
+            <DialogActions sx={{ p: 3, bgcolor: "#f8f9fa" }}>
+              <Button
+                variant="outlined"
+                onClick={handleCloseViewModal}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  borderColor: "#ccc",
+                  color: "#666",
+                  "&:hover": {
+                    borderColor: "#999",
+                    bgcolor: "#f5f5f5",
+                  },
+                }}
+              >
+                Fechar
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => handleConfirmDeleteItem(selectedItem.id)}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  bgcolor: "#ffccd5",
+                  color: "#333",
+                  fontWeight: 600,
+                  "&:hover": {
+                    bgcolor: "#ffb6c1",
+                  },
+                }}
+              >
+                Remover do Carrinho
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+
+      {/* Confirmation Dialog for Deleting Items */}
+      <Dialog
+        open={openDeleteConfirmation}
+        onClose={handleCancelDelete}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+            maxWidth: "400px",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            bgcolor: "#ffccd5",
+            display: "flex",
+            alignItems: "center",
+            p: 2,
+          }}
+        >
+          <WarningIcon sx={{ mr: 1, color: "#d32f2f" }} />
+          <Typography variant="h6" sx={{ fontWeight: 600, color: "#333" }}>
+            Confirmar Remoção
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, pb: 2 }}>
+          <DialogContentText>
+            {itemToDelete ? (
+              <>
+                Tem certeza que deseja remover <strong>{itemToDelete.descricao}</strong> do carrinho?
+              </>
+            ) : (
+              "Tem certeza que deseja remover este item do carrinho?"
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, bgcolor: "#f8f9fa" }}>
+          <Button
+            onClick={handleCancelDelete}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              color: "#666",
+              "&:hover": {
+                bgcolor: "#f5f5f5",
+              },
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleDeleteItem}
+            variant="contained"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              bgcolor: "#ffccd5",
+              color: "#333",
+              fontWeight: 600,
+              "&:hover": {
+                bgcolor: "#ffb6c1",
+              },
+            }}
+          >
+            Confirmar
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   )

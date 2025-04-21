@@ -75,6 +75,10 @@ export default function VendasPage() {
     setOpenProductModal(false)
   }
 
+  const handleGoToCart = () => {
+    router.push("/vendas/carrinho")
+  }
+
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#a8e1ff" }}>
       {/* Importando o componente Sidebar */}
@@ -392,7 +396,7 @@ export default function VendasPage() {
                         <IconButton size="small" sx={{ p: 0.5 }} onClick={handleOpenProductModal}>
                           <VisibilityIcon fontSize="small" />
                         </IconButton>
-                        <IconButton size="small" sx={{ p: 0.5 }}>
+                        <IconButton size="small" sx={{ p: 0.5 }} onClick={handleGoToCart}>
                           <ShoppingCartIcon fontSize="small" />
                         </IconButton>
                       </Box>
@@ -572,6 +576,7 @@ export default function VendasPage() {
           <Button
             variant="contained"
             startIcon={<ShoppingCartIcon />}
+            onClick={handleGoToCart}
             sx={{
               borderRadius: 2,
               px: 3,
