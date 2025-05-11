@@ -24,73 +24,17 @@ import {
   DialogTitle,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material"
 import Sidebar from "../../components/sidebar"
 import EditIcon from "@mui/icons-material/Edit"
 import DeleteIcon from "@mui/icons-material/Delete"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import SearchIcon from "@mui/icons-material/Search"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 
-// Dados mockados para lotes
-const mockLotes = [
-  {
-    id: 1,
-    numero: "L001",
-    data: "2023-03-15",
-    fornecedora: "Fornecedora ABC Ltda",
-  },
-  {
-    id: 2,
-    numero: "L002",
-    data: "2023-04-20",
-    fornecedora: "Distribuidora XYZ S.A.",
-  },
-  {
-    id: 3,
-    numero: "L003",
-    data: "2023-05-10",
-    fornecedora: "Indústria Têxtil Nacional",
-  },
-  {
-    id: 4,
-    numero: "L004",
-    data: "2023-06-05",
-    fornecedora: "Confecções Moda Brasil",
-  },
-  {
-    id: 5,
-    numero: "L005",
-    data: "2023-07-12",
-    fornecedora: "Tecidos & Cia",
-  },
-  {
-    id: 6,
-    numero: "L006",
-    data: "2023-08-18",
-    fornecedora: "Fornecedora ABC Ltda",
-  },
-  {
-    id: 7,
-    numero: "L007",
-    data: "2023-09-22",
-    fornecedora: "Distribuidora XYZ S.A.",
-  },
-  {
-    id: 8,
-    numero: "L008",
-    data: "2023-10-30",
-    fornecedora: "Indústria Têxtil Nacional",
-  },
-]
-
-// Serviço mockado para lotes
-const LoteService = {
-  getLotes: () => Promise.resolve(mockLotes),
-  deleteLote: (id) => {
-    return Promise.resolve(true)
-  },
-}
+// Importando as funções da API
+import { listarLotes, deletarLote } from "../api/lotes"
 
 const EstoquePage = () => {
   const [lotes, setLotes] = useState([])
@@ -106,7 +50,6 @@ const EstoquePage = () => {
     severity: "success",
   })
 
-  // Initialize useRouter outside of conditional block
   const router = useRouter()
 
   useEffect(() => {
@@ -116,9 +59,19 @@ const EstoquePage = () => {
   const fetchLotes = async () => {
     setLoading(true)
     try {
-      // Usando o serviço mockado
-      const lotesData = await LoteService.getLotes()
-      setLotes(lotesData)
+      const response = await listarLotes()
+      if (response.data) {
+        // Formatando os dados recebidos da API
+        const lotesFormatados = response.data.map((lote) => ({
+          id: lote.id,
+          numero: `L${lote.id}`,
+          data: lote.dataCriacao || new Date().toISOString(),
+          fornecedora: lote.fornecedora?.nome || "Fornecedora não especificada",
+        }))
+        setLotes(lotesFormatados)
+      } else {
+        setLotes([])
+      }
     } catch (error) {
       console.error("Erro ao buscar lotes:", error)
       setSnackbar({
@@ -138,7 +91,8 @@ const EstoquePage = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      await LoteService.deleteLote(loteToDelete)
+      setLoading(true)
+      await deletarLote(loteToDelete)
       setLotes((prev) => prev.filter((lote) => lote.id !== loteToDelete))
       setSnackbar({
         open: true,
@@ -153,6 +107,7 @@ const EstoquePage = () => {
         severity: "error",
       })
     } finally {
+      setLoading(false)
       setOpenDialog(false)
       setLoteToDelete(null)
     }
@@ -175,14 +130,10 @@ const EstoquePage = () => {
 
   const handleNavigateToView = (lote) => {
     try {
-L
-      router.push(
-        `./visualizar_lote?id=${lote.numero}&data=${lote.data}&fornecedora=${encodeURIComponent(lote.fornecedora)}`,
-      )
+      router.push(`./visualizar_lote?id=${lote.id}`)
     } catch (error) {
       console.error("Erro ao navegar:", error)
-
-      window.location.href = `./visualizar_lote?id=${lote.numero}&data=${lote.data}&fornecedora=${encodeURIComponent(lote.fornecedora)}`
+      window.location.href = `./visualizar_lote?id=${lote.id}`
     }
   }
 
@@ -456,7 +407,9 @@ const LotesTable = ({
           {loading ? (
             <TableRow>
               <TableCell colSpan={4} align="center">
-                Carregando lotes...
+                <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                  <CircularProgress size={40} sx={{ color: "#FADADD" }} />
+                </Box>
               </TableCell>
             </TableRow>
           ) : lotesFiltrados.length === 0 ? (
@@ -507,5 +460,5 @@ const LotesTable = ({
     />
   </Card>
 )
-export default EstoquePage
 
+export default EstoquePage

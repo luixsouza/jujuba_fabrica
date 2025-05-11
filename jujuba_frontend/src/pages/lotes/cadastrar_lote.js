@@ -4,37 +4,26 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Home, User, Package, ShoppingCart, List, Trash2, Eye } from "lucide-react"
-
-// Dados mockados para os lotes na barra lateral
-const mockLotesSidebar = [
-  { codigo: "L001", data: "15/03/2023" },
-  { codigo: "L002", data: "20/04/2023" },
-  { codigo: "L003", data: "10/05/2023" },
-]
-
-// Dados mockados para fornecedoras
-const mockFornecedoras = [
-  { id: 1, nome: "Fornecedora ABC Ltda" },
-  { id: 2, nome: "Distribuidora XYZ S.A." },
-  { id: 3, nome: "Indústria Têxtil Nacional" },
-  { id: 4, nome: "Confecções Moda Brasil" },
-  { id: 5, nome: "Tecidos & Cia" },
-]
+import { salvarLote, listarLotes } from "../api/lotes"
 
 export default function CadastroLotePage() {
   const router = useRouter()
-  // Use a fixed ID to avoid hydration errors
-  const [loteId, setLoteId] = useState("L000")
+  const [loteId, setLoteId] = useState("")
   const [isClient, setIsClient] = useState(false)
-  const [fornecedora, setFornecedora] = useState("")
+  const [fornecedoraId, setFornecedoraId] = useState("")
   const [items, setItems] = useState([])
+  const [lotesSidebar, setLotesSidebar] = useState([])
+  const [fornecedoras, setFornecedoras] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   const [novoItem, setNovoItem] = useState({
     descricao: "",
     marca: "",
     tamanho: "",
     estadoConservacao: "Ótimo",
-    valor: "",
+    preco: "",
     genero: "",
+    quantidade: 1,
     imagem: "/placeholder.svg?height=80&width=80",
   })
 
@@ -43,7 +32,56 @@ export default function CadastroLotePage() {
     setIsClient(true)
     // Generate random ID only on the client side
     setLoteId(`L${String(Math.floor(Math.random() * 900) + 100)}`)
+
+    // Carregar lotes para a barra lateral
+    fetchLotes()
+
+    // Carregar fornecedoras
+    fetchFornecedoras()
   }, [])
+
+  const fetchLotes = async () => {
+    try {
+      setLoading(true)
+      const response = await listarLotes()
+      if (response.data) {
+        // Formatar os dados para exibição na barra lateral
+        const lotesFormatados = response.data
+          .map((lote) => ({
+            id: lote.id,
+            codigo: `L${lote.id}`,
+            data: new Date(lote.dataCriacao).toLocaleDateString("pt-BR"),
+          }))
+          .slice(0, 5) // Limitar a 5 lotes para a barra lateral
+
+        setLotesSidebar(lotesFormatados)
+      }
+    } catch (error) {
+      console.error("Erro ao buscar lotes:", error)
+      setError("Não foi possível carregar os lotes.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchFornecedoras = async () => {
+    try {
+      setLoading(true)
+      // Aqui você precisaria de um endpoint para buscar fornecedoras
+      // Como não temos esse endpoint na API fornecida, vamos simular
+      // Em um caso real, você substituiria isso por uma chamada à API
+      const response = await fetch("http://localhost:8080/api/fornecedoras")
+      if (response.ok) {
+        const data = await response.json()
+        setFornecedoras(data)
+      }
+    } catch (error) {
+      console.error("Erro ao buscar fornecedoras:", error)
+      setError("Não foi possível carregar as fornecedoras.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -55,20 +93,21 @@ export default function CadastroLotePage() {
 
   const handleAddItem = () => {
     // Validação básica
-    if (!novoItem.descricao || !novoItem.valor) {
+    if (!novoItem.descricao || !novoItem.preco) {
       alert("Por favor, preencha pelo menos a descrição e o valor")
       return
     }
 
     const newItem = {
-      id: items.length + 1,
+      id: Date.now(), // ID temporário para manipulação na interface
       imagem: novoItem.imagem,
       descricao: novoItem.descricao,
+      marca: novoItem.marca,
+      tamanho: novoItem.tamanho,
       estadoConservacao: novoItem.estadoConservacao,
-      valor: Number.parseFloat(novoItem.valor),
-      codigo: `ALC${Math.floor(Math.random() * 900000) + 100000}`,
-      genero:
-        novoItem.genero === "Masculino" ? "Masc" : novoItem.genero === "Feminino" ? "Fem" : novoItem.genero || "Unisex",
+      preco: Number.parseFloat(novoItem.preco),
+      genero: novoItem.genero || "Unisex",
+      quantidade: Number.parseInt(novoItem.quantidade) || 1,
     }
 
     setItems((prev) => [...prev, newItem])
@@ -79,8 +118,9 @@ export default function CadastroLotePage() {
       marca: "",
       tamanho: "",
       estadoConservacao: "Ótimo",
-      valor: "",
+      preco: "",
       genero: "",
+      quantidade: 1,
       imagem: "/placeholder.svg?height=80&width=80",
     })
   }
@@ -92,23 +132,37 @@ export default function CadastroLotePage() {
   const handleViewItem = (id) => {
     const item = items.find((item) => item.id === id)
     if (item) {
-      alert(`Detalhes do item: ${item.descricao}\nValor: R$ ${item.valor.toFixed(2)}\nCódigo: ${item.codigo}`)
+      alert(
+        `Detalhes do item: ${item.descricao}\nValor: R$ ${item.preco.toFixed(2)}\nMarca: ${item.marca}\nTamanho: ${item.tamanho}`,
+      )
     }
   }
 
-  const handleFinalizarLote = () => {
+  const handleFinalizarLote = async () => {
     if (items.length === 0) {
       alert("Adicione pelo menos um item ao lote antes de finalizar.")
       return
     }
 
-    if (!fornecedora) {
+    if (!fornecedoraId) {
       alert("Selecione uma fornecedora para o lote.")
       return
     }
 
-    alert(`Lote ${loteId} finalizado com ${items.length} itens!`)
-    router.push("./")
+    try {
+      setLoading(true)
+      // Chamar a API para salvar o lote
+      await salvarLote(fornecedoraId, items)
+
+      alert(`Lote finalizado com ${items.length} itens!`)
+      router.push("./lotes_geral")
+    } catch (error) {
+      console.error("Erro ao finalizar lote:", error)
+      setError("Não foi possível finalizar o lote.")
+      alert("Erro ao finalizar lote. Por favor, tente novamente.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGoBack = () => {
@@ -120,7 +174,7 @@ export default function CadastroLotePage() {
   }
 
   const calcularValorTotal = () => {
-    return items.reduce((total, item) => total + item.valor, 0)
+    return items.reduce((total, item) => total + item.preco * item.quantidade, 0)
   }
 
   return (
@@ -399,6 +453,14 @@ export default function CadastroLotePage() {
           transform: translateY(-4px);
         }
 
+        .pink-button:disabled {
+          background: #f5f5f5;
+          color: #999;
+          cursor: not-allowed;
+          box-shadow: none;
+          transform: none;
+        }
+
         /* Responsive styles */
         @media (max-width: 1024px) {
           .sidebar {
@@ -451,6 +513,24 @@ export default function CadastroLotePage() {
           padding: 10px;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
+
+        .loading {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 20px;
+          font-size: 18px;
+          color: #666;
+        }
+
+        .error {
+          background-color: #fee2e2;
+          color: #ef4444;
+          padding: 12px;
+          border-radius: 8px;
+          margin-bottom: 16px;
+          font-size: 16px;
+        }
       `}</style>
 
       <div className="container">
@@ -458,7 +538,7 @@ export default function CadastroLotePage() {
         <div className="sidebar">
           <div className="logo-container">
             <div className="logo">
-              <Image src="/jujba2.png"  alt="Jujuba Logo" width={140} height={140} priority />
+              <Image src="/jujba2.png" alt="Jujuba Logo" width={140} height={140} priority />
             </div>
           </div>
 
@@ -484,12 +564,18 @@ export default function CadastroLotePage() {
           <div className="lotes-list">
             <h3>Lista de Lotes</h3>
             <div className="lotes-card">
-              {mockLotesSidebar.map((lote) => (
-                <div key={lote.codigo} className="lote-item">
-                  <span>{lote.codigo}</span>
-                  <span>{lote.data}</span>
-                </div>
-              ))}
+              {loading ? (
+                <div className="loading">Carregando...</div>
+              ) : lotesSidebar.length > 0 ? (
+                lotesSidebar.map((lote) => (
+                  <div key={lote.id} className="lote-item">
+                    <span>{lote.codigo}</span>
+                    <span>{lote.data}</span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: "center", padding: "10px" }}>Nenhum lote encontrado</div>
+              )}
             </div>
           </div>
         </div>
@@ -507,6 +593,8 @@ export default function CadastroLotePage() {
               <Home size={20} />
             </button>
           </header>
+
+          {error && <div className="error">{error}</div>}
 
           <div className="form-grid">
             <input
@@ -547,10 +635,19 @@ export default function CadastroLotePage() {
               type="number"
               className="input-field"
               placeholder="Valor (R$)"
-              name="valor"
-              value={novoItem.valor}
+              name="preco"
+              value={novoItem.preco}
               onChange={handleInputChange}
               step="0.01"
+            />
+            <input
+              type="number"
+              className="input-field"
+              placeholder="Quantidade"
+              name="quantidade"
+              value={novoItem.quantidade}
+              onChange={handleInputChange}
+              min="1"
             />
             <select className="select-field" name="genero" value={novoItem.genero} onChange={handleInputChange}>
               <option value="">Selecione o gênero</option>
@@ -558,10 +655,10 @@ export default function CadastroLotePage() {
               <option value="Feminino">Feminino</option>
               <option value="Unisex">Unisex</option>
             </select>
-            <select className="select-field" value={fornecedora} onChange={(e) => setFornecedora(e.target.value)}>
+            <select className="select-field" value={fornecedoraId} onChange={(e) => setFornecedoraId(e.target.value)}>
               <option value="">Selecione a fornecedora</option>
-              {mockFornecedoras.map((f) => (
-                <option key={f.id} value={f.nome}>
+              {fornecedoras.map((f) => (
+                <option key={f.id} value={f.id}>
                   {f.nome}
                 </option>
               ))}
@@ -576,7 +673,9 @@ export default function CadastroLotePage() {
                   <th>Descrição</th>
                   <th>Estado de conservação</th>
                   <th>Valor</th>
-                  <th>Código do Produto</th>
+                  <th>Quantidade</th>
+                  <th>Marca</th>
+                  <th>Tamanho</th>
                   <th>Gênero</th>
                   <th>Ações</th>
                 </tr>
@@ -584,7 +683,7 @@ export default function CadastroLotePage() {
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={7} style={{ textAlign: "center" }}>
+                    <td colSpan={9} style={{ textAlign: "center" }}>
                       Nenhum item adicionado ao lote
                     </td>
                   </tr>
@@ -602,8 +701,10 @@ export default function CadastroLotePage() {
                       </td>
                       <td>{item.descricao}</td>
                       <td>{item.estadoConservacao}</td>
-                      <td>R$ {item.valor.toFixed(2).replace(".", ",")}</td>
-                      <td>{item.codigo}</td>
+                      <td>R$ {item.preco.toFixed(2).replace(".", ",")}</td>
+                      <td>{item.quantidade}</td>
+                      <td>{item.marca || "-"}</td>
+                      <td>{item.tamanho || "-"}</td>
                       <td>{item.genero}</td>
                       <td>
                         <div style={{ display: "flex", gap: "8px" }}>
@@ -631,7 +732,7 @@ export default function CadastroLotePage() {
                     <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
                       Total:
                     </td>
-                    <td colSpan={4} style={{ fontWeight: "bold" }}>
+                    <td colSpan={6} style={{ fontWeight: "bold" }}>
                       R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
                     </td>
                   </tr>
@@ -641,11 +742,15 @@ export default function CadastroLotePage() {
           </div>
 
           <div className="buttons-container">
-            <button className="pink-button" onClick={handleAddItem}>
+            <button className="pink-button" onClick={handleAddItem} disabled={loading}>
               Adicionar Item
             </button>
-            <button className="pink-button" onClick={handleFinalizarLote}>
-              Finalizar Lote
+            <button
+              className="pink-button"
+              onClick={handleFinalizarLote}
+              disabled={loading || items.length === 0 || !fornecedoraId}
+            >
+              {loading ? "Processando..." : "Finalizar Lote"}
             </button>
           </div>
         </div>
@@ -653,4 +758,3 @@ export default function CadastroLotePage() {
     </>
   )
 }
-

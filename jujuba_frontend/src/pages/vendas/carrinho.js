@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Box,
@@ -25,6 +25,7 @@ import {
   Divider,
   Chip,
   DialogContentText,
+  CircularProgress,
 } from "@mui/material"
 import {
   Search as SearchIcon,
@@ -42,6 +43,7 @@ import {
   Warning as WarningIcon,
 } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
+import { removerProdutoDoCarrinho, listarProdutosDoCarrinho, calcularTotalCarrinho, limparCarrinho } from "../api/carrinho"
 
 export default function CarrinhoPage() {
   const router = useRouter()
@@ -51,41 +53,37 @@ export default function CarrinhoPage() {
   const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
   const [itemToDelete, setItemToDelete] = useState(null)
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      descricao: "Crocs Minnie Tamanho 19/20",
-      estado: "Ótimo",
-      valor: 47.5,
-      lote: "B321",
-      codigo: "ALC352333",
-      categoria: "Calçados Infantis",
-      marca: "Crocs",
-      cor: "Rosa",
-      dataEntrada: "15/04/2023",
-      fornecedor: "Bazar Infantil",
-      observacoes: "Produto em excelente estado, sem marcas de uso. Acompanha todos os adesivos originais.",
-    },
-    {
-      id: 2,
-      descricao: "Camiseta Lacoste 8 anos",
-      estado: "Ótimo",
-      valor: 68.9,
-      lote: "B321",
-      codigo: "ALC123456",
-      categoria: "Roupas Infantis",
-      marca: "Lacoste",
-      cor: "Verde",
-      dataEntrada: "10/04/2023",
-      fornecedor: "Bazar Infantil",
-      observacoes: "Produto original em ótimo estado de conservação.",
-    },
-  ])
+  const [cartItems, setCartItems] = useState([])
+  const [totalValue, setTotalValue] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [searchOptions, setSearchOptions] = useState([])
 
-  // Opções de pesquisa (simuladas)
-  const options = ["Crocs Minnie", "Camiseta Lacoste", "Tênis Nike", "Vestido Lilica"]
+  // Carregar itens do carrinho ao iniciar
+  useEffect(() => {
+    const fetchCartItems = async () => {
+      try {
+        setLoading(true)
+        const items = await listarProdutosDoCarrinho()
+        setCartItems(items)
 
-  const totalValue = cartItems.reduce((total, item) => total + item.valor, 0)
+        // Extrair opções de pesquisa dos itens do carrinho
+        const options = items.map((item) => item.descricao)
+        setSearchOptions([...new Set(options)])
+
+        // Calcular o valor total do carrinho
+        const total = await calcularTotalCarrinho()
+        setTotalValue(total)
+      } catch (error) {
+        console.error("Erro ao carregar itens do carrinho:", error)
+        setError("Não foi possível carregar os itens do carrinho.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCartItems()
+  }, [])
 
   const handleOpenSellModal = () => {
     setOpenSellModal(true)
@@ -100,19 +98,35 @@ export default function CarrinhoPage() {
   }
 
   const handleConfirmDeleteItem = (id) => {
-    // Find the item to delete for showing in the confirmation dialog
+    // Encontrar o item a ser removido para mostrar no diálogo de confirmação
     const item = cartItems.find((item) => item.id === id)
     setItemToDelete(item)
     setOpenDeleteConfirmation(true)
   }
 
-  const handleDeleteItem = () => {
+  const handleDeleteItem = async () => {
     if (itemToDelete) {
-      setCartItems(cartItems.filter((item) => item.id !== itemToDelete.id))
+      try {
+        setLoading(true)
+        await removerProdutoDoCarrinho(itemToDelete.id)
 
-      // If the item being deleted is also the selected item in the view modal, close the modal
-      if (selectedItem && selectedItem.id === itemToDelete.id) {
-        setOpenViewModal(false)
+        // Atualizar a lista de itens do carrinho
+        const updatedItems = await listarProdutosDoCarrinho()
+        setCartItems(updatedItems)
+
+        // Atualizar o valor total
+        const total = await calcularTotalCarrinho()
+        setTotalValue(total)
+
+        // Se o item sendo removido também é o item selecionado na modal de visualização, fechar a modal
+        if (selectedItem && selectedItem.id === itemToDelete.id) {
+          setOpenViewModal(false)
+        }
+      } catch (error) {
+        console.error("Erro ao remover item do carrinho:", error)
+        setError("Não foi possível remover o item do carrinho.")
+      } finally {
+        setLoading(false)
       }
     }
     setOpenDeleteConfirmation(false)
@@ -131,6 +145,44 @@ export default function CarrinhoPage() {
 
   const handleCloseViewModal = () => {
     setOpenViewModal(false)
+  }
+
+  const handleFinalizarVenda = async () => {
+    try {
+      setLoading(true)
+      // Aqui você pode implementar a lógica para finalizar a venda
+      // Por exemplo, chamar uma API para registrar a venda
+
+      // Limpar o carrinho após a venda
+      await limparCarrinho()
+
+      // Atualizar a lista de itens do carrinho (que agora deve estar vazia)
+      setCartItems([])
+      setTotalValue(0)
+
+      // Fechar o modal de venda
+      setOpenSellModal(false)
+
+      // Redirecionar para uma página de confirmação ou voltar para a página de vendas
+      router.push("/vendas/confirmacao")
+    } catch (error) {
+      console.error("Erro ao finalizar venda:", error)
+      setError("Não foi possível finalizar a venda.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSearch = (event, newValue) => {
+    setSearch(newValue || "")
+
+    // Filtrar itens do carrinho com base no termo de pesquisa
+    if (newValue) {
+      const filteredItems = cartItems.filter((item) => item.descricao.toLowerCase().includes(newValue.toLowerCase()))
+      // Aqui você pode decidir se quer atualizar a lista exibida ou não
+      // Por enquanto, vamos apenas exibir no console
+      console.log("Itens filtrados:", filteredItems)
+    }
   }
 
   return (
@@ -183,11 +235,9 @@ export default function CarrinhoPage() {
         >
           <Autocomplete
             freeSolo
-            options={options}
+            options={searchOptions}
             value={search}
-            onChange={(event, newValue) => {
-              setSearch(newValue || "")
-            }}
+            onChange={handleSearch}
             onInputChange={(event, newValue) => {
               setSearch(newValue || "")
             }}
@@ -275,171 +325,190 @@ export default function CarrinhoPage() {
               Itens no carrinho
             </Typography>
 
+            {/* Loading indicator */}
+            {loading && (
+              <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+                <CircularProgress sx={{ color: "#ffccd5" }} />
+              </Box>
+            )}
+
+            {/* Error message */}
+            {error && (
+              <Box sx={{ bgcolor: "#ffebee", p: 2, borderRadius: 2, mb: 3 }}>
+                <Typography color="error">{error}</Typography>
+              </Box>
+            )}
+
             {/* Cart Items Table */}
-            <Table sx={{ mb: 3 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{
-                      width: "25%",
-                      color: "#333",
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
-                      borderBottom: "1px solid #e0e0e0",
-                      p: 1,
-                    }}
-                  >
-                    Descrição
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      width: "25%",
-                      color: "#333",
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
-                      borderBottom: "1px solid #e0e0e0",
-                      p: 1,
-                      textAlign: "center",
-                    }}
-                  >
-                    Estado de conservação
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      width: "15%",
-                      color: "#333",
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
-                      borderBottom: "1px solid #e0e0e0",
-                      p: 1,
-                      textAlign: "center",
-                    }}
-                  >
-                    Valor
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      width: "15%",
-                      color: "#333",
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
-                      borderBottom: "1px solid #e0e0e0",
-                      p: 1,
-                      textAlign: "center",
-                    }}
-                  >
-                    Lote
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      width: "20%",
-                      color: "#333",
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
-                      borderBottom: "1px solid #e0e0e0",
-                      p: 1,
-                      textAlign: "center",
-                    }}
-                  >
-                    Ações
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {cartItems.map((item, index) => (
-                  <TableRow
-                    key={item.id}
-                    sx={{
-                      bgcolor: "#f9f9f9",
-                      borderBottom: index < cartItems.length - 1 ? "1px solid #e0e0e0" : "none",
-                    }}
-                  >
-                    <TableCell
-                      sx={{
-                        fontSize: "0.9rem",
-                        color: "#333",
-                        p: 1,
-                        borderBottom: "none",
-                      }}
-                    >
-                      {item.descricao}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: "0.9rem",
-                        color: "#333",
-                        p: 1,
-                        textAlign: "center",
-                        borderBottom: "none",
-                      }}
-                    >
-                      {item.estado}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: "0.9rem",
-                        color: "#333",
-                        p: 1,
-                        textAlign: "center",
-                        borderBottom: "none",
-                      }}
-                    >
-                      R$ {item.valor.toFixed(2).replace(".", ",")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: "0.9rem",
-                        color: "#333",
-                        p: 1,
-                        textAlign: "center",
-                        borderBottom: "none",
-                      }}
-                    >
-                      {item.lote}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        p: 1,
-                        textAlign: "center",
-                        borderBottom: "none",
-                      }}
-                    >
-                      <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                        <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleViewItem(item)}>
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleConfirmDeleteItem(item.id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {cartItems.length === 0 && (
+            {!loading && !error && (
+              <Table sx={{ mb: 3 }}>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={5} sx={{ textAlign: "center", py: 3 }}>
-                      Nenhum item no carrinho
+                    <TableCell
+                      sx={{
+                        width: "25%",
+                        color: "#333",
+                        fontWeight: 500,
+                        fontSize: "0.9rem",
+                        borderBottom: "1px solid #e0e0e0",
+                        p: 1,
+                      }}
+                    >
+                      Descrição
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        width: "25%",
+                        color: "#333",
+                        fontWeight: 500,
+                        fontSize: "0.9rem",
+                        borderBottom: "1px solid #e0e0e0",
+                        p: 1,
+                        textAlign: "center",
+                      }}
+                    >
+                      Estado de conservação
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        width: "15%",
+                        color: "#333",
+                        fontWeight: 500,
+                        fontSize: "0.9rem",
+                        borderBottom: "1px solid #e0e0e0",
+                        p: 1,
+                        textAlign: "center",
+                      }}
+                    >
+                      Valor
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        width: "15%",
+                        color: "#333",
+                        fontWeight: 500,
+                        fontSize: "0.9rem",
+                        borderBottom: "1px solid #e0e0e0",
+                        p: 1,
+                        textAlign: "center",
+                      }}
+                    >
+                      Lote
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        width: "20%",
+                        color: "#333",
+                        fontWeight: 500,
+                        fontSize: "0.9rem",
+                        borderBottom: "1px solid #e0e0e0",
+                        p: 1,
+                        textAlign: "center",
+                      }}
+                    >
+                      Ações
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {cartItems.length > 0 ? (
+                    cartItems.map((item, index) => (
+                      <TableRow
+                        key={item.id}
+                        sx={{
+                          bgcolor: "#f9f9f9",
+                          borderBottom: index < cartItems.length - 1 ? "1px solid #e0e0e0" : "none",
+                        }}
+                      >
+                        <TableCell
+                          sx={{
+                            fontSize: "0.9rem",
+                            color: "#333",
+                            p: 1,
+                            borderBottom: "none",
+                          }}
+                        >
+                          {item.descricao}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: "0.9rem",
+                            color: "#333",
+                            p: 1,
+                            textAlign: "center",
+                            borderBottom: "none",
+                          }}
+                        >
+                          {item.estadoConservacao}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: "0.9rem",
+                            color: "#333",
+                            p: 1,
+                            textAlign: "center",
+                            borderBottom: "none",
+                          }}
+                        >
+                          R$ {item.preco.toFixed(2).replace(".", ",")}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: "0.9rem",
+                            color: "#333",
+                            p: 1,
+                            textAlign: "center",
+                            borderBottom: "none",
+                          }}
+                        >
+                          {item.lote || "-"}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            p: 1,
+                            textAlign: "center",
+                            borderBottom: "none",
+                          }}
+                        >
+                          <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+                            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleViewItem(item)}>
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleConfirmDeleteItem(item.id)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} sx={{ textAlign: "center", py: 3 }}>
+                        Nenhum item no carrinho
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
 
             {/* Total Value */}
-            <Box
-              sx={{
-                display: "inline-block",
-                bgcolor: "#b3e5fc",
-                px: 2,
-                py: 0.5,
-                borderRadius: 1,
-                mb: 3,
-              }}
-            >
-              <Typography sx={{ fontWeight: 500, fontSize: "0.9rem", color: "#333" }}>
-                Valor Total: R$ {totalValue.toFixed(2).replace(".", ",")}
-              </Typography>
-            </Box>
+            {!loading && !error && (
+              <Box
+                sx={{
+                  display: "inline-block",
+                  bgcolor: "#b3e5fc",
+                  px: 2,
+                  py: 0.5,
+                  borderRadius: 1,
+                  mb: 3,
+                }}
+              >
+                <Typography sx={{ fontWeight: 500, fontSize: "0.9rem", color: "#333" }}>
+                  Valor Total: R$ {totalValue.toFixed(2).replace(".", ",")}
+                </Typography>
+              </Box>
+            )}
 
             {/* Action Buttons - Aumentados */}
             <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
@@ -465,7 +534,7 @@ export default function CarrinhoPage() {
               <Button
                 variant="contained"
                 onClick={handleOpenSellModal}
-                disabled={cartItems.length === 0}
+                disabled={cartItems.length === 0 || loading}
                 sx={{
                   bgcolor: "#ffc1cc",
                   color: "black",
@@ -599,7 +668,7 @@ export default function CarrinhoPage() {
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
             <Button
               variant="contained"
-              onClick={handleCloseSellModal}
+              onClick={handleFinalizarVenda}
               sx={{
                 bgcolor: "#ffc1cc",
                 color: "black",
@@ -696,7 +765,7 @@ export default function CarrinhoPage() {
                   <Box sx={{ mt: 3 }}>
                     <Chip
                       icon={<CheckCircleIcon />}
-                      label={selectedItem.estado}
+                      label={selectedItem.estadoConservacao}
                       color="success"
                       sx={{ fontWeight: 600, fontSize: "1rem", py: 2.5, px: 1 }}
                     />
@@ -712,7 +781,7 @@ export default function CarrinhoPage() {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <AttachMoneyIcon sx={{ color: "#00509E", mr: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600, color: "#00509E" }}>
-                      R$ {selectedItem.valor.toFixed(2).replace(".", ",")}
+                      R$ {selectedItem.preco.toFixed(2).replace(".", ",")}
                     </Typography>
                   </Box>
 
@@ -721,7 +790,7 @@ export default function CarrinhoPage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <QrCodeIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Código:</strong> {selectedItem.codigo}
+                          <strong>Código:</strong> {selectedItem.id}
                         </Typography>
                       </Box>
                     </Grid>
@@ -729,7 +798,7 @@ export default function CarrinhoPage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <InventoryIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Lote:</strong> {selectedItem.lote}
+                          <strong>Lote:</strong> {selectedItem.lote || "-"}
                         </Typography>
                       </Box>
                     </Grid>
@@ -737,18 +806,20 @@ export default function CarrinhoPage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <CategoryIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Categoria:</strong> {selectedItem.categoria}
+                          <strong>Categoria:</strong> {selectedItem.categoria || "-"}
                         </Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <CalendarMonthIcon sx={{ color: "#666", mr: 1 }} />
-                        <Typography variant="body1">
-                          <strong>Data de Entrada:</strong> {selectedItem.dataEntrada}
-                        </Typography>
-                      </Box>
-                    </Grid>
+                    {selectedItem.dataEntrada && (
+                      <Grid item xs={6}>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                          <CalendarMonthIcon sx={{ color: "#666", mr: 1 }} />
+                          <Typography variant="body1">
+                            <strong>Data de Entrada:</strong> {selectedItem.dataEntrada}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
                   </Grid>
 
                   <Divider sx={{ my: 2 }} />
@@ -763,26 +834,32 @@ export default function CarrinhoPage() {
                         <strong>Marca:</strong> {selectedItem.marca}
                       </Typography>
                     </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Cor:</strong> {selectedItem.cor}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Fornecedor:</strong> {selectedItem.fornecedor}
-                      </Typography>
-                    </Grid>
+                    {selectedItem.cor && (
+                      <Grid item xs={6}>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Cor:</strong> {selectedItem.cor}
+                        </Typography>
+                      </Grid>
+                    )}
+                    {selectedItem.fornecedor && (
+                      <Grid item xs={12}>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Fornecedor:</strong> {selectedItem.fornecedor}
+                        </Typography>
+                      </Grid>
+                    )}
                   </Grid>
 
-                  <Box sx={{ mt: 3, bgcolor: "#f5f5f5", p: 2, borderRadius: 2 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                      Observações
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {selectedItem.observacoes}
-                    </Typography>
-                  </Box>
+                  {selectedItem.observacoes && (
+                    <Box sx={{ mt: 3, bgcolor: "#f5f5f5", p: 2, borderRadius: 2 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                        Observações
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedItem.observacoes}
+                      </Typography>
+                    </Box>
+                  )}
                 </Grid>
               </Grid>
             </DialogContent>

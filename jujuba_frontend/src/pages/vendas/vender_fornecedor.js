@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Box,
@@ -26,6 +26,7 @@ import {
   DialogContentText,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material"
 import {
   ArrowBack as ArrowBackIcon,
@@ -41,72 +42,98 @@ import {
   CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
-
-// Dados mockados para fornecedores
-const mockFornecedores = [
-  {
-    id: 1,
-    nome: "Aparecida Ferreira",
-    contato: "62 99999-9999",
-    valorCredito: 200.0,
-    chavePix: "12312312312",
-    endereco: "Rua das Flores, 123 - Centro",
-    cidade: "Goiânia",
-    estado: "GO",
-    cep: "74000-000",
-    observacoes: "Fornecedora de roupas infantis em ótimo estado. Sempre pontual nas entregas.",
-  },
-  {
-    id: 2,
-    nome: "Maria Ferreira",
-    contato: "62 99999-9999",
-    valorCredito: -32.0,
-    chavePix: "12312312312",
-    endereco: "Av. Principal, 456 - Setor Sul",
-    cidade: "Goiânia",
-    estado: "GO",
-    cep: "74100-000",
-    observacoes: "Fornecedora de calçados infantis. Produtos de alta qualidade.",
-  },
-]
+import { finalizarVendaFornecedora } from "../api/vendas"
 
 export default function FornecedoresPage() {
   const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState("Ferreira")
-  const [search, setSearch] = useState("Ferreira")
-  const [fornecedores, setFornecedores] = useState(mockFornecedores)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [search, setSearch] = useState("")
+  const [fornecedores, setFornecedores] = useState([])
   const [openFinalizarModal, setOpenFinalizarModal] = useState(false)
   const [openViewModal, setOpenViewModal] = useState(false)
   const [selectedFornecedor, setSelectedFornecedor] = useState(null)
   const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false)
   const [fornecedorToDelete, setFornecedorToDelete] = useState(null)
   const [openSuccessMessage, setOpenSuccessMessage] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [carrinhoItems, setCarrinhoItems] = useState([])
+  const [totalVenda, setTotalVenda] = useState(0)
+  useEffect(() => {
+    const fetchFornecedores = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch("http://localhost:8080/api/fornecedores")
+        if (!response.ok) {
+          throw new Error("Falha ao buscar fornecedores")
+        }
+        const data = await response.json()
+        setFornecedores(data)
+      } catch (error) {
+        console.error("Erro ao buscar fornecedores:", error)
+        setError(error.message)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  // Opções de pesquisa (simuladas)
-  const options = ["Ferreira", "Aparecida Ferreira", "Maria Ferreira", "João Silva", "Ana Souza"]
+    fetchFornecedores()
+  }, [])
+  useEffect(() => {
+    const carrinhoSalvo = localStorage.getItem("carrinho")
+    if (carrinhoSalvo) {
+      const items = JSON.parse(carrinhoSalvo)
+      setCarrinhoItems(items)
+      const total = items.reduce((sum, item) => sum + item.preco * item.quantidade, 0)
+      setTotalVenda(total)
+    }
+  }, [])
 
   const handleGoBack = () => {
     router.back()
   }
 
-  const handleSearch = (event, newValue) => {
+  const handleSearch = async (event, newValue) => {
     setSearch(newValue || "")
     setSearchTerm(newValue || "")
-    // Filtrar fornecedores baseado no termo de busca
-    if (newValue) {
-      const filtered = mockFornecedores.filter((fornecedor) =>
-        fornecedor.nome.toLowerCase().includes(newValue.toLowerCase()),
-      )
-      setFornecedores(filtered)
-    } else {
-      setFornecedores(mockFornecedores)
+
+    try {
+      setLoading(true)
+      let url = "http://localhost:8080/api/fornecedoras"
+      if (newValue) {
+        url += `?nome=${encodeURIComponent(newValue)}`
+      }
+
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error("Falha ao buscar fornecedores")
+      }
+
+      const data = await response.json()
+      setFornecedores(data)
+    } catch (error) {
+      console.error("Erro ao buscar fornecedores:", error)
+      setError(error.message)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleViewFornecedor = (id) => {
-    const fornecedor = fornecedores.find((f) => f.id === id)
-    setSelectedFornecedor(fornecedor)
-    setOpenViewModal(true)
+  const handleViewFornecedor = async (id) => {
+    try {
+      // Buscar detalhes do fornecedor pela API
+      const response = await fetch(`http://localhost:8080/api/fornecedoras/${id}`)
+      if (!response.ok) {
+        throw new Error("Falha ao buscar detalhes do fornecedor")
+      }
+
+      const fornecedor = await response.json()
+      setSelectedFornecedor(fornecedor)
+      setOpenViewModal(true)
+    } catch (error) {
+      console.error("Erro ao buscar detalhes do fornecedor:", error)
+      setError(error.message)
+    }
   }
 
   const handleCloseViewModal = () => {
@@ -119,12 +146,27 @@ export default function FornecedoresPage() {
     setOpenDeleteConfirmation(true)
   }
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (fornecedorToDelete) {
-      setFornecedores(fornecedores.filter((f) => f.id !== fornecedorToDelete.id))
+      try {
+
+        const response = await fetch(`http://localhost:8080/api/fornecedoras/${fornecedorToDelete.id}`, {
+          method: "DELETE",
+        })
+
+        if (!response.ok) {
+          throw new Error("Falha ao excluir fornecedor")
+        }
+
+
+        setFornecedores(fornecedores.filter((f) => f.id !== fornecedorToDelete.id))
+        setOpenDeleteConfirmation(false)
+        setFornecedorToDelete(null)
+      } catch (error) {
+        console.error("Erro ao excluir fornecedor:", error)
+        setError(error.message)
+      }
     }
-    setOpenDeleteConfirmation(false)
-    setFornecedorToDelete(null)
   }
 
   const handleCancelDelete = () => {
@@ -133,6 +175,9 @@ export default function FornecedoresPage() {
   }
 
   const handleFinalizarCompra = () => {
+    if (!selectedFornecedor) {
+      setSelectedFornecedor(fornecedores[0])
+    }
     setOpenFinalizarModal(true)
   }
 
@@ -140,17 +185,33 @@ export default function FornecedoresPage() {
     setOpenFinalizarModal(false)
   }
 
-  const handleConfirmFinalizarCompra = () => {
-    setOpenFinalizarModal(false)
-    setOpenSuccessMessage(true)
-    // Redirect after showing the success message for a short time
-    setTimeout(() => {
-      router.push("/vendas/vendas")
-    }, 2000)
+  const handleConfirmFinalizarCompra = async () => {
+    if (!selectedFornecedor || carrinhoItems.length === 0) return
+
+    try {
+      await finalizarVendaFornecedora(selectedFornecedor.id, carrinhoItems)
+      localStorage.removeItem("carrinho")
+      setCarrinhoItems([])
+
+      setOpenFinalizarModal(false)
+      setOpenSuccessMessage(true)
+      setTimeout(() => {
+        router.push("/vendas")
+      }, 2000)
+    } catch (error) {
+      console.error("Erro ao finalizar venda:", error)
+      setError("Falha ao finalizar a venda. Por favor, tente novamente.")
+    }
   }
 
   const handleCloseSuccessMessage = () => {
     setOpenSuccessMessage(false)
+  }
+
+  // Calcular o crédito final após a venda
+  const calcularCreditoFinal = () => {
+    if (!selectedFornecedor) return 0
+    return selectedFornecedor.valorCredito - totalVenda
   }
 
   return (
@@ -168,10 +229,9 @@ export default function FornecedoresPage() {
           <Typography variant="h4" sx={{ fontWeight: "bold", textAlign: "center", flex: 1, color: "#333" }}>
             FORNECEDORES
           </Typography>
-          <Box sx={{ width: 48 }} /> {/* Spacer to balance the back button */}
+          <Box sx={{ width: 48 }} /> 
         </Box>
 
-        {/* Search Bar - Autocomplete with exact styling from example */}
         <Box
           sx={{
             display: "flex",
@@ -182,31 +242,12 @@ export default function FornecedoresPage() {
         >
           <Autocomplete
             freeSolo
-            options={options}
+            options={fornecedores.map((f) => f.nome)}
             value={search}
-            onChange={(event, newValue) => {
-              setSearch(newValue || "")
-              setSearchTerm(newValue || "")
-              if (newValue) {
-                const filtered = mockFornecedores.filter((fornecedor) =>
-                  fornecedor.nome.toLowerCase().includes(newValue.toLowerCase()),
-                )
-                setFornecedores(filtered)
-              } else {
-                setFornecedores(mockFornecedores)
-              }
-            }}
+            onChange={handleSearch}
             onInputChange={(event, newValue) => {
               setSearch(newValue || "")
               setSearchTerm(newValue || "")
-              if (newValue) {
-                const filtered = mockFornecedores.filter((fornecedor) =>
-                  fornecedor.nome.toLowerCase().includes(newValue.toLowerCase()),
-                )
-                setFornecedores(filtered)
-              } else {
-                setFornecedores(mockFornecedores)
-              }
             }}
             renderInput={(params) => (
               <TextField
@@ -269,7 +310,7 @@ export default function FornecedoresPage() {
           />
         </Box>
 
-        {/* Table with increased width */}
+   
         <TableContainer
           component={Paper}
           sx={{
@@ -283,62 +324,83 @@ export default function FornecedoresPage() {
             flex: 1,
           }}
         >
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: "#ffccd5", height: "70px" }}>
-                <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", color: "#666" }}>Fornecedores</TableCell>
-                <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", color: "#666" }}>Contato</TableCell>
-                <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", textAlign: "center", color: "#666" }}>
-                  Valor de Crédito da loja
-                </TableCell>
-                <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", textAlign: "center", color: "#666" }}>
-                  Chave Pix
-                </TableCell>
-                <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", textAlign: "center", color: "#666" }}>
-                  Ações
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {fornecedores.map((fornecedor) => (
-                <TableRow key={fornecedor.id} sx={{ bgcolor: "white" }}>
-                  <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.nome}</TableCell>
-                  <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.contato}</TableCell>
-                  <TableCell sx={{ fontSize: "0.95rem", textAlign: "center", color: "#555" }}>
-                    {fornecedor.valorCredito.toFixed(2).replace(".", ",")}
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 300 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Box
+              sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 300, color: "error.main" }}
+            >
+              <Typography>{error}</Typography>
+            </Box>
+          ) : (
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "#ffccd5", height: "70px" }}>
+                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", color: "#666" }}>Fornecedores</TableCell>
+                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", color: "#666" }}>Contato</TableCell>
+                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", textAlign: "center", color: "#666" }}>
+                    Valor de Crédito da loja
                   </TableCell>
-                  <TableCell sx={{ fontSize: "0.95rem", textAlign: "center", color: "#555" }}>
-                    {fornecedor.chavePix}
+                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", textAlign: "center", color: "#666" }}>
+                    Chave Pix
                   </TableCell>
-                  <TableCell sx={{ textAlign: "center" }}>
-                    <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleViewFornecedor(fornecedor.id)}
-                        sx={{ color: "text.secondary" }}
-                      >
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteFornecedor(fornecedor.id)}
-                        sx={{ color: "text.secondary" }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
+                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", textAlign: "center", color: "#666" }}>
+                    Ações
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {fornecedores.length > 0 ? (
+                  fornecedores.map((fornecedor) => (
+                    <TableRow key={fornecedor.id} sx={{ bgcolor: "white" }}>
+                      <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.nome}</TableCell>
+                      <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.contato}</TableCell>
+                      <TableCell sx={{ fontSize: "0.95rem", textAlign: "center", color: "#555" }}>
+                        {fornecedor.valorCredito.toFixed(2).replace(".", ",")}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "0.95rem", textAlign: "center", color: "#555" }}>
+                        {fornecedor.chavePix}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: "center" }}>
+                        <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleViewFornecedor(fornecedor.id)}
+                            sx={{ color: "text.secondary" }}
+                          >
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteFornecedor(fornecedor.id)}
+                            sx={{ color: "text.secondary" }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} sx={{ textAlign: "center", py: 3 }}>
+                      Nenhum fornecedor encontrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </TableContainer>
 
-        {/* Finalizar Compra Button */}
+ 
         <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
           <Button
             variant="contained"
             onClick={handleFinalizarCompra}
+            disabled={carrinhoItems.length === 0 || fornecedores.length === 0}
             sx={{
               bgcolor: "#ffccd5",
               color: "black",
@@ -351,6 +413,10 @@ export default function FornecedoresPage() {
               "&:hover": {
                 bgcolor: "#ffb6c1",
               },
+              "&.Mui-disabled": {
+                bgcolor: "#f5f5f5",
+                color: "#aaa",
+              },
               width: "300px",
             }}
           >
@@ -359,7 +425,7 @@ export default function FornecedoresPage() {
         </Box>
       </Box>
 
-      {/* Modal de Visualização do Fornecedor */}
+    
       <Dialog
         open={openViewModal}
         onClose={handleCloseViewModal}
@@ -409,7 +475,7 @@ export default function FornecedoresPage() {
                   <Divider sx={{ my: 3 }} />
                 </Grid>
 
-                {/* Informações de Contato */}
+            
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                     Informações de Contato
@@ -437,7 +503,7 @@ export default function FornecedoresPage() {
                   </Box>
                 </Grid>
 
-                {/* Endereço */}
+       
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                     Endereço
@@ -460,7 +526,7 @@ export default function FornecedoresPage() {
                   </Typography>
                 </Grid>
 
-                {/* Observações */}
+            
                 <Grid item xs={12}>
                   <Divider sx={{ my: 2 }} />
                   <Box sx={{ mt: 2, bgcolor: "#f5f5f5", p: 2, borderRadius: 2 }}>
@@ -525,117 +591,119 @@ export default function FornecedoresPage() {
           Finalizar compra
         </DialogTitle>
         <DialogContent sx={{ p: 2 }}>
-          <Table sx={{ mb: 3, mt: 2 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  sx={{
-                    bgcolor: "#ffc1cc",
-                    color: "#333",
-                    fontWeight: 500,
-                    fontSize: "0.9rem",
-                    p: 1.5,
-                    textAlign: "center",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  Nome Fornecedora
-                </TableCell>
-                <TableCell
-                  sx={{
-                    bgcolor: "#ffc1cc",
-                    color: "#333",
-                    fontWeight: 500,
-                    fontSize: "0.9rem",
-                    p: 1.5,
-                    textAlign: "center",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  Crédito disponível
-                </TableCell>
-                <TableCell
-                  sx={{
-                    bgcolor: "#ffc1cc",
-                    color: "#333",
-                    fontWeight: 500,
-                    fontSize: "0.9rem",
-                    p: 1.5,
-                    textAlign: "center",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  Total da venda
-                </TableCell>
-                <TableCell
-                  sx={{
-                    bgcolor: "#ffc1cc",
-                    color: "#333",
-                    fontWeight: 500,
-                    fontSize: "0.9rem",
-                    p: 1.5,
-                    textAlign: "center",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  Crédito final
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell
-                  sx={{
-                    bgcolor: "#f5f5f5",
-                    color: "#333",
-                    fontSize: "0.9rem",
-                    p: 1.5,
-                    textAlign: "center",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  Aparecida Pereira
-                </TableCell>
-                <TableCell
-                  sx={{
-                    bgcolor: "#f5f5f5",
-                    color: "#333",
-                    fontSize: "0.9rem",
-                    p: 1.5,
-                    textAlign: "center",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  R$ 200,00
-                </TableCell>
-                <TableCell
-                  sx={{
-                    bgcolor: "#f5f5f5",
-                    color: "#333",
-                    fontSize: "0.9rem",
-                    p: 1.5,
-                    textAlign: "center",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  R$ 137,80
-                </TableCell>
-                <TableCell
-                  sx={{
-                    bgcolor: "#f5f5f5",
-                    color: "#008000",
-                    fontWeight: "bold",
-                    fontSize: "0.9rem",
-                    p: 1.5,
-                    textAlign: "center",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  R$ 62,20
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          {selectedFornecedor && (
+            <Table sx={{ mb: 3, mt: 2 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell
+                    sx={{
+                      bgcolor: "#ffc1cc",
+                      color: "#333",
+                      fontWeight: 500,
+                      fontSize: "0.9rem",
+                      p: 1.5,
+                      textAlign: "center",
+                      border: "1px solid #e0e0e0",
+                    }}
+                  >
+                    Nome Fornecedora
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      bgcolor: "#ffc1cc",
+                      color: "#333",
+                      fontWeight: 500,
+                      fontSize: "0.9rem",
+                      p: 1.5,
+                      textAlign: "center",
+                      border: "1px solid #e0e0e0",
+                    }}
+                  >
+                    Crédito disponível
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      bgcolor: "#ffc1cc",
+                      color: "#333",
+                      fontWeight: 500,
+                      fontSize: "0.9rem",
+                      p: 1.5,
+                      textAlign: "center",
+                      border: "1px solid #e0e0e0",
+                    }}
+                  >
+                    Total da venda
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      bgcolor: "#ffc1cc",
+                      color: "#333",
+                      fontWeight: 500,
+                      fontSize: "0.9rem",
+                      p: 1.5,
+                      textAlign: "center",
+                      border: "1px solid #e0e0e0",
+                    }}
+                  >
+                    Crédito final
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow>
+                  <TableCell
+                    sx={{
+                      bgcolor: "#f5f5f5",
+                      color: "#333",
+                      fontSize: "0.9rem",
+                      p: 1.5,
+                      textAlign: "center",
+                      border: "1px solid #e0e0e0",
+                    }}
+                  >
+                    {selectedFornecedor.nome}
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      bgcolor: "#f5f5f5",
+                      color: "#333",
+                      fontSize: "0.9rem",
+                      p: 1.5,
+                      textAlign: "center",
+                      border: "1px solid #e0e0e0",
+                    }}
+                  >
+                    R$ {selectedFornecedor.valorCredito.toFixed(2).replace(".", ",")}
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      bgcolor: "#f5f5f5",
+                      color: "#333",
+                      fontSize: "0.9rem",
+                      p: 1.5,
+                      textAlign: "center",
+                      border: "1px solid #e0e0e0",
+                    }}
+                  >
+                    R$ {totalVenda.toFixed(2).replace(".", ",")}
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      bgcolor: "#f5f5f5",
+                      color: calcularCreditoFinal() >= 0 ? "#008000" : "#d32f2f",
+                      fontWeight: "bold",
+                      fontSize: "0.9rem",
+                      p: 1.5,
+                      textAlign: "center",
+                      border: "1px solid #e0e0e0",
+                    }}
+                  >
+                    R$ {calcularCreditoFinal().toFixed(2).replace(".", ",")}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          )}
 
           {/* Botões de Confirmação */}
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
@@ -681,7 +749,7 @@ export default function FornecedoresPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirmation Dialog for Deleting Suppliers */}
+
       <Dialog
         open={openDeleteConfirmation}
         onClose={handleCancelDelete}
@@ -753,7 +821,7 @@ export default function FornecedoresPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Success Message Snackbar */}
+
       <Snackbar
         open={openSuccessMessage}
         autoHideDuration={2000}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Box,
@@ -38,36 +38,59 @@ import {
   Inventory as InventoryIcon,
   QrCode as QrCodeIcon,
   Category as CategoryIcon,
-  CalendarMonth as CalendarMonthIcon,
 } from "@mui/icons-material"
+import { listarTodasVendas, buscarVendaPorId } from "../api/vendas"
 import Sidebar from "../../components/sidebar"
 
 export default function VendasPage() {
   const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState("ALC352333")
-  const [search, setSearch] = useState("ALC352333")
-  const [searchTerm, setSearchTerm] = useState("ALC352333")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [search, setSearch] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
   const [openProductModal, setOpenProductModal] = useState(false)
+  const [produtos, setProdutos] = useState([])
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null)
+  const [searchOptions, setSearchOptions] = useState([])
+  const [carrinhoItems, setCarrinhoItems] = useState([])
 
-  // Opções de pesquisa (simuladas)
-  const searchOptions = ["ALC352333", "ALC123456", "ALC789012", "ALC456789"]
+  
+  useEffect(() => {
+    const fetchVendas = async () => {
+      try {
+        const response = await listarTodasVendas()
+        if (response.data) {
+          setProdutos(response.data)
+          const codigos = response.data.map((item) => item.id || "")
+          setSearchOptions([...new Set(codigos)].filter(Boolean))
+        }
+      } catch (error) {
+        console.error("Erro ao buscar vendas:", error)
+      }
+    }
 
-  // Dados do produto
-  const product = {
-    descricao: "Crocs Minnie Tamanho 19/20",
-    estado: "Ótimo",
-    valor: 47.5,
-    codigo: "ALC352333",
-    lote: "B321",
-    categoria: "Calçados Infantis",
-    marca: "Crocs",
-    cor: "Rosa",
-    dataEntrada: "15/04/2023",
-    fornecedor: "Bazar Infantil",
-    observacoes: "Produto em excelente estado, sem marcas de uso. Acompanha todos os adesivos originais.",
-  }
+    fetchVendas()
+  }, [])
+  useEffect(() => {
+    const buscarProduto = async () => {
+      if (!searchTerm) return
 
-  const handleOpenProductModal = () => {
+      try {
+        const response = await buscarVendaPorId(searchTerm)
+        if (response.data) {
+          setProdutos([response.data])
+        }
+      } catch (error) {
+        console.error("Erro ao buscar produto:", error)
+      }
+    }
+
+    if (searchTerm) {
+      buscarProduto()
+    }
+  }, [searchTerm])
+
+  const handleOpenProductModal = (produto) => {
+    setProdutoSelecionado(produto)
     setOpenProductModal(true)
   }
 
@@ -76,7 +99,16 @@ export default function VendasPage() {
   }
 
   const handleGoToCart = () => {
+    if (produtoSelecionado) {
+      // Adicionar ao carrinho
+      setCarrinhoItems((prev) => [...prev, { ...produtoSelecionado, quantidade: 1 }])
+    }
+    setOpenProductModal(false)
     router.push("/vendas/carrinho")
+  }
+
+  const handleAddToCart = (produto) => {
+    setCarrinhoItems((prev) => [...prev, { ...produto, quantidade: 1 }])
   }
 
   return (
@@ -320,88 +352,98 @@ export default function VendasPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  <TableRow sx={{ bgcolor: "white" }}>
-                    <TableCell
-                      sx={{
-                        p: 1,
-                        pl: 2,
-                        borderBottom: "none",
-                      }}
-                    >
-                      {/* Placeholder for image */}
-                      <Box sx={{ width: 40, height: 40, bgcolor: "#f5f5f5", borderRadius: 1 }}></Box>
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: "0.85rem",
-                        color: "#555",
-                        p: 1,
-                        borderBottom: "none",
-                      }}
-                    >
-                      {product.descricao}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: "0.85rem",
-                        color: "#555",
-                        p: 1,
-                        textAlign: "center",
-                        borderBottom: "none",
-                      }}
-                    >
-                      {product.estado}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: "0.85rem",
-                        color: "#555",
-                        p: 1,
-                        textAlign: "center",
-                        borderBottom: "none",
-                      }}
-                    >
-                      R$ {product.valor.toFixed(2).replace(".", ",")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: "0.85rem",
-                        color: "#555",
-                        p: 1,
-                        textAlign: "center",
-                        borderBottom: "none",
-                      }}
-                    >
-                      {product.codigo}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: "0.85rem",
-                        color: "#555",
-                        p: 1,
-                        textAlign: "center",
-                        borderBottom: "none",
-                      }}
-                    >
-                      {product.lote}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        p: 1,
-                        textAlign: "center",
-                        borderBottom: "none",
-                      }}
-                    >
-                      <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                        <IconButton size="small" sx={{ p: 0.5 }} onClick={handleOpenProductModal}>
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" sx={{ p: 0.5 }} onClick={handleGoToCart}>
-                          <ShoppingCartIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
+                  {produtos.length > 0 ? (
+                    produtos.map((produto, index) => (
+                      <TableRow key={index} sx={{ bgcolor: "white" }}>
+                        <TableCell
+                          sx={{
+                            p: 1,
+                            pl: 2,
+                            borderBottom: "none",
+                          }}
+                        >
+                          {/* Placeholder for image */}
+                          <Box sx={{ width: 40, height: 40, bgcolor: "#f5f5f5", borderRadius: 1 }}></Box>
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: "0.85rem",
+                            color: "#555",
+                            p: 1,
+                            borderBottom: "none",
+                          }}
+                        >
+                          {produto.descricao}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: "0.85rem",
+                            color: "#555",
+                            p: 1,
+                            textAlign: "center",
+                            borderBottom: "none",
+                          }}
+                        >
+                          {produto.estadoConservacao}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: "0.85rem",
+                            color: "#555",
+                            p: 1,
+                            textAlign: "center",
+                            borderBottom: "none",
+                          }}
+                        >
+                          R$ {produto.preco ? produto.preco.toFixed(2).replace(".", ",") : "0,00"}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: "0.85rem",
+                            color: "#555",
+                            p: 1,
+                            textAlign: "center",
+                            borderBottom: "none",
+                          }}
+                        >
+                          {produto.id}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: "0.85rem",
+                            color: "#555",
+                            p: 1,
+                            textAlign: "center",
+                            borderBottom: "none",
+                          }}
+                        >
+                          {produto.lote || "-"}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            p: 1,
+                            textAlign: "center",
+                            borderBottom: "none",
+                          }}
+                        >
+                          <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+                            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleOpenProductModal(produto)}>
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleAddToCart(produto)}>
+                              <ShoppingCartIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow sx={{ bgcolor: "white" }}>
+                      <TableCell colSpan={7} sx={{ textAlign: "center", py: 4 }}>
+                        Nenhum produto encontrado
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -422,176 +464,158 @@ export default function VendasPage() {
           },
         }}
       >
-        <DialogTitle
-          sx={{
-            bgcolor: "#ffccd5",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            p: 2,
-          }}
-        >
-          <Typography variant="h5" sx={{ fontWeight: 700, color: "#333" }}>
-            Detalhes do Produto
-          </Typography>
-          <IconButton onClick={handleCloseProductModal} size="large" sx={{ color: "#333" }}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
+        {produtoSelecionado && (
+          <>
+            <DialogTitle
+              sx={{
+                bgcolor: "#ffccd5",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                p: 2,
+              }}
+            >
+              <Typography variant="h5" sx={{ fontWeight: 700, color: "#333" }}>
+                Detalhes do Produto
+              </Typography>
+              <IconButton onClick={handleCloseProductModal} size="large" sx={{ color: "#333" }}>
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
 
-        <DialogContent sx={{ p: 4 }}>
-          <Grid container spacing={4}>
-            {/* Imagem do Produto */}
-            <Grid item xs={12} md={4}>
-              <Box
+            <DialogContent sx={{ p: 4 }}>
+              <Grid container spacing={4}>
+                {/* Imagem do Produto */}
+                <Grid item xs={12} md={4}>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      height: 250,
+                      bgcolor: "#f5f5f5",
+                      borderRadius: 2,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                      mb: 2,
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Imagem do Produto
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 3 }}>
+                    <Chip
+                      icon={<CheckCircleIcon />}
+                      label={produtoSelecionado.estadoConservacao}
+                      color="success"
+                      sx={{ fontWeight: 600, fontSize: "1rem", py: 2.5, px: 1 }}
+                    />
+                  </Box>
+                </Grid>
+
+                {/* Informações do Produto */}
+                <Grid item xs={12} md={8}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: "#333" }}>
+                    {produtoSelecionado.descricao}
+                  </Typography>
+
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <AttachMoneyIcon sx={{ color: "#00509E", mr: 1 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: "#00509E" }}>
+                      R$ {produtoSelecionado.preco ? produtoSelecionado.preco.toFixed(2).replace(".", ",") : "0,00"}
+                    </Typography>
+                  </Box>
+
+                  <Grid container spacing={3} sx={{ mb: 3 }}>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <QrCodeIcon sx={{ color: "#666", mr: 1 }} />
+                        <Typography variant="body1">
+                          <strong>Código:</strong> {produtoSelecionado.id}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <InventoryIcon sx={{ color: "#666", mr: 1 }} />
+                        <Typography variant="body1">
+                          <strong>Tamanho:</strong> {produtoSelecionado.tamanho || "-"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <CategoryIcon sx={{ color: "#666", mr: 1 }} />
+                        <Typography variant="body1">
+                          <strong>Gênero:</strong> {produtoSelecionado.genero || "-"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                    Detalhes Adicionais
+                  </Typography>
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Marca:</strong> {produtoSelecionado.marca}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Estado:</strong> {produtoSelecionado.estadoConservacao}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </DialogContent>
+
+            <DialogActions sx={{ p: 3, bgcolor: "#f8f9fa" }}>
+              <Button
+                variant="outlined"
+                onClick={handleCloseProductModal}
                 sx={{
-                  width: "100%",
-                  height: 250,
-                  bgcolor: "#f5f5f5",
                   borderRadius: 2,
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                  mb: 2,
+                  px: 3,
+                  py: 1,
+                  borderColor: "#ccc",
+                  color: "#666",
+                  "&:hover": {
+                    borderColor: "#999",
+                    bgcolor: "#f5f5f5",
+                  },
                 }}
               >
-                <Typography variant="body2" color="text.secondary">
-                  Imagem do Produto
-                </Typography>
-              </Box>
-
-              <Box sx={{ mt: 3 }}>
-                <Chip
-                  icon={<CheckCircleIcon />}
-                  label={product.estado}
-                  color="success"
-                  sx={{ fontWeight: 600, fontSize: "1rem", py: 2.5, px: 1 }}
-                />
-              </Box>
-            </Grid>
-
-            {/* Informações do Produto */}
-            <Grid item xs={12} md={8}>
-              <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: "#333" }}>
-                {product.descricao}
-              </Typography>
-
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <AttachMoneyIcon sx={{ color: "#00509E", mr: 1 }} />
-                <Typography variant="h6" sx={{ fontWeight: 600, color: "#00509E" }}>
-                  R$ {product.valor.toFixed(2).replace(".", ",")}
-                </Typography>
-              </Box>
-
-              <Grid container spacing={3} sx={{ mb: 3 }}>
-                <Grid item xs={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <QrCodeIcon sx={{ color: "#666", mr: 1 }} />
-                    <Typography variant="body1">
-                      <strong>Código:</strong> {product.codigo}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <InventoryIcon sx={{ color: "#666", mr: 1 }} />
-                    <Typography variant="body1">
-                      <strong>Lote:</strong> {product.lote}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <CategoryIcon sx={{ color: "#666", mr: 1 }} />
-                    <Typography variant="body1">
-                      <strong>Categoria:</strong> {product.categoria}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <CalendarMonthIcon sx={{ color: "#666", mr: 1 }} />
-                    <Typography variant="body1">
-                      <strong>Data de Entrada:</strong> {product.dataEntrada}
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                Detalhes Adicionais
-              </Typography>
-
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Marca:</strong> {product.marca}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Cor:</strong> {product.cor}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Fornecedor:</strong> {product.fornecedor}
-                  </Typography>
-                </Grid>
-              </Grid>
-
-              <Box sx={{ mt: 3, bgcolor: "#f5f5f5", p: 2, borderRadius: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Observações
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {product.observacoes}
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </DialogContent>
-
-        <DialogActions sx={{ p: 3, bgcolor: "#f8f9fa" }}>
-          <Button
-            variant="outlined"
-            onClick={handleCloseProductModal}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              borderColor: "#ccc",
-              color: "#666",
-              "&:hover": {
-                borderColor: "#999",
-                bgcolor: "#f5f5f5",
-              },
-            }}
-          >
-            Fechar
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<ShoppingCartIcon />}
-            onClick={handleGoToCart}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              bgcolor: "#ffccd5",
-              color: "#333",
-              fontWeight: 600,
-              "&:hover": {
-                bgcolor: "#ffb6c1",
-              },
-            }}
-          >
-            Adicionar ao Carrinho
-          </Button>
-        </DialogActions>
+                Fechar
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<ShoppingCartIcon />}
+                onClick={handleGoToCart}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  bgcolor: "#ffccd5",
+                  color: "#333",
+                  fontWeight: 600,
+                  "&:hover": {
+                    bgcolor: "#ffb6c1",
+                  },
+                }}
+              >
+                Adicionar ao Carrinho
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </Box>
   )

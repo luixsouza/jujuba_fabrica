@@ -5,168 +5,100 @@ import Image from "next/image"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ArrowLeft, Home, User, Package, ShoppingCart, List } from "lucide-react"
 
-const mockLoteItems = {
-  L001: [
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Camisa Lacoste (Original) Tamanho 8 anos",
-      estadoConservacao: "Ótimo",
-      valor: 89.9,
-      codigo: "ALC222333",
-      genero: "Masc",
-    },
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Crocs Minnie Tamanho 19/20",
-      estadoConservacao: "Ótimo",
-      valor: 68.9,
-      codigo: "ALC352333",
-      genero: "Fem",
-    },
-  ],
-  L002: [
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Tênis Nike Air Max Tamanho 42",
-      estadoConservacao: "Bom",
-      valor: 129.9,
-      codigo: "ANK123456",
-      genero: "Masc",
-    },
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Calça Jeans Levis Tamanho 40",
-      estadoConservacao: "Ótimo",
-      valor: 79.9,
-      codigo: "ALV789012",
-      genero: "Masc",
-    },
-  ],
-  L003: [
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Vestido Infantil Lilica Ripilica Tamanho 6",
-      estadoConservacao: "Ótimo",
-      valor: 59.9,
-      codigo: "VLR345678",
-      genero: "Fem",
-    },
-  ],
-  L004: [
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Jaqueta de Couro Tamanho M",
-      estadoConservacao: "Bom",
-      valor: 149.9,
-      codigo: "JCR901234",
-      genero: "Unisex",
-    },
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Blusa de Lã Tamanho P",
-      estadoConservacao: "Ótimo",
-      valor: 45.9,
-      codigo: "BLA567890",
-      genero: "Fem",
-    },
-  ],
-  L005: [
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Sapato Social Tamanho 41",
-      estadoConservacao: "Ótimo",
-      valor: 89.9,
-      codigo: "SSC123789",
-      genero: "Masc",
-    },
-  ],
-  L006: [
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Bolsa de Couro Feminina",
-      estadoConservacao: "Ótimo",
-      valor: 119.9,
-      codigo: "BCF456123",
-      genero: "Fem",
-    },
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Cinto de Couro Tamanho Único",
-      estadoConservacao: "Bom",
-      valor: 39.9,
-      codigo: "CCU789456",
-      genero: "Unisex",
-    },
-  ],
-  L007: [
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Bermuda Jeans Tamanho 38",
-      estadoConservacao: "Ótimo",
-      valor: 49.9,
-      codigo: "BJN123456",
-      genero: "Masc",
-    },
-  ],
-  L008: [
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Vestido de Festa Tamanho 42",
-      estadoConservacao: "Ótimo",
-      valor: 159.9,
-      codigo: "VFT789012",
-      genero: "Fem",
-    },
-    {
-      imagem: "/placeholder.svg?height=80&width=80",
-      descricao: "Sandália Feminina Tamanho 37",
-      estadoConservacao: "Bom",
-      valor: 69.9,
-      codigo: "SFM345678",
-      genero: "Fem",
-    },
-  ],
-}
-
-const mockLotesSidebar = [
-  { codigo: "L001", data: "15/03/2023" },
-  { codigo: "L002", data: "20/04/2023" },
-  { codigo: "L003", data: "10/05/2023" },
-]
+// Importando as funções da API
+import { buscarLotePorId, listarLotes } from "../api/lotes"
 
 export default function VisualizarLotePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [loteInfo, setLoteInfo] = useState(null)
   const [items, setItems] = useState([])
+  const [lotesSidebar, setLotesSidebar] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    const id = searchParams.get("id")
-    const data = searchParams.get("data")
-    const fornecedora = searchParams.get("fornecedora")
+    const fetchLotesSidebar = async () => {
+      try {
+        const response = await listarLotes()
+        if (response.data) {
+          // Formatar os dados para exibição na barra lateral
+          const lotesFormatados = response.data
+            .map((lote) => ({
+              id: lote.id,
+              codigo: `L${lote.id}`,
+              data: new Date(lote.dataCriacao).toLocaleDateString("pt-BR"),
+            }))
+            .slice(0, 5) // Limitar a 5 lotes para a barra lateral
 
-    if (id && data && fornecedora) {
-      const formattedDate = new Date(data).toLocaleDateString("pt-BR")
-
-      setLoteInfo({
-        id,
-        data: formattedDate,
-        fornecedora,
-        descricao: `Lote ${id}`,
-        marca: "Diversos",
-        tamanho: "Variados",
-        estado: "Bom/Ótimo",
-        valor: `R$ ${calcularValorTotal(mockLoteItems[id] || [])
-          .toFixed(2)
-          .replace(".", ",")}`,
-        genero: "Diversos",
-      })
-      setItems(mockLoteItems[id] || [])
+          setLotesSidebar(lotesFormatados)
+        }
+      } catch (error) {
+        console.error("Erro ao buscar lotes para barra lateral:", error)
+      }
     }
+
+    fetchLotesSidebar()
+  }, [])
+
+  useEffect(() => {
+    const fetchLoteDetails = async () => {
+      const id = searchParams.get("id")
+      if (!id) return
+
+      try {
+        setLoading(true)
+        const response = await buscarLotePorId(id)
+
+        if (response.data) {
+          const loteData = response.data
+          const valorTotal = calcularValorTotal(loteData.produtos || [])
+
+          // Formatar informações do lote
+          setLoteInfo({
+            id: `L${loteData.id}`,
+            data: new Date(loteData.dataCriacao).toLocaleDateString("pt-BR"),
+            fornecedora: loteData.fornecedora?.nome || "Fornecedora não especificada",
+            descricao: `Lote L${loteData.id}`,
+            marca: "Diversos",
+            tamanho: "Variados",
+            estado: "Bom/Ótimo",
+            valor: `R$ ${valorTotal.toFixed(2).replace(".", ",")}`,
+            genero: "Diversos",
+          })
+
+          // Formatar itens do lote
+          if (loteData.produtos && Array.isArray(loteData.produtos)) {
+            const produtosFormatados = loteData.produtos.map((produto) => ({
+              imagem: "/placeholder.svg?height=80&width=80",
+              descricao: produto.descricao,
+              estadoConservacao: produto.estadoConservacao,
+              valor: produto.preco,
+              codigo: produto.id,
+              genero: produto.genero,
+              marca: produto.marca,
+              tamanho: produto.tamanho,
+              quantidade: produto.quantidade,
+            }))
+
+            setItems(produtosFormatados)
+          } else {
+            setItems([])
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar detalhes do lote:", error)
+        setError("Não foi possível carregar os detalhes do lote.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLoteDetails()
   }, [searchParams])
 
-  const calcularValorTotal = (items) => {
-    return items.reduce((total, item) => total + item.valor, 0)
+  const calcularValorTotal = (produtos) => {
+    return produtos.reduce((total, produto) => total + produto.preco * (produto.quantidade || 1), 0)
   }
 
   const handleGoBack = () => {
@@ -175,6 +107,58 @@ export default function VisualizarLotePage() {
 
   const handleGoHome = () => {
     router.push("../fornecedores/fornecedores_tabela")
+  }
+
+  const handleAddItem = () => {
+    const id = searchParams.get("id")
+    if (id) {
+      router.push(`./editar_lote?id=${id}`)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "#a3e0f5",
+        }}
+      >
+        <p style={{ fontSize: "18px" }}>Carregando detalhes do lote...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "#a3e0f5",
+          flexDirection: "column",
+        }}
+      >
+        <p style={{ fontSize: "18px", color: "red", marginBottom: "20px" }}>{error}</p>
+        <button
+          onClick={handleGoBack}
+          style={{
+            background: "#ffd0e8",
+            border: "none",
+            padding: "10px 20px",
+            borderRadius: "20px",
+            cursor: "pointer",
+          }}
+        >
+          Voltar
+        </button>
+      </div>
+    )
   }
 
   if (!loteInfo) {
@@ -188,7 +172,7 @@ export default function VisualizarLotePage() {
           backgroundColor: "#a3e0f5",
         }}
       >
-        <p style={{ fontSize: "18px" }}>Carregando detalhes do lote...</p>
+        <p style={{ fontSize: "18px" }}>Lote não encontrado</p>
       </div>
     )
   }
@@ -491,6 +475,13 @@ export default function VisualizarLotePage() {
           padding: 10px;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
+
+        .empty-message {
+          text-align: center;
+          padding: 20px;
+          font-size: 16px;
+          color: #666;
+        }
       `}</style>
 
       <div className="container">
@@ -498,7 +489,7 @@ export default function VisualizarLotePage() {
         <div className="sidebar">
           <div className="logo-container">
             <div className="logo">
-              <Image src="/jujba2.png"  alt="Jujuba Logo" width={140} height={140} priority />
+              <Image src="/jujba2.png" alt="Jujuba Logo" width={140} height={140} priority />
             </div>
           </div>
 
@@ -524,12 +515,20 @@ export default function VisualizarLotePage() {
           <div className="lotes-list">
             <h3>Lista de Lotes</h3>
             <div className="lotes-card">
-              {mockLotesSidebar.map((lote) => (
-                <div key={lote.codigo} className="lote-item">
-                  <span>{lote.codigo}</span>
-                  <span>{lote.data}</span>
-                </div>
-              ))}
+              {lotesSidebar.length > 0 ? (
+                lotesSidebar.map((lote) => (
+                  <div
+                    key={lote.id}
+                    className="lote-item"
+                    onClick={() => router.push(`./visualizar_lote?id=${lote.id}`)}
+                  >
+                    <span>{lote.codigo}</span>
+                    <span>{lote.data}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-message">Nenhum lote encontrado</div>
+              )}
             </div>
           </div>
         </div>
@@ -568,38 +567,49 @@ export default function VisualizarLotePage() {
                   <th>Estado de conservação</th>
                   <th>Valor</th>
                   <th>Código do Produto</th>
-                  <th>Genero</th>
+                  <th>Gênero</th>
+                  <th>Quantidade</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, index) => (
-                  <tr key={index}>
-                    <td>
-                      <Image
-                        src={item.imagem || "/placeholder.svg"}
-                        alt={item.descricao}
-                        width={80}
-                        height={80}
-                        style={{ borderRadius: "10px" }}
-                      />
+                {items.length > 0 ? (
+                  items.map((item, index) => (
+                    <tr key={index}>
+                      <td>
+                        <Image
+                          src={item.imagem || "/placeholder.svg"}
+                          alt={item.descricao}
+                          width={80}
+                          height={80}
+                          style={{ borderRadius: "10px" }}
+                        />
+                      </td>
+                      <td>{item.descricao}</td>
+                      <td>{item.estadoConservacao}</td>
+                      <td>R$ {item.valor.toFixed(2).replace(".", ",")}</td>
+                      <td>{item.codigo}</td>
+                      <td>{item.genero}</td>
+                      <td>{item.quantidade || 1}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="empty-message">
+                      Nenhum item encontrado neste lote
                     </td>
-                    <td>{item.descricao}</td>
-                    <td>{item.estadoConservacao}</td>
-                    <td>R$ {item.valor.toFixed(2).replace(".", ",")}</td>
-                    <td>{item.codigo}</td>
-                    <td>{item.genero}</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
 
           <div className="center-button">
-            <button className="pink-button">Adicionar Item</button>
+            <button className="pink-button" onClick={handleAddItem}>
+              Adicionar Item
+            </button>
           </div>
         </div>
       </div>
     </>
   )
 }
-
