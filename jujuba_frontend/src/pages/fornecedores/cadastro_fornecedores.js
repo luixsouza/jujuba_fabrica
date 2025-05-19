@@ -10,6 +10,7 @@ import { useRouter } from "next/router"
 export default function FornecedoresCadastro() {
   const [fornecedora, setFornecedora] = useState({
     nome: "",
+    dataNascimento: "",
     contato: "",
     endereco: "",
     chavePix: "",
@@ -42,6 +43,7 @@ export default function FornecedoresCadastro() {
         "fornecedora",
         JSON.stringify({
           nome: values.nome || "N/A",
+          dataNascimento: values.dataNascimento || "N/A",
           contato: values.contato || "N/A",
           endereco: values.endereco || "N/A",
           chavePix: values.chavePix || "N/A",
@@ -80,6 +82,7 @@ export default function FornecedoresCadastro() {
       alert("Fornecedor criado com sucesso!")
       setFornecedora({
         nome: "",
+        dataNascimento: "",
         contato: "",
         endereco: "",
         chavePix: "",
@@ -120,8 +123,8 @@ export default function FornecedoresCadastro() {
               borderRadius: 10,
               backgroundColor: "#FADADD",
               p: 3,
-              maxWidth: "150%",
-              mx: "auto",
+              maxWidth: "60%", // Mantido em 60%
+              mx: "auto", // Centraliza o card
               mt: { xs: 4, md: 8 },
               height: "auto",
               boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
@@ -132,34 +135,33 @@ export default function FornecedoresCadastro() {
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Grid container direction="column" alignItems="center" spacing={1}>
-                    <Grid item xs={12} display="flex" justifyContent="flex-start" width="100%" alignItems="center">
-                      <ArrowBack
-                        sx={{
-                          fontSize: "30px",
-                          cursor: "pointer",
-                          color: "black",
-                        }}
-                        onClick={() => router.back()}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} display="flex" justifyContent="flex-end" width="100%" alignItems="center">
-                      <Home
-                        sx={{
-                          fontSize: "30px",
-                          cursor: "pointer",
-                          color: "black",
-                          marginTop: "-40px",
-                        }}
-                        onClick={() => router.push("/")}
-                      />
+                    {/* Ícones de navegação */}
+                    <Grid item xs={12} width="100%">
+                      <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
+                        <ArrowBack
+                          sx={{
+                            fontSize: "30px",
+                            cursor: "pointer",
+                            color: "black",
+                          }}
+                          onClick={() => router.back()}
+                        />
+                        <Home
+                          sx={{
+                            fontSize: "30px",
+                            cursor: "pointer",
+                            color: "black",
+                          }}
+                          onClick={() => router.push("/")}
+                        />
+                      </Box>
                     </Grid>
 
                     <Grid item xs={12}>
                       <Typography
                         variant="h4"
                         sx={{
-                          mb: 4,
+                          mb: 1, // Mantido em 1
                           fontSize: { xs: "35px", md: "45px" },
                           fontWeight: "bold",
                           textAlign: "center",
@@ -167,111 +169,190 @@ export default function FornecedoresCadastro() {
                       >
                         Cadastro de Fornecedor
                       </Typography>
+                      
+                      {/* Mensagem informativa sobre campos obrigatórios */}
+                      <Typography
+                        variant="body2"
+                        sx={{ 
+                          fontSize: "14px",
+                          color: "gray",
+                          textAlign: "center",
+                          mb: 3 // Mantido em 3
+                        }}
+                      >
+                        Campos com <span style={{ color: 'red' }}>*</span> são obrigatórios
+                      </Typography>
                     </Grid>
                   </Grid>
                 </Grid>
-                <Grid item xs={12} sm={8} md={7}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
-                  >
-                    Nome
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Nome do Fornecedor"
-                    name="nome"
-                    onChange={handleChange}
-                    required
-                    value={fornecedora.nome}
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused": {
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={8} md={7}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
-                  >
-                    Contato
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Contato"
-                    name="contato"
-                    onChange={handleChange}
-                    required
-                    value={fornecedora.contato}
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused": {
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={8} md={7}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
-                  >
-                    Endereço
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Endereço"
-                    name="endereco"
-                    onChange={handleChange}
-                    required
-                    value={fornecedora.endereco}
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused": {
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={8} md={7}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
-                  >
-                    Chave Pix
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Chave Pix"
-                    name="chavePix"
-                    onChange={handleChange}
-                    value={fornecedora.chavePix}
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused": {
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  />
+                
+                {/* Container para os campos do formulário em formato vertical */}
+                <Grid item xs={12}>
+                  <Grid container justifyContent="center">
+                    {/* Campo Nome - ocupando toda a largura */}
+                    <Grid item xs={12} sm={10} md={8}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Nome <span style={{ color: 'red' }}>*</span>
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="nome"
+                        onChange={handleChange}
+                        required
+                        value={fornecedora.nome}
+                        variant="outlined"
+                        label="" // Mantido vazio
+                        placeholder="" // Mantido vazio
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
+                    
+                    {/* NOVO Campo Data de Nascimento - ocupando toda a largura */}
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Data de Nascimento <span style={{ color: 'red' }}>*</span>
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="dataNascimento"
+                        onChange={handleChange}
+                        required
+                        value={fornecedora.dataNascimento}
+                        variant="outlined"
+                        label="" // Vazio
+                        placeholder="" // Vazio
+                        type="date" // Definido como campo de data
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
+                    
+                    {/* Campo Contato - ocupando toda a largura */}
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Contato <span style={{ color: 'red' }}>*</span>
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="contato"
+                        onChange={handleChange}
+                        required
+                        value={fornecedora.contato}
+                        variant="outlined"
+                        label="" // Mantido vazio
+                        placeholder="" // Mantido vazio
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
+                    
+                    {/* Campo Endereço - ocupando toda a largura */}
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Endereço <span style={{ color: 'red' }}>*</span>
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="endereco"
+                        onChange={handleChange}
+                        required
+                        value={fornecedora.endereco}
+                        variant="outlined"
+                        label="" // Mantido vazio
+                        placeholder="" // Mantido vazio
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
+                    
+                    {/* Campo Chave Pix - ocupando toda a largura */}
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Chave Pix
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="chavePix"
+                        onChange={handleChange}
+                        value={fornecedora.chavePix}
+                        variant="outlined"
+                        label="" // Mantido vazio
+                        placeholder="" // Mantido vazio
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
+                    
+                    {/* Mensagem sobre obrigatoriedade do upload de contrato */}
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 4 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ 
+                          fontWeight: "normal", 
+                          fontSize: "14px", 
+                          marginBottom: "8px", 
+                          color: "gray",
+                          textAlign: "center"
+                        }}
+                      >
+                        O upload do contrato é <span style={{ color: 'red', fontWeight: 'bold' }}>obrigatório</span>
+                      </Typography>
+                    </Grid>
+                  </Grid>
                 </Grid>
 
                 {/* Botões alinhados horizontalmente no final da página */}
@@ -279,7 +360,7 @@ export default function FornecedoresCadastro() {
                   item
                   xs={12}
                   sx={{
-                    mt: 4,
+                    mt: 2, // Reduzido de 4 para 2 por causa da mensagem acima
                     display: "flex",
                     flexDirection: { xs: "column", sm: "row" },
                     justifyContent: "center",
@@ -293,12 +374,12 @@ export default function FornecedoresCadastro() {
                       color: "Black",
                       backgroundColor: "#50abe4",
                       textTransform: "none",
-                      width: { xs: "100%", sm: "250px" },
+                      width: { xs: "100%", sm: "200px" }, // Mantido em 200px
                       fontWeight: "bold",
-                      fontSize: { xs: "16px", md: "18px" },
+                      fontSize: { xs: "14px", md: "16px" }, // Mantido
                       borderRadius: "50px",
-                      padding: "10px 20px",
-                      height: "56px",
+                      padding: "8px 16px", // Mantido
+                      height: "48px", // Mantido
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -313,7 +394,7 @@ export default function FornecedoresCadastro() {
                   >
                     {loading ? (
                       <CircularProgress
-                        size={24}
+                        size={20} // Mantido
                         sx={{
                           color: "#FFFFFF",
                           marginRight: 1,
@@ -332,12 +413,12 @@ export default function FornecedoresCadastro() {
                       color: "Black",
                       backgroundColor: "#50abe4",
                       textTransform: "none",
-                      width: { xs: "100%", sm: "250px" },
+                      width: { xs: "100%", sm: "200px" }, // Mantido em 200px
                       fontWeight: "bold",
-                      fontSize: { xs: "16px", md: "18px" },
+                      fontSize: { xs: "14px", md: "16px" }, // Mantido
                       borderRadius: "50px",
-                      padding: "10px 20px",
-                      height: "56px",
+                      padding: "8px 16px", // Mantido
+                      height: "48px", // Mantido
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -352,7 +433,7 @@ export default function FornecedoresCadastro() {
                   >
                     {loading ? (
                       <CircularProgress
-                        size={24}
+                        size={20} // Mantido
                         sx={{
                           color: "#FFFFFF",
                           marginRight: 1,
@@ -370,12 +451,12 @@ export default function FornecedoresCadastro() {
                       color: "Black",
                       backgroundColor: "#50abe4",
                       textTransform: "none",
-                      width: { xs: "100%", sm: "250px" },
+                      width: { xs: "100%", sm: "200px" }, // Mantido em 200px
                       fontWeight: "bold",
-                      fontSize: { xs: "16px", md: "18px" },
+                      fontSize: { xs: "14px", md: "16px" }, // Mantido
                       borderRadius: "50px",
-                      padding: "10px 20px",
-                      height: "56px",
+                      padding: "8px 16px", // Mantido
+                      height: "48px", // Mantido
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -390,7 +471,7 @@ export default function FornecedoresCadastro() {
                   >
                     {loading ? (
                       <CircularProgress
-                        size={24}
+                        size={20} // Mantido
                         sx={{
                           color: "#FFFFFF",
                           marginRight: 1,
@@ -409,4 +490,3 @@ export default function FornecedoresCadastro() {
     </Box>
   )
 }
-
