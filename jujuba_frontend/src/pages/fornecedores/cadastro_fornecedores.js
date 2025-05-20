@@ -33,44 +33,53 @@ export default function FornecedoresCadastro() {
     }))
   }
 
-  // função para criar um fornecedor na API
-  const createFornecedora = async (values) => {
-    try {
-      const formData = new FormData()
+ // Função para formatar a data no padrão "dd/MM/yyyy"
+function formatDateToDDMMYYYY(dateString) {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  if (isNaN(date)) return "N/A";
 
-      // serializa o objeto fornecedora como JSON
-      formData.append(
-        "fornecedora",
-        JSON.stringify({
-          nome: values.nome || "N/A",
-          dataNascimento: values.dataNascimento || "N/A",
-          contato: values.contato || "N/A",
-          endereco: values.endereco || "N/A",
-          chavePix: values.chavePix || "N/A",
-        }),
-      )
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
 
-      // adiciona o contrato ao FormData
-      const contrato = document.querySelector('input[name="contrato"]')?.files[0]
-      if (contrato) {
-        formData.append("contratoUrl", contrato)
-      } else {
-        throw new Error("O arquivo do contrato é obrigatório!")
-      }
+  return `${day}/${month}/${year}`;
+}
 
+const createFornecedora = async (values) => {
+  try {
+    const formData = new FormData();
 
-      const response = await axios.post(BASE_URL, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
+    const dataNascimentoFormatted = formatDateToDDMMYYYY(values.dataNascimento);
 
-      return response.data
-    } catch (error) {
-      console.error("Erro ao criar fornecedor:", error)
-      throw error
+    const fornecedoraObj = {
+      nome: values.nome || "N/A",
+      dataNascimento: dataNascimentoFormatted,
+      contato: values.contato || "N/A",
+      endereco: values.endereco || "N/A",
+      chavePix: values.chavePix || "N/A",
+    };
+
+    formData.append("fornecedora", JSON.stringify(fornecedoraObj));
+
+    const contrato = values.contratoUrl || document.querySelector('input[name="contrato"]')?.files[0];
+    if (contrato) {
+      formData.append("contratoUrl", contrato);
+    } else {
+      throw new Error("O arquivo do contrato é obrigatório!");
     }
+
+    const response = await axios.post(BASE_URL, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao criar fornecedora:", error);
+    throw error;
   }
+};
+
 
   // envia os dados para a API
   const handleSubmit = async (event) => {
