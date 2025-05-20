@@ -62,9 +62,12 @@ const createFornecedora = async (values) => {
 
     formData.append("fornecedora", JSON.stringify(fornecedoraObj));
 
-    const contrato = values.contratoUrl || document.querySelector('input[name="contrato"]')?.files[0];
+    // Aqui deve ser só o arquivo do input, sem usar 'contratoUrl' de values
+    const contrato = document.querySelector('input[name="contrato"]')?.files[0];
+
     if (contrato) {
-      formData.append("contratoUrl", contrato);
+      // O nome do campo DEVE ser "contrato" para o backend reconhecer
+      formData.append("contrato", contrato);
     } else {
       throw new Error("O arquivo do contrato é obrigatório!");
     }
