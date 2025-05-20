@@ -1,8 +1,10 @@
 package com.jujuba.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
@@ -32,6 +34,10 @@ public class Fornecedora {
 
     @Column(name = "endereco", nullable = false, length = 200)
     private String endereco;
+
+    @Column(name = "data_nascimento", nullable = false)
+    @JsonFormat(pattern = "dd/MM/yyyy")
+    private LocalDate dataNascimento;
 
     @Column(name = "chave_pix", nullable = false, length = 100)
     private String chavePix;

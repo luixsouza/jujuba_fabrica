@@ -58,6 +58,7 @@ public class FornecedoraController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+        
     }
 
     @Operation(summary = "Lista todas as fornecedoras", description = "Retorna uma lista de todas as fornecedoras cadastradas.")

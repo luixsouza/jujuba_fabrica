@@ -1,5 +1,9 @@
 package com.jujuba.dto;
 
+import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -28,4 +32,8 @@ public class FornecedoraCreateDTO {
     @NotBlank
     @Size(max = 100)
     private String chavePix;
+
+    @NotBlank
+    @JsonFormat(pattern = "dd/MM/yyyy")
+    private LocalDate dataNascimento;
 }

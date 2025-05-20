@@ -1,5 +1,9 @@
 package com.jujuba.dto;
 
+import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,5 +21,8 @@ public class FornecedoraResponseDTO {
     private String endereco;
     private String chavePix;
     private String contratoUrl;
+    
+    @JsonFormat(pattern = "dd/MM/yyyy")
+    private LocalDate dataNascimento;
 }
 
