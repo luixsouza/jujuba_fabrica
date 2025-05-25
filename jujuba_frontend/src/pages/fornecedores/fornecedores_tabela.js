@@ -76,11 +76,11 @@ const FornecedoresPage = () => {
   }
 
   const handleEditNavigation = (id) => {
-    router.push(`./editar_fornecedores?id=${id}`)
+    router.push(`/fornecedores/${id}/editar`)//// passando o id não mais como query paramentero, mas sim como  dinamyc parametrer 
   }
 
-  const handleNavigation = () => {
-    router.push("./visualizar_fornecedor")
+  const handleNavigation = (id) => {
+    router.push(`/fornecedores/${id}/visualizar`)
   }
 
   const handleChangePage = (event, newPage) => {
@@ -326,7 +326,7 @@ const FornecedoresPage = () => {
                       {fornecedora.chavePix}
                     </TableCell>
                     <TableCell>
-                      <IconButton onClick={handleNavigation} sx={{ marginRight: 1, color: "#00509E" }}>
+                      <IconButton onClick={() => handleNavigation(fornecedora.id)} sx={{ marginRight: 1, color: "#00509E" }}>
                         <VisibilityIcon />
                       </IconButton>
                       <IconButton
@@ -380,4 +380,3 @@ const FornecedoresPage = () => {
 }
 
 export default FornecedoresPage
-

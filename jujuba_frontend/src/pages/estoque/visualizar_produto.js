@@ -4,50 +4,33 @@ import { useState, useEffect } from "react"
 import { Box, Button, Paper, Typography, Grid, IconButton, CircularProgress } from "@mui/material"
 import { ArrowBack, Home, Edit } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
-import { useRouter } from "next/router"
-import { ProdutoService } from "../services/produto-service"
+import { useRouter, useSearchParams } from "next/navigation"
+import { buscarProdutoPorId } from "../api/produtos"
 
 export default function ProdutoVisualizacao() {
   const [produto, setProduto] = useState(null)
-  const [fornecedora, setFornecedora] = useState(null)
-  const [formaPagamento, setFormaPagamento] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const router = useRouter()
-  const { id } = router.query
+  const searchParams = useSearchParams()
+  const id = searchParams.get("id")
 
   useEffect(() => {
     const fetchProduto = async () => {
-      if (!id) return
+      if (!id) {
+        setError("ID do produto não fornecido")
+        setLoading(false)
+        return
+      }
 
       try {
         setLoading(true)
-        const produtoData = await ProdutoService.getProdutoById(id)
+        const response = await buscarProdutoPorId(id)
 
-        if (!produtoData) {
-          setError("Produto não encontrado")
-          return
-        }
-
-       
-        if (!produtoData.descricaoDetalhada) {
-          console.warn(`Produto ${id} não tem descrição detalhada. Gerando uma descrição mockada.`)
-          produtoData.descricaoDetalhada = `Descrição detalhada mockada para o produto ${produtoData.descricao || "desconhecido"}. 
-Este produto apresenta excelente qualidade e acabamento. Fabricado com materiais de primeira linha, 
-oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
-        }
-
-        setProduto(produtoData)
-
-       
-        if (produtoData.fornecedora) {
-          const fornecedoraData = await ProdutoService.getFornecedoraById(produtoData.fornecedora)
-          setFornecedora(fornecedoraData)
-        }
-
-        if (produtoData.forma_pagamento) {
-          const formaPagamentoData = await ProdutoService.getFormaPagamentoById(produtoData.forma_pagamento)
-          setFormaPagamento(formaPagamentoData)
+        if (response.sucesso) {
+          setProduto(response.produto)
+        } else {
+          setError(response.mensagem || "Erro ao carregar produto")
         }
       } catch (err) {
         console.error("Erro ao buscar produto:", err)
@@ -61,7 +44,15 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
   }, [id])
 
   const handleEditClick = () => {
-    router.push(`./editar_produto/${id}`)
+    router.push(`./editar_produto?id=${id}`)
+  }
+
+  const handleGoBack = () => {
+    router.back()
+  }
+
+  const handleGoHome = () => {
+    router.push("../../fornecedores/fornecedores_tabela")
   }
 
   if (loading) {
@@ -96,10 +87,10 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
             {error || "Produto não encontrado"}
           </Typography>
           <Button
-            onClick={() => router.push("/produtos")}
+            onClick={() => router.push("../../estoque/estoque_tabela")}
             sx={{ mt: 2, bgcolor: "#f8c8cc", color: "black", "&:hover": { bgcolor: "#f8c8cc" } }}
           >
-            Voltar para Lista de Produtos
+            Voltar para Estoque
           </Button>
         </Paper>
       </Box>
@@ -115,7 +106,7 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
         sx={{
           flexGrow: 1,
           p: 3,
-          marginLeft: "280px",
+          marginLeft: "244px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -131,7 +122,7 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
           }}
         >
           <IconButton
-            onClick={() => router.back()}
+            onClick={handleGoBack}
             sx={{
               backgroundColor: "#9AE4FF",
               "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.9)" },
@@ -143,7 +134,7 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
             VISUALIZAR PRODUTO
           </Typography>
           <IconButton
-            onClick={() => router.push("/")}
+            onClick={handleGoHome}
             sx={{
               backgroundColor: "#9AE4FF",
               "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.9)" },
@@ -159,11 +150,27 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
             width: "100%",
             maxWidth: "800px",
             borderRadius: "20px",
-            backgroundColor: " #9AE4FF",
+            backgroundColor: "#9AE4FF",
             p: 3,
             mb: 3,
           }}
         >
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              ID do Produto:
+            </Typography>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: "30px",
+                backgroundColor: "#f8f9fa",
+                fontSize: "18px",
+              }}
+            >
+              <Typography>{produto.id || "N/A"}</Typography>
+            </Paper>
+          </Box>
+
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
               Descrição:
@@ -177,22 +184,6 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
               }}
             >
               <Typography>{produto.descricao || "N/A"}</Typography>
-            </Paper>
-          </Box>
-
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-              Descrição detalhada:
-            </Typography>
-            <Paper
-              sx={{
-                p: 2,
-                borderRadius: "15px",
-                backgroundColor: "#f8f9fa",
-                minHeight: "100px",
-              }}
-            >
-              <Typography>{produto.descricaoDetalhada || "N/A"}</Typography>
             </Paper>
           </Box>
 
@@ -244,21 +235,6 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                Gênero:
-              </Typography>
-              <Paper
-                sx={{
-                  p: 2,
-                  borderRadius: "15px",
-                  backgroundColor: "#f8f9fa",
-                  mb: 2,
-                }}
-              >
-                <Typography>{produto.genero || "N/A"}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
                 Preço:
               </Typography>
               <Paper
@@ -269,12 +245,12 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
                   mb: 2,
                 }}
               >
-                <Typography>R$ {produto.preco?.toFixed(2) || "0.00"}</Typography>
+                <Typography>R$ {produto.preco?.toFixed(2).replace(".", ",") || "0,00"}</Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                Fornecedora:
+                ID da Fornecedora:
               </Typography>
               <Paper
                 sx={{
@@ -284,12 +260,12 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
                   mb: 2,
                 }}
               >
-                <Typography>{fornecedora?.nome || "N/A"}</Typography>
+                <Typography>{produto.fornecedoraId || "N/A"}</Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                Forma de Pagamento:
+                Imagem URL:
               </Typography>
               <Paper
                 sx={{
@@ -299,26 +275,49 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
                   mb: 2,
                 }}
               >
-                <Typography>{formaPagamento?.nome || "N/A"}</Typography>
+                <Typography
+                  sx={{
+                    wordBreak: "break-all",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {produto.imagemUrl || "N/A"}
+                </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                ID do Lote:
-              </Typography>
-              <Paper
-                sx={{
-                  p: 2,
-                  borderRadius: "15px",
-                  backgroundColor: "#f8f9fa",
-                  mb: 2,
-                }}
-              >
-                <Typography>{produto.lote_id || "N/A"}</Typography>
-              </Paper>
-            </Grid>
-
           </Grid>
+
+          {/* Display product image if available */}
+          {produto.imagemUrl && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                Imagem do Produto:
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: "15px",
+                  backgroundColor: "#f8f9fa",
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <img
+                  src={produto.imagemUrl || "/placeholder.svg"}
+                  alt={produto.descricao || "Produto"}
+                  style={{
+                    maxWidth: "300px",
+                    maxHeight: "300px",
+                    objectFit: "contain",
+                    borderRadius: "10px",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none"
+                  }}
+                />
+              </Paper>
+            </Box>
+          )}
 
           <Box
             sx={{
@@ -352,4 +351,3 @@ oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais.`
     </Box>
   )
 }
-

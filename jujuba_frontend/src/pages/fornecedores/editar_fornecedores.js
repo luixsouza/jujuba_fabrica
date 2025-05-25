@@ -17,8 +17,9 @@ import {
   Chip,
 } from "@mui/material"
 import { ArrowBack, Home } from "@mui/icons-material"
-import Sidebar from "../../components/sidebar"
+import Sidebar from "../../../components/sidebar"
 import { useRouter } from "next/router"
+import { editarFornecedora } from "../api/fornecedores" // ajuste o caminho conforme sua estrutura aí zé 
 import axios from "axios"
 
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
@@ -49,9 +50,8 @@ export default function FornecedoresEdicao() {
     severity: "success",
   })
 
-
   useEffect(() => {
-    if (id) {
+    if (id && typeof id === "string") {
       fetchFornecedora(id)
     }
   }, [id])
@@ -59,26 +59,46 @@ export default function FornecedoresEdicao() {
   const fetchFornecedora = async (fornecedoraId) => {
     try {
       setFetchLoading(true)
+      console.log("Buscando fornecedor com ID:", fornecedoraId)
+
       const response = await axios.get(`${BASE_URL}/${fornecedoraId}`)
+      console.log("Resposta da API:", response.data)
+
       const data = response.data
+
+      // Formatando a data se necessário
+      let dataFormatada = data.dataDeNascimento || ""
+      if (dataFormatada && !dataFormatada.includes("-")) {
+        // Se a data vier em formato brasileiro (dd/mm/yyyy), converter para yyyy-mm-dd
+        const partes = dataFormatada.split("/")
+        if (partes.length === 3) {
+          dataFormatada = `${partes[2]}-${partes[1].padStart(2, "0")}-${partes[0].padStart(2, "0")}`
+        }
+      }
 
       setFornecedora({
         nome: data.nome || "",
         contato: data.contato || "",
         endereco: data.endereco || "",
         chavePix: data.chavePix || "",
-        dataDeNascimento: data.dataDeNascimento || "",
+        dataDeNascimento: dataFormatada,
         contratoUrl: data.contratoUrl || "",
       })
 
       if (data.contratoUrl) {
         setContratoAtual(data.contratoUrl)
       }
+
+      setSnackbar({
+        open: true,
+        message: "Dados carregados com sucesso!",
+        severity: "success",
+      })
     } catch (error) {
       console.error("Erro ao buscar dados do fornecedor:", error)
       setSnackbar({
         open: true,
-        message: "Erro ao carregar dados do fornecedor",
+        message: `Erro ao carregar dados do fornecedor: ${error.response?.data?.message || error.message}`,
         severity: "error",
       })
     } finally {
@@ -88,12 +108,14 @@ export default function FornecedoresEdicao() {
 
   const handleChange = (event) => {
     const { name, value } = event.target
+    console.log(`Campo ${name} alterado para:`, value)
     setFornecedora((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleFileChange = (event) => {
     const file = event.target.files[0]
     if (file) {
+      console.log("Arquivo selecionado:", file.name)
       setSelectedFile(file)
       setFornecedora((prev) => ({
         ...prev,
@@ -106,53 +128,15 @@ export default function FornecedoresEdicao() {
     setSnackbar({ ...snackbar, open: false })
   }
 
-  const updateFornecedora = async (values) => {
-    if (!id) {
-      throw new Error("ID do fornecedor não encontrado")
-    }
-
-    try {
-      const formData = new FormData()
-
-
-      const fornecedoraData = {
-        id: id,
-        nome: values.nome || "N/A",
-        contato: values.contato || "N/A",
-        endereco: values.endereco || "N/A",
-        chavePix: values.chavePix || "N/A",
-        dataDeNascimento: values.dataDeNascimento || "N/A",
-        contratoUrl: selectedFile ? null : contratoAtual,
-      }
-
-
-      formData.append("fornecedora", JSON.stringify(fornecedoraData))
-
-
-      if (selectedFile) {
-        formData.append("contratoUrl", selectedFile)
-      }
-
-      const response = await axios.put(`${BASE_URL}/${id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
-
-      return response.data
-    } catch (error) {
-      console.error("Erro ao atualizar fornecedor:", error)
-      throw error
-    }
-  }
-
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    if (!fornecedora.nome || !fornecedora.contato || !fornecedora.endereco) {
+    console.log("Dados do formulário antes da validação:", fornecedora)
+
+    if (!fornecedora.nome.trim() || !fornecedora.contato.trim() || !fornecedora.endereco.trim()) {
       setSnackbar({
         open: true,
-        message: "Por favor, preencha todos os campos obrigatórios.",
+        message: "Por favor, preencha todos os campos obrigatórios (Nome, Contato e Endereço).",
         severity: "error",
       })
       return
@@ -160,7 +144,20 @@ export default function FornecedoresEdicao() {
 
     setLoading(true)
     try {
-      const data = await updateFornecedora(fornecedora)
+      // Preparar dados seguindo exatamente o formato da API
+      const fornecedoraData = {
+        nome: fornecedora.nome,
+        contato: fornecedora.contato,
+        endereco: fornecedora.endereco,
+        chavePix: fornecedora.chavePix,
+        contratoUrl: selectedFile ? selectedFile.name : contratoAtual,
+        dataNascimento: fornecedora.dataDeNascimento,
+      }
+
+      console.log("Dados enviados para API:", fornecedoraData)
+
+      // Usar a função da API exatamente como definida
+      const data = await editarFornecedora(id, fornecedoraData)
       console.log("Fornecedor atualizado com sucesso:", data)
 
       setSnackbar({
@@ -169,6 +166,7 @@ export default function FornecedoresEdicao() {
         severity: "success",
       })
 
+      // Aguardar um pouco antes de redirecionar
       setTimeout(() => {
         router.push("/fornecedores/fornecedores_tabela")
       }, 2000)
@@ -309,7 +307,7 @@ export default function FornecedoresEdicao() {
                     variant="body2"
                     sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                   >
-                    Nome
+                    Nome *
                   </Typography>
                   <TextField
                     fullWidth
@@ -336,7 +334,7 @@ export default function FornecedoresEdicao() {
                     variant="body2"
                     sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                   >
-                    Contato
+                    Contato *
                   </Typography>
                   <TextField
                     fullWidth
@@ -363,7 +361,7 @@ export default function FornecedoresEdicao() {
                     variant="body2"
                     sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                   >
-                    Endereço
+                    Endereço *
                   </Typography>
                   <TextField
                     fullWidth
@@ -422,9 +420,13 @@ export default function FornecedoresEdicao() {
                     fullWidth
                     label="Data de Nascimento"
                     name="dataDeNascimento"
+                    type="date"
                     onChange={handleChange}
                     value={fornecedora.dataDeNascimento}
                     variant="outlined"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         backgroundColor: "#FFFFFF",
@@ -436,6 +438,7 @@ export default function FornecedoresEdicao() {
                     }}
                   />
                 </Grid>
+
                 <Grid
                   item
                   xs={12}
@@ -546,4 +549,3 @@ export default function FornecedoresEdicao() {
     </Box>
   )
 }
-
