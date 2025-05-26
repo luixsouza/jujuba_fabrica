@@ -55,34 +55,19 @@ const FornecedoresPage = () => {
   }, [])
 
   const deleteFornecedora = useCallback(
-    async (id) => {
-      try {
-        const formData = new FormData()
-        formData.append(
-          "fornecedora",
-          JSON.stringify({
-            id,
-            nome: values.nome,
-            contato: values.contato,
-            endereco: values.endereco,
-            chavePix: values.chavePix,
-          }),
-        )
-        const response = await axios.post(`${BASE_URL}/delete`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        console.log("Fornecedor deletado com sucesso:", response.data)
-        setFornecedores((prev) => prev.filter((fornecedora) => fornecedora.id !== id))
-        alert("Fornecedor deletado com sucesso!")
-      } catch (error) {
-        console.error("Erro ao deletar fornecedor:", error)
-        alert("Erro ao deletar fornecedor.")
-      }
-    },
-    [values],
-  )
+  async (id) => {
+    try {
+      const response = await axios.delete(`${BASE_URL}/${id}`)
+      console.log("Fornecedor deletado com sucesso:", response.data)
+      setFornecedores((prev) => prev.filter((fornecedora) => fornecedora.id !== id))
+      alert("Fornecedor deletado com sucesso!")
+    } catch (error) {
+      console.error("Erro ao deletar fornecedor:", error)
+      alert("Erro ao deletar fornecedor.")
+    }
+  },
+  []
+)
 
   const handleNavigateToRegister = () => {
     if (router) {
@@ -91,11 +76,11 @@ const FornecedoresPage = () => {
   }
 
   const handleEditNavigation = (id) => {
-    router.push(`./editar_fornecedores?id=${id}`)
+    router.push(`/fornecedores/${id}/editar`)//// passando o id não mais como query paramentero, mas sim como  dinamyc parametrer 
   }
 
-  const handleNavigation = () => {
-    router.push("./visualizar_fornecedor")
+  const handleNavigation = (id) => {
+    router.push(`/fornecedores/${id}/visualizar`)
   }
 
   const handleChangePage = (event, newPage) => {
@@ -341,7 +326,7 @@ const FornecedoresPage = () => {
                       {fornecedora.chavePix}
                     </TableCell>
                     <TableCell>
-                      <IconButton onClick={handleNavigation} sx={{ marginRight: 1, color: "#00509E" }}>
+                      <IconButton onClick={() => handleNavigation(fornecedora.id)} sx={{ marginRight: 1, color: "#00509E" }}>
                         <VisibilityIcon />
                       </IconButton>
                       <IconButton
@@ -395,4 +380,3 @@ const FornecedoresPage = () => {
 }
 
 export default FornecedoresPage
-

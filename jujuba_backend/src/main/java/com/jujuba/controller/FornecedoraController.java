@@ -3,6 +3,7 @@ package com.jujuba.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jujuba.dto.FornecedoraCreateDTO;
 import com.jujuba.dto.FornecedoraResponseDTO;
+import com.jujuba.exception.FornecedoraNotFoundException;
 import com.jujuba.mapper.FornecedoraMapper;
 import com.jujuba.model.Fornecedora;
 import com.jujuba.service.ArquivoService;
@@ -33,9 +34,9 @@ public class FornecedoraController {
 
     @Operation(summary = "Cadastra uma nova fornecedora", description = "Permite cadastrar uma nova fornecedora e opcionalmente enviar um contrato.")
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Fornecedora cadastrada com sucesso"),
-        @ApiResponse(responseCode = "400", description = "Erro na requisição - dados inválidos"),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
+            @ApiResponse(responseCode = "201", description = "Fornecedora cadastrada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Erro na requisição - dados inválidos"),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
     })
     @PostMapping
     public ResponseEntity<FornecedoraResponseDTO> cadastrarFornecedora(
@@ -58,13 +59,13 @@ public class FornecedoraController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        
+
     }
 
     @Operation(summary = "Lista todas as fornecedoras", description = "Retorna uma lista de todas as fornecedoras cadastradas.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
     })
     @GetMapping
     public ResponseEntity<List<FornecedoraResponseDTO>> listarFornecedoras() {
@@ -80,9 +81,9 @@ public class FornecedoraController {
 
     @Operation(summary = "Busca fornecedora por ID", description = "Retorna os dados de uma fornecedora específica com base no ID informado.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Fornecedora encontrada"),
-        @ApiResponse(responseCode = "404", description = "Fornecedora não encontrada"),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
+            @ApiResponse(responseCode = "200", description = "Fornecedora encontrada"),
+            @ApiResponse(responseCode = "404", description = "Fornecedora não encontrada"),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
     })
     @GetMapping("/{id}")
     public ResponseEntity<FornecedoraResponseDTO> buscarPorId(@PathVariable Long id) {
@@ -94,11 +95,47 @@ public class FornecedoraController {
         }
     }
 
+    @Operation(summary = "Atualiza uma fornecedora", description = "Permite atualizar os dados de uma fornecedora existente e, opcionalmente, enviar um novo contrato.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Fornecedora atualizada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Erro na requisição - dados inválidos"),
+            @ApiResponse(responseCode = "404", description = "Fornecedora não encontrada"),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<FornecedoraResponseDTO> atualizarFornecedora(
+            @PathVariable Long id,
+            @RequestParam("fornecedora") String fornecedoraJson,
+            @RequestParam(value = "contrato", required = false) MultipartFile contrato) {
+
+        try {
+            FornecedoraCreateDTO dto = objectMapper.readValue(fornecedoraJson, FornecedoraCreateDTO.class);
+            Fornecedora fornecedora = FornecedoraMapper.toFornecedora(dto);
+
+            Fornecedora fornecedoraAtualizada = fornecedoraService.atualizar(id, fornecedora);
+
+            if (contrato != null && !contrato.isEmpty()) {
+                String contratoUrl = arquivoService.salvarContrato(contrato);
+                fornecedoraAtualizada.setContratoUrl(contratoUrl);
+                fornecedoraAtualizada = fornecedoraService.atualizar(id, fornecedoraAtualizada);
+            }
+
+            return ResponseEntity.ok(FornecedoraMapper.toDTO(fornecedoraAtualizada));
+
+        } catch (FornecedoraNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @Operation(summary = "Exclui uma fornecedora", description = "Remove uma fornecedora do sistema com base no ID informado.")
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Fornecedora excluída com sucesso"),
-        @ApiResponse(responseCode = "404", description = "Fornecedora não encontrada"),
-        @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
+            @ApiResponse(responseCode = "204", description = "Fornecedora excluída com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Fornecedora não encontrada"),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluirFornecedora(@PathVariable Long id) {

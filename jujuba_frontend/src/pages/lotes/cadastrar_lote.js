@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Home, User, Package, ShoppingCart, List, Trash2, Eye } from "lucide-react"
+import { ArrowLeft, Home, Trash2, Eye } from "lucide-react"
 import { salvarLote, listarLotes } from "../api/lotes"
+import Sidebar from "../../components/sidebar"
 
 export default function CadastroLotePage() {
   const router = useRouter()
@@ -186,87 +187,9 @@ export default function CadastroLotePage() {
           font-family: Arial, sans-serif;
         }
 
-        .sidebar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          height: 100vh;
-          width: 276px;
-          background-color: #f8c0e0;
-          display: flex;
-          flex-direction: column;
-          padding: 20px;
-          box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-          z-index: 10;
-        }
-
-        .logo-container {
-          display: flex;
-          justify-content: center;
-          margin: 20px 0 40px;
-        }
-
-        .logo {
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          background: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .menu-item {
-          display: flex;
-          align-items: center;
-          color: #6b7280;
-          margin-bottom: 16px;
-          cursor: pointer;
-          padding: 8px;
-          border-radius: 8px;
-          transition: all 0.3s ease;
-        }
-
-        .menu-item:hover {
-          background-color: rgba(255,255,255,0.5);
-          transform: translateX(5px);
-        }
-
-        .menu-item svg {
-          margin-right: 12px;
-        }
-
-        .lotes-list {
-          margin-top: 40px;
-        }
-
-        .lotes-list h3 {
-          color: #6b7280;
-          margin-bottom: 12px;
-          font-size: 16px;
-          font-weight: bold;
-        }
-
-        .lote-item {
-          display: flex;
-          justify-content: space-between;
-          background-color: #ffd0e8;
-          padding: 8px 12px;
-          margin-bottom: 6px;
-          border-radius: 4px;
-          transition: all 0.2s ease;
-        }
-
-        .lote-item:hover {
-          transform: scale(1.02);
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
         .main-content {
           flex: 1;
-          margin-left: 276px;
+          margin-left: 244px;
           background-color: #a3e0f5;
           padding: 32px;
         }
@@ -463,11 +386,8 @@ export default function CadastroLotePage() {
 
         /* Responsive styles */
         @media (max-width: 1024px) {
-          .sidebar {
-            width: 220px;
-          }
           .main-content {
-            margin-left: 220px;
+            margin-left: 244px;
           }
           .form-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -475,9 +395,6 @@ export default function CadastroLotePage() {
         }
 
         @media (max-width: 768px) {
-          .sidebar {
-            display: none;
-          }
           .main-content {
             margin-left: 0;
             padding: 20px;
@@ -500,20 +417,6 @@ export default function CadastroLotePage() {
           }
         }
 
-        .menu-container {
-          background-color: rgba(255, 255, 255, 0.2);
-          border-radius: 12px;
-          padding: 10px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .lotes-card {
-          background-color: rgba(255, 255, 255, 0.2);
-          border-radius: 12px;
-          padding: 10px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
         .loading {
           display: flex;
           justify-content: center;
@@ -534,51 +437,7 @@ export default function CadastroLotePage() {
       `}</style>
 
       <div className="container">
-        {/* Sidebar */}
-        <div className="sidebar">
-          <div className="logo-container">
-            <div className="logo">
-              <Image src="/jujba2.png" alt="Jujuba Logo" width={140} height={140} priority />
-            </div>
-          </div>
-
-          <div className="menu-container">
-            <div className="menu-item" onClick={() => router.push("../../fornecedores/fornecedores_tabela")}>
-              <User size={20} />
-              <span>Fornecedores</span>
-            </div>
-            <div className="menu-item" onClick={() => router.push("../../estoque/estoque_tabela")}>
-              <Package size={20} />
-              <span>Estoque</span>
-            </div>
-            <div className="menu-item" onClick={() => router.push("/Caixa")}>
-              <ShoppingCart size={20} />
-              <span>Vendas</span>
-            </div>
-            <div className="menu-item" onClick={() => router.push("../../lotes/lotes_geral")}>
-              <List size={20} />
-              <span>Lotes</span>
-            </div>
-          </div>
-
-          <div className="lotes-list">
-            <h3>Lista de Lotes</h3>
-            <div className="lotes-card">
-              {loading ? (
-                <div className="loading">Carregando...</div>
-              ) : lotesSidebar.length > 0 ? (
-                lotesSidebar.map((lote) => (
-                  <div key={lote.id} className="lote-item">
-                    <span>{lote.codigo}</span>
-                    <span>{lote.data}</span>
-                  </div>
-                ))
-              ) : (
-                <div style={{ textAlign: "center", padding: "10px" }}>Nenhum lote encontrado</div>
-              )}
-            </div>
-          </div>
-        </div>
+        <Sidebar lotes={lotesSidebar} />
 
         <div className="main-content">
           <header className="header">

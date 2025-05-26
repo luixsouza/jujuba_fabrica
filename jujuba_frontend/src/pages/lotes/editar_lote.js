@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 
 // Correct MUI imports
@@ -16,11 +15,6 @@ import TableHead from "@mui/material/TableHead"
 import TableRow from "@mui/material/TableRow"
 import Paper from "@mui/material/Paper"
 import IconButton from "@mui/material/IconButton"
-import List from "@mui/material/List"
-import ListItem from "@mui/material/ListItem"
-import ListItemIcon from "@mui/material/ListItemIcon"
-import ListItemText from "@mui/material/ListItemText"
-import Tooltip from "@mui/material/Tooltip"
 import TextField from "@mui/material/TextField"
 import Select from "@mui/material/Select"
 import MenuItem from "@mui/material/MenuItem"
@@ -42,24 +36,22 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import HomeIcon from "@mui/icons-material/Home"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import EditIcon from "@mui/icons-material/Edit"
-import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import SaveIcon from "@mui/icons-material/Save"
 import CancelIcon from "@mui/icons-material/Cancel"
 import AddIcon from "@mui/icons-material/Add"
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera"
 
-// Import Lucide icons
-import { Users, ShoppingBag, ShoppingCart, ListIcon } from "lucide-react"
-
 // Import API functions
 import { buscarLotePorId, atualizarLote, listarLotes } from "../api/lotes"
+
+// Import Sidebar component
+import Sidebar from "../../components/sidebar"
 
 export default function EditandoLotePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const loteId = searchParams.get("id") || ""
 
-  const [activeItem, setActiveItem] = useState("lotes")
   const [editingItemId, setEditingItemId] = useState(null)
   const [fornecedorPercentage, setFornecedorPercentage] = useState("30")
   const [openFornecedorDialog, setOpenFornecedorDialog] = useState(false)
@@ -170,25 +162,6 @@ export default function EditandoLotePage() {
       setHasChanges(itemsChanged)
     }
   }, [items, originalItems])
-
-  const handleNavigation = (path, menuItem) => {
-    setActiveItem(menuItem)
-    router.push(path)
-  }
-
-  const getMenuItemStyle = (itemName) => ({
-    borderRadius: "8px",
-    mb: 1,
-    backgroundColor: activeItem === itemName ? "rgba(255, 255, 255, 0.3)" : "transparent",
-    "&:hover": {
-      backgroundColor: "rgba(255, 255, 255, 0.5)",
-    },
-  })
-
-  const iconStyle = {
-    size: 20,
-    strokeWidth: 2,
-  }
 
   const handleGoBack = () => {
     router.back()
@@ -371,198 +344,17 @@ export default function EditandoLotePage() {
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
       {/* Sidebar */}
-      <Box
-        sx={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          height: "100vh",
-          width: "276px",
-          bgcolor: "#f8c0e0",
-          display: "flex",
-          flexDirection: "column",
-          p: 2.5,
-          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-          zIndex: 10,
-        }}
-      >
-        <Box sx={{ display: "flex", justifyContent: "center", my: 2.5 }}>
-          <Box
-            sx={{
-              width: "120px",
-              height: "120px",
-              borderRadius: "50%",
-              bgcolor: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-            }}
-          >
-            <Image
-              src="/jujba2.png"
-              alt="Jujuba Logo"
-              width={140}
-              height={140}
-              priority
-              style={{ borderRadius: "50%" }}
-            />
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            bgcolor: "rgba(255,255,255,0.2)",
-            borderRadius: 3,
-            p: 1.5,
-            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-            mb: 3,
-          }}
-        >
-          <List sx={{ width: "100%", padding: "0 8px" }}>
-            <Tooltip title="Gerenciar Fornecedores" placement="right" arrow>
-              <ListItem
-                button
-                sx={getMenuItemStyle("fornecedores")}
-                onClick={() => handleNavigation("/fornecedores/fornecedores_tabela", "fornecedores")}
-              >
-                <ListItemIcon sx={{ minWidth: "40px" }}>
-                  <Users {...iconStyle} color="black" />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Fornecedores"
-                  sx={{
-                    color: "black",
-                    "& .MuiListItemText-primary": {
-                      fontWeight: activeItem === "fornecedores" ? 600 : 400,
-                      fontSize: "1rem",
-                    },
-                  }}
-                />
-                {activeItem === "fornecedores" && <ChevronRightIcon size={16} color="black" />}
-              </ListItem>
-            </Tooltip>
-
-            <Tooltip title="Gerenciar Estoque" placement="right" arrow>
-              <ListItem
-                button
-                sx={getMenuItemStyle("estoque")}
-                onClick={() => handleNavigation("/estoque/estoque_tabela", "estoque")}
-              >
-                <ListItemIcon sx={{ minWidth: "40px" }}>
-                  <ShoppingBag {...iconStyle} color="black" />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Estoque"
-                  sx={{
-                    color: "black",
-                    "& .MuiListItemText-primary": {
-                      fontWeight: activeItem === "estoque" ? 600 : 400,
-                      fontSize: "1rem",
-                    },
-                  }}
-                />
-                {activeItem === "estoque" && <ChevronRightIcon size={16} color="black" />}
-              </ListItem>
-            </Tooltip>
-
-            <Tooltip title="Gerenciar Vendas" placement="right" arrow>
-              <ListItem button sx={getMenuItemStyle("vendas")} onClick={() => handleNavigation("/Caixa", "vendas")}>
-                <ListItemIcon sx={{ minWidth: "40px" }}>
-                  <ShoppingCart {...iconStyle} color="black" />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Vendas"
-                  sx={{
-                    color: "black",
-                    "& .MuiListItemText-primary": {
-                      fontWeight: activeItem === "vendas" ? 600 : 400,
-                      fontSize: "1rem",
-                    },
-                  }}
-                />
-                {activeItem === "vendas" && <ChevronRightIcon size={16} color="black" />}
-              </ListItem>
-            </Tooltip>
-
-            <Tooltip title="Gerenciar Lotes" placement="right" arrow>
-              <ListItem
-                button
-                sx={getMenuItemStyle("lotes")}
-                onClick={() => handleNavigation("/lotes/lotes_geral", "lotes")}
-              >
-                <ListItemIcon sx={{ minWidth: "40px" }}>
-                  <ListIcon {...iconStyle} color="black" />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Lotes"
-                  sx={{
-                    color: "black",
-                    "& .MuiListItemText-primary": {
-                      fontWeight: activeItem === "lotes" ? 600 : 400,
-                      fontSize: "1rem",
-                    },
-                  }}
-                />
-                {activeItem === "lotes" && <ChevronRightIcon size={16} color="black" />}
-              </ListItem>
-            </Tooltip>
-          </List>
-        </Box>
-
-        <Box sx={{ mt: 2 }}>
-          <Typography sx={{ color: "text.secondary", mb: 1.5, fontWeight: "bold", fontSize: "1rem" }}>
-            Lista de Lotes
-          </Typography>
-          <Box
-            sx={{
-              bgcolor: "rgba(255,255,255,0.2)",
-              borderRadius: 3,
-              p: 1.5,
-              boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-            }}
-          >
-            {lotesSidebar.length > 0 ? (
-              lotesSidebar.map((lote) => (
-                <Box
-                  key={lote.id}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    bgcolor: "#ffd0e8",
-                    p: 1,
-                    mb: 1,
-                    borderRadius: 1,
-                    "&:hover": {
-                      transform: "scale(1.02)",
-                      transition: "all 0.2s ease",
-                      cursor: "pointer",
-                    },
-                  }}
-                  onClick={() => handleNavigation(`/lotes/visualizar_lote?id=${lote.id}`, "lotes")}
-                >
-                  <Typography sx={{ fontSize: "0.95rem" }}>{lote.codigo}</Typography>
-                  <Typography sx={{ fontSize: "0.95rem" }}>{lote.data}</Typography>
-                </Box>
-              ))
-            ) : (
-              <Typography sx={{ textAlign: "center", p: 1, color: "text.secondary" }}>
-                Nenhum lote encontrado
-              </Typography>
-            )}
-          </Box>
-        </Box>
-      </Box>
+      <Sidebar lotes={lotesSidebar} />
 
       {/* Main Content */}
       <Box
         sx={{
-          ml: "276px",
+          ml: "244px",
           flex: 1,
           bgcolor: "#a3e0f5",
           display: "flex",
           flexDirection: "column",
-          maxWidth: "calc(100% - 276px)",
+          maxWidth: "calc(100% - 244px)",
           px: 4, // Add horizontal padding
         }}
       >

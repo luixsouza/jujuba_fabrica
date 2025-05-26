@@ -1,7 +1,7 @@
 import formidable from 'formidable';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/fornecedoras'; // URL base
+const BASE_URL = 'http://localhost:8080/api/fornecedoras';
 
 export const config = {
   api: {
@@ -65,3 +65,60 @@ export default async function handler(req, res) {
     }
   });
 }
+export const editarFornecedora = async (id, fornecedoraData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${id}`, {   //// aqui pode mudar, depende do nome da rota
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(fornecedoraData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Erro ao atualizar fornecedora.');
+    }
+
+    const data = await response.json();
+
+    return {
+      id: data.id,
+      nome: data.nome,
+      contato: data.contato,
+      endereco: data.endereco,
+      chavePix: data.chavePix,
+      contratoUrl: data.contratoUrl,
+      dataNascimento: data.dataNascimento,
+    };
+  } catch (error) {
+    console.error('Erro ao editar fornecedora:', error);
+    throw error;
+  }
+};
+
+export const buscarFornecedoras = async () => {
+  try {
+    const response = await axios.get(BASE_URL);
+    return {
+      sucesso: true,
+      mensagem: 'Fornecedoras buscadas com sucesso.',
+      quantidade: response.data.length,
+      fornecedoras: response.data.map(f => ({
+        id: f.id,
+        nome: f.nome,
+        contato: f.contato,
+        endereco: f.endereco,
+        chavePix: f.chavePix,
+        contratoUrl: f.contratoUrl,
+        dataNascimento: f.dataNascimento
+      }))
+    };
+  } catch (error) {
+    return {
+      sucesso: false,
+      mensagem: 'Erro ao buscar fornecedoras.',
+      erro: error.response?.data || error.message
+    };
+  }
+};
