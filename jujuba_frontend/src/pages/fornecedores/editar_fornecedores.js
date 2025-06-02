@@ -18,9 +18,15 @@ import {
   InputAdornment,
 } from "@mui/material"
 import { ArrowBack, Home } from "@mui/icons-material"
+<<<<<<< HEAD
 import Sidebar from "../../../../components/sidebar"
 import { useRouter } from "next/navigation"
 import { useParams } from "next/navigation"
+=======
+import Sidebar from "../../../components/sidebar" // Usando o caminho da 'main'
+import { useRouter } from "next/router"
+import { editarFornecedora } from "../api/fornecedores" // Usando a função importada da 'main'
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
 import axios from "axios"
 
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
@@ -47,15 +53,25 @@ export default function FornecedoresEdicao() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
+<<<<<<< HEAD
   // Alterar a estrutura do estado fornecedora para corresponder ao backend
   const [fornecedora, setFornecedora] = useState({
     nome: "",
     dataNascimento: "", // Alterado de dataDeNascimento para dataNascimento para corresponder ao backend
+=======
+  // Estado combinando campos de ambas as versões, padronizado para dataDeNascimento
+  const [fornecedora, setFornecedora] = useState({
+    nome: "",
+    dataDeNascimento: "", // Padronizado
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
     contato: "",
     endereco: "",
     chavePix: "",
     contratoUrl: "",
+<<<<<<< HEAD
     creditoLoja: "", // Adicionado campo que existe no backend
+=======
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
   })
 
   const [loading, setLoading] = useState(false)
@@ -74,7 +90,11 @@ export default function FornecedoresEdicao() {
     }
   }, [id])
 
+<<<<<<< HEAD
   // Modificar a função fetchFornecedora para formatar a data corretamente
+=======
+  // Lógica de busca da 'main', com formatação de data e erro detalhado
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
   const fetchFornecedora = async (fornecedoraId) => {
     try {
       setFetchLoading(true)
@@ -85,9 +105,15 @@ export default function FornecedoresEdicao() {
 
       const data = response.data
 
+<<<<<<< HEAD
       // Formatação da data para o formato esperado pelo input type="date"
       let dataFormatada = data.dataNascimento || ""
       if (dataFormatada && dataFormatada.includes("/")) {
+=======
+      // Formatando a data se necessário (lógica da 'main')
+      let dataFormatada = data.dataDeNascimento || ""
+      if (dataFormatada && !dataFormatada.includes("-")) {
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
         const partes = dataFormatada.split("/")
         if (partes.length === 3) {
           // Converter de dd/MM/yyyy para yyyy-MM-dd
@@ -95,9 +121,14 @@ export default function FornecedoresEdicao() {
         }
       }
 
+      // Atualizando estado com dados da API e data formatada
       setFornecedora({
         nome: data.nome || "",
+<<<<<<< HEAD
         dataNascimento: dataFormatada, // Usando o nome correto do campo
+=======
+        dataDeNascimento: dataFormatada, // Usando o campo padronizado e formatado
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
         contato: data.contato || "",
         endereco: data.endereco || "",
         chavePix: data.chavePix || "",
@@ -116,6 +147,7 @@ export default function FornecedoresEdicao() {
       })
     } catch (error) {
       console.error("Erro ao buscar dados do fornecedor:", error)
+      // Mensagem de erro detalhada da 'main'
       setSnackbar({
         open: true,
         message: `Erro ao carregar dados do fornecedor: ${error.response?.data?.message || error.message}`,
@@ -126,6 +158,7 @@ export default function FornecedoresEdicao() {
     }
   }
 
+  // Handlers da 'main' (incluindo console.log)
   const handleChange = (event) => {
     const { name, value } = event.target
     console.log(`Campo ${name} alterado para:`, value)
@@ -137,9 +170,10 @@ export default function FornecedoresEdicao() {
     if (file) {
       console.log("Arquivo selecionado:", file.name)
       setSelectedFile(file)
+      // Atualiza o nome no estado apenas para exibição, o arquivo real será enviado
       setFornecedora((prev) => ({
         ...prev,
-        contratoUrl: file.name,
+        contratoUrl: file.name, 
       }))
     }
   }
@@ -148,12 +182,17 @@ export default function FornecedoresEdicao() {
     setSnackbar({ ...snackbar, open: false })
   }
 
+<<<<<<< HEAD
   // Modificar a função handleSubmit para formatar a data corretamente antes de enviar
+=======
+  // Lógica de submit da 'main', mas adaptada para usar FormData (necessário para arquivo)
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
   const handleSubmit = async (event) => {
     event.preventDefault()
 
     console.log("Dados do formulário antes da validação:", fornecedora)
 
+    // Validação da 'main' (Nome, Contato, Endereço)
     if (!fornecedora.nome.trim() || !fornecedora.contato.trim() || !fornecedora.endereco.trim()) {
       setSnackbar({
         open: true,
@@ -165,6 +204,7 @@ export default function FornecedoresEdicao() {
 
     setLoading(true)
     try {
+<<<<<<< HEAD
       const formData = new FormData()
 
       formData.append("nome", fornecedora.nome)
@@ -190,6 +230,34 @@ export default function FornecedoresEdicao() {
       console.log("Dados enviados para API (FormData):", formData)
 
       const data = await editarFornecedora(id, formData)
+=======
+      // Usar FormData para enviar dados e arquivo (influência da Corrigir_telas)
+      const formData = new FormData()
+      
+      // Anexar dados do formulário ao FormData
+      // É crucial que a API (e a função editarFornecedora) espere receber os dados dessa forma
+      // Se editarFornecedora espera um objeto JSON, esta parte precisa ser ajustada
+      // Assumindo que editarFornecedora pode lidar com FormData ou que será ajustada:
+      formData.append("nome", fornecedora.nome)
+      formData.append("dataDeNascimento", fornecedora.dataDeNascimento)
+      formData.append("contato", fornecedora.contato)
+      formData.append("endereco", fornecedora.endereco)
+      formData.append("chavePix", fornecedora.chavePix)
+      // Não enviar contratoUrl como string, enviar o arquivo ou nada
+
+      if (selectedFile) {
+        formData.append("contratoFile", selectedFile) // Nome do campo para o arquivo (verificar API)
+      } else {
+        // Se não há arquivo novo, talvez a API precise saber o contrato atual?
+        // Ou talvez não precise enviar nada se não mudou. Verifique a API.
+        // formData.append("contratoUrl", contratoAtual); // Exemplo, se necessário
+      }
+
+      console.log("Dados enviados para API (FormData):", formData) // FormData não é diretamente logável assim
+
+      // Chamar a função importada da 'main', passando FormData
+      const data = await editarFornecedora(id, formData) 
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
       console.log("Fornecedor atualizado com sucesso:", data)
 
       setSnackbar({
@@ -213,6 +281,7 @@ export default function FornecedoresEdicao() {
     }
   }
 
+  // JSX de carregamento (padrão)
   if (fetchLoading) {
     return (
       <Box
@@ -244,11 +313,12 @@ export default function FornecedoresEdicao() {
     )
   }
 
+  // JSX principal com layout da 'Corrigir_telas'
   return (
     <Box
       sx={{
         display: "flex",
-        backgroundColor: "#9AE4FF",
+        backgroundColor: "#9AE4FF", // Cor de fundo geral
         minHeight: "100vh",
         flexDirection: { xs: "column", md: "row" },
       }}
@@ -258,15 +328,27 @@ export default function FornecedoresEdicao() {
       </Box>
 
       <Box sx={{ flex: 1, p: 3 }}>
+<<<<<<< HEAD
         <Box sx={{ mb: 1, textAlign: "center", mt: { xs: 4, md: 8 } }}></Box>
+=======
+        {/* Título da página removido ou vazio na versão Corrigir_telas */}
+        <Box sx={{ mb: 1, textAlign: "center", mt: { xs: 4, md: 8 } }}>
+          {/* <Typography variant="h4" sx={{...}}></Typography> */}
+        </Box>
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
 
         <form autoComplete="off" onSubmit={handleSubmit}>
+          {/* Estilo do Card da 'Corrigir_telas' */}
           <Card
             sx={{
               borderRadius: 10,
-              backgroundColor: "#FADADD",
+              backgroundColor: "#FADADD", // Cor do card
               p: 3,
+<<<<<<< HEAD
               maxWidth: "60%",
+=======
+              maxWidth: "60%", // Largura do card da 'Corrigir_telas'
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
               mx: "auto",
               mt: { xs: 4, md: 8 },
               height: "auto",
@@ -274,9 +356,20 @@ export default function FornecedoresEdicao() {
             }}
           >
             <CardContent>
+<<<<<<< HEAD
+=======
+              {/* Título interno do Card removido ou vazio */}
+              {/* <Typography variant="h6" gutterBottom sx={{...}}></Typography> */}
+              
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
               <Grid container spacing={3}>
+                {/* Layout dos Ícones, Título, Mensagem e Chip da 'Corrigir_telas' */}
                 <Grid item xs={12}>
                   <Grid container direction="column" alignItems="center" spacing={1}>
+<<<<<<< HEAD
+=======
+                    {/* Ícones de navegação */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                     <Grid item xs={12} width="100%">
                       <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
                         <ArrowBack
@@ -298,6 +391,7 @@ export default function FornecedoresEdicao() {
                       </Box>
                     </Grid>
 
+                    {/* Título Principal */}
                     <Grid item xs={12}>
                       <Typography
                         variant="h4"
@@ -310,6 +404,7 @@ export default function FornecedoresEdicao() {
                       >
                         Edição de Fornecedor
                       </Typography>
+<<<<<<< HEAD
 
                       <Typography
                         variant="body2"
@@ -323,6 +418,23 @@ export default function FornecedoresEdicao() {
                         Campos com <span style={{ color: "red" }}>*</span> são obrigatórios
                       </Typography>
 
+=======
+                      
+                      {/* Mensagem informativa sobre campos obrigatórios */}
+                      <Typography
+                        variant="body2"
+                        sx={{ 
+                          fontSize: "14px",
+                          color: "gray",
+                          textAlign: "center",
+                          mb: 1
+                        }}
+                      >
+                        Campos com <span style={{ color: 'red' }}>*</span> são obrigatórios
+                      </Typography>
+                      
+                      {/* Chip com ID */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                       <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
                         <Chip
                           label={`ID: ${id}`}
@@ -337,25 +449,45 @@ export default function FornecedoresEdicao() {
                     </Grid>
                   </Grid>
                 </Grid>
+<<<<<<< HEAD
 
                 <Grid item xs={12}>
                   <Grid container justifyContent="center">
+=======
+                
+                {/* Layout vertical dos campos da 'Corrigir_telas' */}
+                <Grid item xs={12}>
+                  <Grid container justifyContent="center">
+                    {/* Campo Nome */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                     <Grid item xs={12} sm={10} md={8}>
                       <Typography
                         variant="body2"
                         sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                       >
+<<<<<<< HEAD
                         Nome <span style={{ color: "red" }}>*</span>
+=======
+                        Nome <span style={{ color: 'red' }}>*</span> {/* Obrigatório pela lógica 'main' */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                       </Typography>
                       <TextField
                         fullWidth
                         name="nome"
                         onChange={handleChange}
+<<<<<<< HEAD
                         required
                         value={fornecedora.nome}
                         variant="outlined"
                         label=""
                         placeholder=""
+=======
+                        required // Lógica 'main'
+                        value={fornecedora.nome}
+                        variant="outlined"
+                        label="" // Layout 'Corrigir_telas'
+                        placeholder="" // Layout 'Corrigir_telas'
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#FFFFFF",
@@ -367,12 +499,18 @@ export default function FornecedoresEdicao() {
                         }}
                       />
                     </Grid>
+<<<<<<< HEAD
 
+=======
+                    
+                    {/* Campo Data de Nascimento */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                       <Typography
                         variant="body2"
                         sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                       >
+<<<<<<< HEAD
                         Data de Nascimento <span style={{ color: "red" }}>*</span>
                       </Typography>
                       <TextField
@@ -385,6 +523,20 @@ export default function FornecedoresEdicao() {
                         label=""
                         placeholder=""
                         type="date"
+=======
+                        Data de Nascimento {/* Não obrigatório pela lógica 'main' */}
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="dataDeNascimento"
+                        onChange={handleChange}
+                        // required // Não era required na validação da 'main'
+                        value={fornecedora.dataDeNascimento}
+                        variant="outlined"
+                        label="" // Layout 'Corrigir_telas'
+                        placeholder="" // Layout 'Corrigir_telas'
+                        type="date" // Layout 'Corrigir_telas'
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                         InputLabelProps={{
                           shrink: true,
                         }}
@@ -399,23 +551,40 @@ export default function FornecedoresEdicao() {
                         }}
                       />
                     </Grid>
+<<<<<<< HEAD
 
+=======
+                    
+                    {/* Campo Contato */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                       <Typography
                         variant="body2"
                         sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                       >
+<<<<<<< HEAD
                         Contato <span style={{ color: "red" }}>*</span>
+=======
+                        Contato <span style={{ color: 'red' }}>*</span> {/* Obrigatório pela lógica 'main' */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                       </Typography>
                       <TextField
                         fullWidth
                         name="contato"
                         onChange={handleChange}
+<<<<<<< HEAD
                         required
                         value={fornecedora.contato}
                         variant="outlined"
                         label=""
                         placeholder=""
+=======
+                        required // Lógica 'main'
+                        value={fornecedora.contato}
+                        variant="outlined"
+                        label="" // Layout 'Corrigir_telas'
+                        placeholder="" // Layout 'Corrigir_telas'
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#FFFFFF",
@@ -427,23 +596,40 @@ export default function FornecedoresEdicao() {
                         }}
                       />
                     </Grid>
+<<<<<<< HEAD
 
+=======
+                    
+                    {/* Campo Endereço */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                       <Typography
                         variant="body2"
                         sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                       >
+<<<<<<< HEAD
                         Endereço <span style={{ color: "red" }}>*</span>
+=======
+                        Endereço <span style={{ color: 'red' }}>*</span> {/* Obrigatório pela lógica 'main' */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                       </Typography>
                       <TextField
                         fullWidth
                         name="endereco"
                         onChange={handleChange}
+<<<<<<< HEAD
                         required
                         value={fornecedora.endereco}
                         variant="outlined"
                         label=""
                         placeholder=""
+=======
+                        required // Lógica 'main'
+                        value={fornecedora.endereco}
+                        variant="outlined"
+                        label="" // Layout 'Corrigir_telas'
+                        placeholder="" // Layout 'Corrigir_telas'
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#FFFFFF",
@@ -455,13 +641,22 @@ export default function FornecedoresEdicao() {
                         }}
                       />
                     </Grid>
+<<<<<<< HEAD
 
+=======
+                    
+                    {/* Campo Chave Pix */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                       <Typography
                         variant="body2"
                         sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
                       >
+<<<<<<< HEAD
                         Chave Pix
+=======
+                        Chave Pix {/* Não obrigatório pela lógica 'main' */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                       </Typography>
                       <TextField
                         fullWidth
@@ -469,8 +664,13 @@ export default function FornecedoresEdicao() {
                         onChange={handleChange}
                         value={fornecedora.chavePix}
                         variant="outlined"
+<<<<<<< HEAD
                         label=""
                         placeholder=""
+=======
+                        label="" // Layout 'Corrigir_telas'
+                        placeholder="" // Layout 'Corrigir_telas'
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#FFFFFF",
@@ -482,6 +682,7 @@ export default function FornecedoresEdicao() {
                         }}
                       />
                     </Grid>
+<<<<<<< HEAD
 
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                       <Typography
@@ -535,12 +736,34 @@ export default function FornecedoresEdicao() {
                           </>
                         ) : (
                           <>Nenhum contrato carregado.</>
+=======
+                    
+                    {/* Mensagem sobre contrato da 'Corrigir_telas' */}
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 4 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ 
+                          fontWeight: "normal", 
+                          fontSize: "16px", 
+                          marginBottom: "8px", 
+                          color: "gray",
+                          textAlign: "center"
+                        }}
+                      >
+                        {contratoAtual && !selectedFile ? (
+                          <>Contrato atual: <span style={{ fontWeight: 'bold' }}>{contratoAtual}</span></>
+                        ) : selectedFile ? (
+                          <>Novo contrato selecionado: <span style={{ fontWeight: 'bold' }}>{selectedFile.name}</span></>
+                        ) : (
+                          <>Nenhum contrato carregado.</> // Ajuste a mensagem se necessário
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
                         )}
                       </Typography>
                     </Grid>
                   </Grid>
                 </Grid>
 
+                {/* Botões com layout da 'Corrigir_telas' */}
                 <Grid
                   item
                   xs={12}
@@ -552,6 +775,7 @@ export default function FornecedoresEdicao() {
                     gap: { xs: 2, sm: 3 },
                   }}
                 >
+                  {/* Botão Upload/Trocar Contrato */}
                   <Button
                     component="label"
                     disabled={loading}
@@ -589,6 +813,7 @@ export default function FornecedoresEdicao() {
                     <input type="file" name="contratoFile" hidden onChange={handleFileChange} />
                   </Button>
 
+                  {/* Botão Atualizar Fornecedor */}
                   <Button
                     type="submit"
                     disabled={loading}
@@ -626,6 +851,10 @@ export default function FornecedoresEdicao() {
           </Card>
         </form>
 
+<<<<<<< HEAD
+=======
+        {/* Snackbar (padrão) */}
+>>>>>>> 8d21375b7922937d5cb130b094e473cab6fffc21
         <Snackbar
           open={snackbar.open}
           autoHideDuration={6000}
@@ -640,3 +869,4 @@ export default function FornecedoresEdicao() {
     </Box>
   )
 }
+
