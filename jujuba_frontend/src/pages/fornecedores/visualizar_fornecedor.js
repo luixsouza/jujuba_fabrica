@@ -381,7 +381,7 @@ export default function FornecedoresVisualizar() {
                     component="label"
                     onClick={handleDownloadContrato}
                     sx={{
-                      color: "Black",
+                      color: "Black",////
                       backgroundColor: "#50abe4",
                       textTransform: "none",
                       width: { xs: "100%", sm: "250px" },

@@ -357,7 +357,7 @@ const FornecedoresPage = () => {
         </Card>
         <Box sx={{ display: "flex", justifyContent: "center", marginTop: "30px" }}>
           <Button
-            sx={{
+            sx={{////
               backgroundColor: "#FADADD",
               color: "black",
               boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
