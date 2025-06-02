@@ -22,7 +22,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility"
 import DeleteIcon from "@mui/icons-material/Delete"
 import EditIcon from "@mui/icons-material/Edit"
 import axios from "axios"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 import SearchIcon from "@mui/icons-material/Search"
 import Sidebar from "../../components/sidebar"
 
@@ -54,8 +54,7 @@ const FornecedoresPage = () => {
     fetchFornecedores()
   }, [])
 
-  const deleteFornecedora = useCallback(
-  async (id) => {
+  const deleteFornecedora = useCallback(async (id) => {
     try {
       const response = await axios.delete(`${BASE_URL}/${id}`)
       console.log("Fornecedor deletado com sucesso:", response.data)
@@ -65,21 +64,19 @@ const FornecedoresPage = () => {
       console.error("Erro ao deletar fornecedor:", error)
       alert("Erro ao deletar fornecedor.")
     }
-  },
-  []
-)
+  }, [])
 
   const handleNavigateToRegister = () => {
-    if (router) {
-      router.push("./cadastro_fornecedores")
-    }
+    router.push("/fornecedores/cadastro")
   }
 
   const handleEditNavigation = (id) => {
-    router.push(`/fornecedores/${id}/editar`)//// passando o id não mais como query paramentero, mas sim como  dinamyc parametrer 
+    console.log("Navegando para edição com ID:", id)
+    router.push(`/fornecedores/${id}/editar`)
   }
 
   const handleNavigation = (id) => {
+    console.log("Navegando para visualização com ID:", id)
     router.push(`/fornecedores/${id}/visualizar`)
   }
 
@@ -91,6 +88,7 @@ const FornecedoresPage = () => {
     setRowsPerPage(Number.parseInt(event.target.value, 10))
     setPage(0)
   }
+
   const filteredFornecedores = useMemo(
     () => fornecedores.filter((fornecedora) => fornecedora.nome.toLowerCase().includes(searchTerm.toLowerCase())),
     [fornecedores, searchTerm],
@@ -98,7 +96,7 @@ const FornecedoresPage = () => {
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#50abe4", minHeight: "100vh", backgroundColor: "#9AE4FF" }}>
-        <Sidebar />
+      <Sidebar />
       <Box
         sx={{
           flex: 1,
@@ -326,7 +324,10 @@ const FornecedoresPage = () => {
                       {fornecedora.chavePix}
                     </TableCell>
                     <TableCell>
-                      <IconButton onClick={() => handleNavigation(fornecedora.id)} sx={{ marginRight: 1, color: "#00509E" }}>
+                      <IconButton
+                        onClick={() => handleNavigation(fornecedora.id)}
+                        sx={{ marginRight: 1, color: "#00509E" }}
+                      >
                         <VisibilityIcon />
                       </IconButton>
                       <IconButton

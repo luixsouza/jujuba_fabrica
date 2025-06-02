@@ -15,29 +15,47 @@ import {
   Snackbar,
   Alert,
   Chip,
+  InputAdornment,
 } from "@mui/material"
 import { ArrowBack, Home } from "@mui/icons-material"
-import Sidebar from "../../../components/sidebar"
-import { useRouter } from "next/router"
-import { editarFornecedora } from "../api/fornecedores" // ajuste o caminho conforme sua estrutura aí zé 
+import Sidebar from "../../../../components/sidebar"
+import { useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import axios from "axios"
 
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
 
+// Função para editar fornecedora
+const editarFornecedora = async (id, formData) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+    return response.data
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Erro ao editar fornecedora")
+  }
+}
+
 export default function FornecedoresEdicao() {
   const theme = useTheme()
   const router = useRouter()
-  const { id } = router.query
+  const params = useParams()
+  const id = params?.id
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
+  // Alterar a estrutura do estado fornecedora para corresponder ao backend
   const [fornecedora, setFornecedora] = useState({
     nome: "",
+    dataNascimento: "", // Alterado de dataDeNascimento para dataNascimento para corresponder ao backend
     contato: "",
     endereco: "",
     chavePix: "",
     contratoUrl: "",
-    dataDeNascimento: "",
+    creditoLoja: "", // Adicionado campo que existe no backend
   })
 
   const [loading, setLoading] = useState(false)
@@ -56,6 +74,7 @@ export default function FornecedoresEdicao() {
     }
   }, [id])
 
+  // Modificar a função fetchFornecedora para formatar a data corretamente
   const fetchFornecedora = async (fornecedoraId) => {
     try {
       setFetchLoading(true)
@@ -66,23 +85,24 @@ export default function FornecedoresEdicao() {
 
       const data = response.data
 
-      // Formatando a data se necessário
-      let dataFormatada = data.dataDeNascimento || ""
-      if (dataFormatada && !dataFormatada.includes("-")) {
-        // Se a data vier em formato brasileiro (dd/mm/yyyy), converter para yyyy-mm-dd
+      // Formatação da data para o formato esperado pelo input type="date"
+      let dataFormatada = data.dataNascimento || ""
+      if (dataFormatada && dataFormatada.includes("/")) {
         const partes = dataFormatada.split("/")
         if (partes.length === 3) {
-          dataFormatada = `${partes[2]}-${partes[1].padStart(2, "0")}-${partes[0].padStart(2, "0")}`
+          // Converter de dd/MM/yyyy para yyyy-MM-dd
+          dataFormatada = `${partes[2]}-${partes[1]}-${partes[0]}`
         }
       }
 
       setFornecedora({
         nome: data.nome || "",
+        dataNascimento: dataFormatada, // Usando o nome correto do campo
         contato: data.contato || "",
         endereco: data.endereco || "",
         chavePix: data.chavePix || "",
-        dataDeNascimento: dataFormatada,
         contratoUrl: data.contratoUrl || "",
+        creditoLoja: data.creditoLoja || "",
       })
 
       if (data.contratoUrl) {
@@ -128,6 +148,7 @@ export default function FornecedoresEdicao() {
     setSnackbar({ ...snackbar, open: false })
   }
 
+  // Modificar a função handleSubmit para formatar a data corretamente antes de enviar
   const handleSubmit = async (event) => {
     event.preventDefault()
 
@@ -144,20 +165,31 @@ export default function FornecedoresEdicao() {
 
     setLoading(true)
     try {
-      // Preparar dados seguindo exatamente o formato da API
-      const fornecedoraData = {
-        nome: fornecedora.nome,
-        contato: fornecedora.contato,
-        endereco: fornecedora.endereco,
-        chavePix: fornecedora.chavePix,
-        contratoUrl: selectedFile ? selectedFile.name : contratoAtual,
-        dataNascimento: fornecedora.dataDeNascimento,
+      const formData = new FormData()
+
+      formData.append("nome", fornecedora.nome)
+
+      // Converter a data de yyyy-MM-dd para dd/MM/yyyy antes de enviar
+      if (fornecedora.dataNascimento) {
+        const [ano, mes, dia] = fornecedora.dataNascimento.split("-")
+        const dataFormatada = `${dia}/${mes}/${ano}`
+        formData.append("dataNascimento", dataFormatada)
       }
 
-      console.log("Dados enviados para API:", fornecedoraData)
+      formData.append("contato", fornecedora.contato)
+      formData.append("endereco", fornecedora.endereco)
+      formData.append("chavePix", fornecedora.chavePix)
+      if (fornecedora.creditoLoja) {
+        formData.append("creditoLoja", fornecedora.creditoLoja)
+      }
 
-      // Usar a função da API exatamente como definida
-      const data = await editarFornecedora(id, fornecedoraData)
+      if (selectedFile) {
+        formData.append("contratoFile", selectedFile)
+      }
+
+      console.log("Dados enviados para API (FormData):", formData)
+
+      const data = await editarFornecedora(id, formData)
       console.log("Fornecedor atualizado com sucesso:", data)
 
       setSnackbar({
@@ -166,9 +198,8 @@ export default function FornecedoresEdicao() {
         severity: "success",
       })
 
-      // Aguardar um pouco antes de redirecionar
       setTimeout(() => {
-        router.push("/fornecedores/fornecedores_tabela")
+        router.push("/fornecedores")
       }, 2000)
     } catch (error) {
       console.error("Erro ao atualizar fornecedor:", error)
@@ -227,12 +258,7 @@ export default function FornecedoresEdicao() {
       </Box>
 
       <Box sx={{ flex: 1, p: 3 }}>
-        <Box sx={{ mb: 1, textAlign: "center", mt: { xs: 4, md: 8 } }}>
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: "bold", marginBottom: "20px", fontSize: { xs: "30px", md: "40px" } }}
-          ></Typography>
-        </Box>
+        <Box sx={{ mb: 1, textAlign: "center", mt: { xs: 4, md: 8 } }}></Box>
 
         <form autoComplete="off" onSubmit={handleSubmit}>
           <Card
@@ -240,7 +266,7 @@ export default function FornecedoresEdicao() {
               borderRadius: 10,
               backgroundColor: "#FADADD",
               p: 3,
-              maxWidth: "150%",
+              maxWidth: "60%",
               mx: "auto",
               mt: { xs: 4, md: 8 },
               height: "auto",
@@ -248,38 +274,35 @@ export default function FornecedoresEdicao() {
             }}
           >
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", mb: 2 }}></Typography>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Grid container direction="column" alignItems="center" spacing={1}>
-                    <Grid item xs={12} display="flex" justifyContent="flex-start" width="100%" alignItems="center">
-                      <ArrowBack
-                        sx={{
-                          fontSize: "30px",
-                          cursor: "pointer",
-                          color: "black",
-                        }}
-                        onClick={() => router.back()}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} display="flex" justifyContent="flex-end" width="100%" alignItems="center">
-                      <Home
-                        sx={{
-                          fontSize: "30px",
-                          cursor: "pointer",
-                          color: "black",
-                          marginTop: "-40px",
-                        }}
-                        onClick={() => router.push("/")}
-                      />
+                    <Grid item xs={12} width="100%">
+                      <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
+                        <ArrowBack
+                          sx={{
+                            fontSize: "30px",
+                            cursor: "pointer",
+                            color: "black",
+                          }}
+                          onClick={() => router.back()}
+                        />
+                        <Home
+                          sx={{
+                            fontSize: "30px",
+                            cursor: "pointer",
+                            color: "black",
+                          }}
+                          onClick={() => router.push("/")}
+                        />
+                      </Box>
                     </Grid>
 
                     <Grid item xs={12}>
                       <Typography
                         variant="h4"
                         sx={{
-                          mb: 4,
+                          mb: 1,
                           fontSize: { xs: "35px", md: "45px" },
                           fontWeight: "bold",
                           textAlign: "center",
@@ -287,6 +310,19 @@ export default function FornecedoresEdicao() {
                       >
                         Edição de Fornecedor
                       </Typography>
+
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: "14px",
+                          color: "gray",
+                          textAlign: "center",
+                          mb: 1,
+                        }}
+                      >
+                        Campos com <span style={{ color: "red" }}>*</span> são obrigatórios
+                      </Typography>
+
                       <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
                         <Chip
                           label={`ID: ${id}`}
@@ -302,148 +338,214 @@ export default function FornecedoresEdicao() {
                   </Grid>
                 </Grid>
 
-                <Grid item xs={12} sm={8} md={7}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
-                  >
-                    Nome *
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Nome do Fornecedor"
-                    name="nome"
-                    onChange={handleChange}
-                    required
-                    value={fornecedora.nome}
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused": {
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  />
-                </Grid>
+                <Grid item xs={12}>
+                  <Grid container justifyContent="center">
+                    <Grid item xs={12} sm={10} md={8}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Nome <span style={{ color: "red" }}>*</span>
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="nome"
+                        onChange={handleChange}
+                        required
+                        value={fornecedora.nome}
+                        variant="outlined"
+                        label=""
+                        placeholder=""
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
 
-                <Grid item xs={12} sm={8} md={7}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
-                  >
-                    Contato *
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Contato"
-                    name="contato"
-                    onChange={handleChange}
-                    required
-                    value={fornecedora.contato}
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused": {
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  />
-                </Grid>
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Data de Nascimento <span style={{ color: "red" }}>*</span>
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="dataNascimento"
+                        onChange={handleChange}
+                        required
+                        value={fornecedora.dataNascimento}
+                        variant="outlined"
+                        label=""
+                        placeholder=""
+                        type="date"
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
 
-                <Grid item xs={12} sm={8} md={7}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
-                  >
-                    Endereço *
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Endereço"
-                    name="endereco"
-                    onChange={handleChange}
-                    required
-                    value={fornecedora.endereco}
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused": {
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  />
-                </Grid>
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Contato <span style={{ color: "red" }}>*</span>
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="contato"
+                        onChange={handleChange}
+                        required
+                        value={fornecedora.contato}
+                        variant="outlined"
+                        label=""
+                        placeholder=""
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
 
-                <Grid item xs={12} sm={8} md={7}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
-                  >
-                    Chave Pix
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Chave Pix"
-                    name="chavePix"
-                    onChange={handleChange}
-                    value={fornecedora.chavePix}
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused": {
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  />
-                </Grid>
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Endereço <span style={{ color: "red" }}>*</span>
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="endereco"
+                        onChange={handleChange}
+                        required
+                        value={fornecedora.endereco}
+                        variant="outlined"
+                        label=""
+                        placeholder=""
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
 
-                <Grid item xs={12} sm={8} md={7}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
-                  >
-                    Data de Nascimento
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Data de Nascimento"
-                    name="dataDeNascimento"
-                    type="date"
-                    onChange={handleChange}
-                    value={fornecedora.dataDeNascimento}
-                    variant="outlined"
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "#FFFFFF",
-                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused": {
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  />
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Chave Pix
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="chavePix"
+                        onChange={handleChange}
+                        value={fornecedora.chavePix}
+                        variant="outlined"
+                        label=""
+                        placeholder=""
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Crédito na Loja
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="creditoLoja"
+                        onChange={handleChange}
+                        value={fornecedora.creditoLoja}
+                        variant="outlined"
+                        label=""
+                        placeholder=""
+                        type="number"
+                        InputProps={{
+                          startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                        }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 4 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: "normal",
+                          fontSize: "16px",
+                          marginBottom: "8px",
+                          color: "gray",
+                          textAlign: "center",
+                        }}
+                      >
+                        {contratoAtual && !selectedFile ? (
+                          <>
+                            Contrato atual: <span style={{ fontWeight: "bold" }}>{contratoAtual}</span>
+                          </>
+                        ) : selectedFile ? (
+                          <>
+                            Novo contrato selecionado: <span style={{ fontWeight: "bold" }}>{selectedFile.name}</span>
+                          </>
+                        ) : (
+                          <>Nenhum contrato carregado.</>
+                        )}
+                      </Typography>
+                    </Grid>
+                  </Grid>
                 </Grid>
 
                 <Grid
                   item
                   xs={12}
                   sx={{
-                    mt: 4,
+                    mt: 2,
                     display: "flex",
                     flexDirection: { xs: "column", sm: "row" },
                     justifyContent: "center",
@@ -457,12 +559,12 @@ export default function FornecedoresEdicao() {
                       color: "Black",
                       backgroundColor: "#50abe4",
                       textTransform: "none",
-                      width: { xs: "100%", sm: "250px" },
+                      width: { xs: "100%", sm: "200px" },
                       fontWeight: "bold",
-                      fontSize: { xs: "16px", md: "18px" },
+                      fontSize: { xs: "14px", md: "16px" },
                       borderRadius: "50px",
-                      padding: "10px 20px",
-                      height: "56px",
+                      padding: "8px 16px",
+                      height: "48px",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -476,13 +578,7 @@ export default function FornecedoresEdicao() {
                     }}
                   >
                     {loading ? (
-                      <CircularProgress
-                        size={24}
-                        sx={{
-                          color: "#FFFFFF",
-                          marginRight: 1,
-                        }}
-                      />
+                      <CircularProgress size={20} sx={{ color: "#FFFFFF", marginRight: 1 }} />
                     ) : selectedFile ? (
                       "Contrato Selecionado"
                     ) : contratoAtual ? (
@@ -490,7 +586,7 @@ export default function FornecedoresEdicao() {
                     ) : (
                       "Upload de Contrato"
                     )}
-                    <input type="file" name="contrato" hidden onChange={handleFileChange} />
+                    <input type="file" name="contratoFile" hidden onChange={handleFileChange} />
                   </Button>
 
                   <Button
@@ -500,12 +596,12 @@ export default function FornecedoresEdicao() {
                       color: "Black",
                       backgroundColor: "#50abe4",
                       textTransform: "none",
-                      width: { xs: "100%", sm: "250px" },
+                      width: { xs: "100%", sm: "200px" },
                       fontWeight: "bold",
-                      fontSize: { xs: "16px", md: "18px" },
+                      fontSize: { xs: "14px", md: "16px" },
                       borderRadius: "50px",
-                      padding: "10px 20px",
-                      height: "56px",
+                      padding: "8px 16px",
+                      height: "48px",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -519,15 +615,9 @@ export default function FornecedoresEdicao() {
                     }}
                   >
                     {loading ? (
-                      <CircularProgress
-                        size={24}
-                        sx={{
-                          color: "#FFFFFF",
-                          marginRight: 1,
-                        }}
-                      />
+                      <CircularProgress size={20} sx={{ color: "#FFFFFF", marginRight: 1 }} />
                     ) : (
-                      "Salvar Alterações"
+                      "Atualizar Fornecedor"
                     )}
                   </Button>
                 </Grid>
@@ -535,17 +625,18 @@ export default function FornecedoresEdicao() {
             </CardContent>
           </Card>
         </form>
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   )
 }

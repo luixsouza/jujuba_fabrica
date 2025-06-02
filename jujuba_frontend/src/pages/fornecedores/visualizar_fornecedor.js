@@ -17,8 +17,9 @@ import {
   TextField,
 } from "@mui/material"
 import { ArrowBack, Home, Download } from "@mui/icons-material"
-import Sidebar from "../../components/sidebar"
-import { useRouter } from "next/router"
+import Sidebar from "../../../../components/sidebar"
+import { useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import axios from "axios"
 
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
@@ -26,17 +27,20 @@ const BASE_URL = "http://localhost:8080/api/fornecedoras"
 export default function FornecedoresVisualizar() {
   const theme = useTheme()
   const router = useRouter()
-  const { id } = router.query
+  const params = useParams()
+  const id = params?.id
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
+  // Atualizar o estado para incluir creditoLoja e usar dataNascimento
   const [fornecedora, setFornecedora] = useState({
     nome: "",
     contato: "",
     endereco: "",
     chavePix: "",
     contratoUrl: "",
-    dataDeNascimento: "",
+    dataNascimento: "",
+    creditoLoja: "",
   })
 
   const [loading, setLoading] = useState(true)
@@ -46,13 +50,13 @@ export default function FornecedoresVisualizar() {
     severity: "success",
   })
 
-  // busca dados da fornecedora quando o componente carregar
   useEffect(() => {
     if (id) {
       fetchFornecedora(id)
     }
   }, [id])
 
+  // Atualizar a função fetchFornecedora
   const fetchFornecedora = async (fornecedoraId) => {
     try {
       setLoading(true)
@@ -64,8 +68,9 @@ export default function FornecedoresVisualizar() {
         contato: data.contato || "",
         endereco: data.endereco || "",
         chavePix: data.chavePix || "",
-        dataDeNascimento: data.dataDeNascimento || "",
+        dataNascimento: data.dataNascimento || "",
         contratoUrl: data.contratoUrl || "",
+        creditoLoja: data.creditoLoja || "",
       })
     } catch (error) {
       console.error("Erro ao buscar dados do fornecedor:", error)
@@ -324,8 +329,33 @@ export default function FornecedoresVisualizar() {
                 <TextField
                   fullWidth
                   label="Data de Nascimento"
-                  name="dataDeNascimento"
-                  value={fornecedora.dataDeNascimento}
+                  name="dataNascimento"
+                  value={fornecedora.dataNascimento}
+                  variant="outlined"
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "#FFFFFF",
+                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={8} md={7}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                >
+                  Crédito na Loja
+                </Typography>
+                <TextField
+                  fullWidth
+                  label="Crédito na Loja"
+                  name="creditoLoja"
+                  value={fornecedora.creditoLoja ? `R$ ${fornecedora.creditoLoja}` : "R$ 0,00"}
                   variant="outlined"
                   InputProps={{
                     readOnly: true,
@@ -394,4 +424,3 @@ export default function FornecedoresVisualizar() {
     </Box>
   )
 }
-
