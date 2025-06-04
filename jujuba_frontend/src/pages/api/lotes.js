@@ -81,7 +81,7 @@ export const createLote = async (fornecedoraId, produtos) => {
       const genero = GENEROS[produto.genero] || "UNISSEX"
 
       const produtoFormatado = {
-        nome: produto.descricao?.trim(),
+        // Remover o campo nome que não é esperado pelo backend
         descricao: produto.descricao?.trim(),
         preco: Number.parseFloat(produto.preco),
         quantidade: Number.parseInt(produto.quantidade),
@@ -96,7 +96,9 @@ export const createLote = async (fornecedoraId, produtos) => {
     })
 
     const loteData = {
-      fornecedoraId: Number.parseInt(fornecedoraId),
+      fornecedora: {
+        id: Number.parseInt(fornecedoraId),
+      },
       produtos: produtosFormatados,
     }
 
