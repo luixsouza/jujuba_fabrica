@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { ArrowLeft, Home, User, Package, ShoppingCart, List } from "lucide-react"
 
 // Importando as funções da API
-import { buscarLotePorId, listarLotes } from "../api/lotes"
+import { buscarLotePorId, getAllLotes } from "../api/lotes"
 
 export default function VisualizarLotePage() {
   const searchParams = useSearchParams()
@@ -20,7 +20,7 @@ export default function VisualizarLotePage() {
   useEffect(() => {
     const fetchLotesSidebar = async () => {
       try {
-        const response = await listarLotes()
+        const response = await getAllLotes()
         if (response.data) {
           // Formatar os dados para exibição na barra lateral
           const lotesFormatados = response.data

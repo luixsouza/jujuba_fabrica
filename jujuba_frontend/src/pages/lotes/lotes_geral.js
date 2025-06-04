@@ -34,7 +34,7 @@ import SearchIcon from "@mui/icons-material/Search"
 import { useRouter } from "next/navigation"
 
 // Importando as funções da API
-import { listarLotes, deletarLote } from "../api/lotes"
+import { getAllLotes , deletarLote } from "../api/lotes"
 
 const EstoquePage = () => {
   const [lotes, setLotes] = useState([])
@@ -59,7 +59,7 @@ const EstoquePage = () => {
   const fetchLotes = async () => {
     setLoading(true)
     try {
-      const response = await listarLotes()
+      const response = await getAllLotes ()
       if (response.data) {
         // Formatando os dados recebidos da API
         const lotesFormatados = response.data.map((lote) => ({

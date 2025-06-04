@@ -1,86 +1,97 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { ArrowLeft, Home, Trash2, Eye } from "lucide-react"
-import { salvarLote, listarLotes } from "../api/lotes"
+import { useRouter } from "next/router"
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Grid,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Alert,
+  CircularProgress,
+  AppBar,
+  Toolbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material"
+import { ArrowBack, Home, Delete, Visibility, Add, BugReport } from "@mui/icons-material"
+import { createLote, getAllLotes, getFornecedoras, testApiConnection } from "../api/lotes"
 import Sidebar from "../../components/sidebar"
 
 export default function CadastroLotePage() {
   const router = useRouter()
   const [loteId, setLoteId] = useState("")
-  const [isClient, setIsClient] = useState(false)
   const [fornecedoraId, setFornecedoraId] = useState("")
   const [items, setItems] = useState([])
   const [lotesSidebar, setLotesSidebar] = useState([])
   const [fornecedoras, setFornecedoras] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(null)
+  const [debugDialog, setDebugDialog] = useState(false)
+  const [debugInfo, setDebugInfo] = useState("")
+
   const [novoItem, setNovoItem] = useState({
     descricao: "",
     marca: "",
     tamanho: "",
     estadoConservacao: "Ótimo",
     preco: "",
-    genero: "",
+    genero: "Unisex",
     quantidade: 1,
-    imagem: "/placeholder.svg?height=80&width=80",
   })
 
-  // Set isClient to true when component mounts on client
   useEffect(() => {
-    setIsClient(true)
-    // Generate random ID only on the client side
+    // Gerar ID do lote
     setLoteId(`L${String(Math.floor(Math.random() * 900) + 100)}`)
 
-    // Carregar lotes para a barra lateral
+    // Carregar dados iniciais
     fetchLotes()
-
-    // Carregar fornecedoras
     fetchFornecedoras()
   }, [])
 
   const fetchLotes = async () => {
     try {
-      setLoading(true)
-      const response = await listarLotes()
+      const response = await getAllLotes()
       if (response.data) {
-        // Formatar os dados para exibição na barra lateral
         const lotesFormatados = response.data
           .map((lote) => ({
             id: lote.id,
             codigo: `L${lote.id}`,
             data: new Date(lote.dataCriacao).toLocaleDateString("pt-BR"),
           }))
-          .slice(0, 5) // Limitar a 5 lotes para a barra lateral
+          .slice(0, 5)
 
         setLotesSidebar(lotesFormatados)
       }
     } catch (error) {
       console.error("Erro ao buscar lotes:", error)
       setError("Não foi possível carregar os lotes.")
-    } finally {
-      setLoading(false)
     }
   }
 
   const fetchFornecedoras = async () => {
     try {
-      setLoading(true)
-      // Aqui você precisaria de um endpoint para buscar fornecedoras
-      // Como não temos esse endpoint na API fornecida, vamos simular
-      // Em um caso real, você substituiria isso por uma chamada à API
-      const response = await fetch("http://localhost:8080/api/fornecedoras")
-      if (response.ok) {
-        const data = await response.json()
-        setFornecedoras(data)
-      }
+      const data = await getFornecedoras()
+      setFornecedoras(data)
     } catch (error) {
       console.error("Erro ao buscar fornecedoras:", error)
       setError("Não foi possível carregar as fornecedoras.")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -93,18 +104,27 @@ export default function CadastroLotePage() {
   }
 
   const handleAddItem = () => {
-    // Validação básica
+    // Validação
     if (!novoItem.descricao || !novoItem.preco) {
-      alert("Por favor, preencha pelo menos a descrição e o valor")
+      setError("Por favor, preencha pelo menos a descrição e o valor")
+      return
+    }
+
+    if (Number.parseFloat(novoItem.preco) <= 0) {
+      setError("O valor deve ser maior que zero")
+      return
+    }
+
+    if (Number.parseInt(novoItem.quantidade) <= 0) {
+      setError("A quantidade deve ser maior que zero")
       return
     }
 
     const newItem = {
-      id: Date.now(), // ID temporário para manipulação na interface
-      imagem: novoItem.imagem,
-      descricao: novoItem.descricao,
-      marca: novoItem.marca,
-      tamanho: novoItem.tamanho,
+      id: Date.now(),
+      descricao: novoItem.descricao.trim(),
+      marca: novoItem.marca.trim(),
+      tamanho: novoItem.tamanho.trim(),
       estadoConservacao: novoItem.estadoConservacao,
       preco: Number.parseFloat(novoItem.preco),
       genero: novoItem.genero || "Unisex",
@@ -112,66 +132,90 @@ export default function CadastroLotePage() {
     }
 
     setItems((prev) => [...prev, newItem])
+    setError(null)
+    setSuccess("Item adicionado com sucesso!")
 
-    // Limpar o formulário
+    // Limpar formulário
     setNovoItem({
       descricao: "",
       marca: "",
       tamanho: "",
       estadoConservacao: "Ótimo",
       preco: "",
-      genero: "",
+      genero: "Unisex",
       quantidade: 1,
-      imagem: "/placeholder.svg?height=80&width=80",
     })
+
+    // Limpar mensagem de sucesso após 3 segundos
+    setTimeout(() => setSuccess(null), 3000)
   }
 
   const handleDeleteItem = (id) => {
     setItems((prev) => prev.filter((item) => item.id !== id))
+    setSuccess("Item removido com sucesso!")
+    setTimeout(() => setSuccess(null), 3000)
   }
 
   const handleViewItem = (id) => {
     const item = items.find((item) => item.id === id)
     if (item) {
       alert(
-        `Detalhes do item: ${item.descricao}\nValor: R$ ${item.preco.toFixed(2)}\nMarca: ${item.marca}\nTamanho: ${item.tamanho}`,
+        `Detalhes do item:\n` +
+          `Descrição: ${item.descricao}\n` +
+          `Valor: R$ ${item.preco.toFixed(2)}\n` +
+          `Marca: ${item.marca || "Não informado"}\n` +
+          `Tamanho: ${item.tamanho || "Não informado"}\n` +
+          `Gênero: ${item.genero}\n` +
+          `Quantidade: ${item.quantidade}`,
       )
     }
   }
 
-  const handleFinalizarLote = async () => {
-    if (items.length === 0) {
-      alert("Adicione pelo menos um item ao lote antes de finalizar.")
-      return
-    }
-
-    if (!fornecedoraId) {
-      alert("Selecione uma fornecedora para o lote.")
-      return
-    }
-
+  const handleTestApi = async () => {
     try {
       setLoading(true)
-      // Chamar a API para salvar o lote
-      await salvarLote(fornecedoraId, items)
-
-      alert(`Lote finalizado com ${items.length} itens!`)
-      router.push("./lotes_geral")
+      const result = await testApiConnection()
+      setDebugInfo(JSON.stringify(result, null, 2))
+      setDebugDialog(true)
     } catch (error) {
-      console.error("Erro ao finalizar lote:", error)
-      setError("Não foi possível finalizar o lote.")
-      alert("Erro ao finalizar lote. Por favor, tente novamente.")
+      setDebugInfo(`Erro ao testar API: ${error.message}`)
+      setDebugDialog(true)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleGoBack = () => {
-    router.push("./lotes_geral")
-  }
+  const handleFinalizarLote = async () => {
+    if (items.length === 0) {
+      setError("Adicione pelo menos um item ao lote antes de finalizar.")
+      return
+    }
 
-  const handleGoHome = () => {
-    router.push("../fornecedores/fornecedores_tabela")
+    if (!fornecedoraId) {
+      setError("Selecione uma fornecedora para o lote.")
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      const result = await createLote(fornecedoraId, items)
+
+      if (result.success) {
+        setSuccess(`Lote finalizado com sucesso! ${items.length} itens cadastrados.`)
+
+        // Aguardar um pouco antes de redirecionar
+        setTimeout(() => {
+          router.push("./lotes_geral")
+        }, 2000)
+      }
+    } catch (error) {
+      console.error("Erro ao finalizar lote:", error)
+      setError(error.message || "Não foi possível finalizar o lote. Tente novamente.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const calcularValorTotal = () => {
@@ -179,441 +223,301 @@ export default function CadastroLotePage() {
   }
 
   return (
-    <>
-      <style jsx>{`
-        .container {
-          display: flex;
-          min-height: 100vh;
-          font-family: Arial, sans-serif;
-        }
+    <Box sx={{ display: "flex" }}>
+      <Sidebar lotes={lotesSidebar} />
 
-        .main-content {
-          flex: 1;
-          margin-left: 244px;
-          background-color: #a3e0f5;
-          padding: 32px;
-        }
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          ml: "244px",
+          backgroundColor: "#a3e0f5",
+          minHeight: "100vh",
+          p: 4,
+        }}
+      >
+        {/* Header */}
+        <AppBar
+          position="static"
+          sx={{
+            backgroundColor: "transparent",
+            boxShadow: "none",
+            mb: 4,
+          }}
+        >
+          <Toolbar sx={{ justifyContent: "space-between" }}>
+            <IconButton onClick={() => router.push("./lotes_geral")} sx={{ color: "#333" }}>
+              <ArrowBack />
+            </IconButton>
 
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 60px;
-        }
+            <Box sx={{ textAlign: "center" }}>
+              <Typography
+                variant="h3"
+                component="h1"
+                sx={{
+                  fontWeight: 800,
+                  color: "#333",
+                  textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+                }}
+              >
+                CADASTRAR LOTE
+              </Typography>
+              <Typography variant="h6" sx={{ color: "#666" }}>
+                Lote: {loteId}
+              </Typography>
+            </Box>
 
-        .header-title {
-          text-align: center;
-        }
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <IconButton onClick={handleTestApi} sx={{ color: "#333" }} title="Testar API">
+                <BugReport />
+              </IconButton>
+              <IconButton onClick={() => router.push("../fornecedores/fornecedores_tabela")} sx={{ color: "#333" }}>
+                <Home />
+              </IconButton>
+            </Box>
+          </Toolbar>
+        </AppBar>
 
-        .header-title h1 {
-          font-size: 40px;
-          font-weight: 800;
-          color: #333;
-          text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-          margin-bottom: 12px;
-        }
+        {/* Alertas */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-        .header-title p {
-          color: #666;
-          font-size: 18px;
-        }
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+            {success}
+          </Alert>
+        )}
 
-        .nav-button {
-          background: transparent;
-          border-radius: 50%;
-          padding: 12px;
-          cursor: pointer;
-          border: none;
-          transition: all 0.2s ease;
-          color: #333;
-        }
+        {/* Formulário */}
+        <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Descrição do item"
+                name="descricao"
+                value={novoItem.descricao}
+                onChange={handleInputChange}
+                variant="outlined"
+                required
+              />
+            </Grid>
 
-        .nav-button:hover {
-          transform: scale(1.1);
-          color: #000;
-        }
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Marca"
+                name="marca"
+                value={novoItem.marca}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
 
-        .form-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-          margin-bottom: 32px;
-        }
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Tamanho"
+                name="tamanho"
+                value={novoItem.tamanho}
+                onChange={handleInputChange}
+                variant="outlined"
+              />
+            </Grid>
 
-        .input-field {
-          padding: 20px;
-          border-radius: 10px;
-          border: none;
-          background-color: #f8f8f8;
-          width: 100%;
-          font-size: 17px;
-          color: #555;
-          box-shadow: 0 8px 15px rgba(0,0,0,0.15);
-          transition: all 0.3s ease;
-          min-height: 65px;
-        }
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth>
+                <InputLabel>Estado de Conservação</InputLabel>
+                <Select
+                  name="estadoConservacao"
+                  value={novoItem.estadoConservacao}
+                  onChange={handleInputChange}
+                  label="Estado de Conservação"
+                >
+                  <MenuItem value="Ótimo">Ótimo</MenuItem>
+                  <MenuItem value="Excelente">Excelente</MenuItem>
+                  <MenuItem value="Bom">Bom</MenuItem>
+                  <MenuItem value="Ruim">Ruim</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
-        .input-field:focus {
-          outline: none;
-          box-shadow: 0 10px 20px rgba(0,0,0,0.18);
-          transform: translateY(-2px);
-        }
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Valor (R$)"
+                name="preco"
+                type="number"
+                value={novoItem.preco}
+                onChange={handleInputChange}
+                variant="outlined"
+                inputProps={{ step: 0.01, min: 0.01 }}
+                required
+              />
+            </Grid>
 
-        .select-field {
-          padding: 20px;
-          border-radius: 10px;
-          border: none;
-          background-color: #f8f8f8;
-          width: 100%;
-          font-size: 17px;
-          color: #555;
-          box-shadow: 0 8px 15px rgba(0,0,0,0.15);
-          transition: all 0.3s ease;
-          min-height: 65px;
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23555' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 15px center;
-          padding-right: 45px;
-        }
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Quantidade"
+                name="quantidade"
+                type="number"
+                value={novoItem.quantidade}
+                onChange={handleInputChange}
+                variant="outlined"
+                inputProps={{ min: 1 }}
+                required
+              />
+            </Grid>
 
-        .select-field:focus {
-          outline: none;
-          box-shadow: 0 10px 20px rgba(0,0,0,0.18);
-          transform: translateY(-2px);
-        }
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Gênero</InputLabel>
+                <Select name="genero" value={novoItem.genero} onChange={handleInputChange} label="Gênero">
+                  <MenuItem value="Masculino">Masculino</MenuItem>
+                  <MenuItem value="Feminino">Feminino</MenuItem>
+                  <MenuItem value="Unisex">Unisex</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
-        .table-container {
-          background: white;
-          border-radius: 16px;
-          padding: 24px;
-          margin-bottom: 32px;
-          box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-        }
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Fornecedora</InputLabel>
+                <Select value={fornecedoraId} onChange={(e) => setFornecedoraId(e.target.value)} label="Fornecedora">
+                  <MenuItem value="">Selecione a fornecedora</MenuItem>
+                  {fornecedoras.map((f) => (
+                    <MenuItem key={f.id} value={f.id}>
+                      {f.nome}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
 
-        table {
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 0;
-        }
-
-        th {
-          background: #ffd0e8;
-          text-align: left;
-          padding: 16px;
-          font-weight: 600;
-          font-size: 17px;
-          border-top: 1px solid #ffc0e0;
-          border-bottom: 1px solid #ffc0e0;
-        }
-
-        th:first-child {
-          border-top-left-radius: 10px;
-          border-left: 1px solid #ffc0e0;
-        }
-
-        th:last-child {
-          border-top-right-radius: 10px;
-          border-right: 1px solid #ffc0e0;
-        }
-
-        td {
-          padding: 16px;
-          border-bottom: 1px solid #eee;
-          font-size: 16px;
-        }
-
-        tr:last-child td {
-          border-bottom: none;
-        }
-
-        tr:hover td {
-          background-color: #f9f9f9;
-        }
-
-        .actions {
-          display: flex;
-          justify-content: center;
-          gap: 12px;
-        }
-
-        .action-button {
-          color: #2563eb;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 8px;
-          border-radius: 6px;
-        }
-
-        .action-button:hover {
-          background: #f0f7ff;
-          transform: scale(1.1);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .buttons-container {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 32px;
-        }
-
-        .pink-button {
-          background: #ffd0e8;
-          border: none;
-          padding: 18px 50px;
-          border-radius: 9999px;
-          font-weight: 600;
-          font-size: 18px;
-          cursor: pointer;
-          box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-          transition: all 0.3s ease;
-        }
-
-        .pink-button:hover {
-          background: #ffb0d8;
-          box-shadow: 0 12px 24px rgba(0,0,0,0.2);
-          transform: translateY(-4px);
-        }
-
-        .pink-button:disabled {
-          background: #f5f5f5;
-          color: #999;
-          cursor: not-allowed;
-          box-shadow: none;
-          transform: none;
-        }
-
-        /* Responsive styles */
-        @media (max-width: 1024px) {
-          .main-content {
-            margin-left: 244px;
-          }
-          .form-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        @media (max-width: 768px) {
-          .main-content {
-            margin-left: 0;
-            padding: 20px;
-          }
-          .header-title h1 {
-            font-size: 30px;
-          }
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-          .table-container {
-            overflow-x: auto;
-          }
-          .buttons-container {
-            flex-direction: column;
-            gap: 16px;
-          }
-          .pink-button {
-            width: 100%;
-          }
-        }
-
-        .loading {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          padding: 20px;
-          font-size: 18px;
-          color: #666;
-        }
-
-        .error {
-          background-color: #fee2e2;
-          color: #ef4444;
-          padding: 12px;
-          border-radius: 8px;
-          margin-bottom: 16px;
-          font-size: 16px;
-        }
-      `}</style>
-
-      <div className="container">
-        <Sidebar lotes={lotesSidebar} />
-
-        <div className="main-content">
-          <header className="header">
-            <button className="nav-button" onClick={handleGoBack}>
-              <ArrowLeft size={20} />
-            </button>
-            <div className="header-title">
-              <h1>CADASTRAR LOTE</h1>
-              <p>Lote: {isClient ? loteId : "L000"}</p>
-            </div>
-            <button className="nav-button" onClick={handleGoHome}>
-              <Home size={20} />
-            </button>
-          </header>
-
-          {error && <div className="error">{error}</div>}
-
-          <div className="form-grid">
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Descrição do item"
-              name="descricao"
-              value={novoItem.descricao}
-              onChange={handleInputChange}
-            />
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Marca"
-              name="marca"
-              value={novoItem.marca}
-              onChange={handleInputChange}
-            />
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Tamanho"
-              name="tamanho"
-              value={novoItem.tamanho}
-              onChange={handleInputChange}
-            />
-            <select
-              className="select-field"
-              name="estadoConservacao"
-              value={novoItem.estadoConservacao}
-              onChange={handleInputChange}
+          <Box sx={{ mt: 3, textAlign: "center" }}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleAddItem}
+              disabled={loading}
+              sx={{
+                backgroundColor: "#ffd0e8",
+                color: "#333",
+                "&:hover": {
+                  backgroundColor: "#ffb0d8",
+                },
+                px: 4,
+                py: 1.5,
+                borderRadius: 25,
+              }}
             >
-              <option value="Ótimo">Ótimo</option>
-              <option value="Bom">Bom</option>
-              <option value="Regular">Regular</option>
-            </select>
-            <input
-              type="number"
-              className="input-field"
-              placeholder="Valor (R$)"
-              name="preco"
-              value={novoItem.preco}
-              onChange={handleInputChange}
-              step="0.01"
-            />
-            <input
-              type="number"
-              className="input-field"
-              placeholder="Quantidade"
-              name="quantidade"
-              value={novoItem.quantidade}
-              onChange={handleInputChange}
-              min="1"
-            />
-            <select className="select-field" name="genero" value={novoItem.genero} onChange={handleInputChange}>
-              <option value="">Selecione o gênero</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Feminino">Feminino</option>
-              <option value="Unisex">Unisex</option>
-            </select>
-            <select className="select-field" value={fornecedoraId} onChange={(e) => setFornecedoraId(e.target.value)}>
-              <option value="">Selecione a fornecedora</option>
-              {fornecedoras.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Imagem</th>
-                  <th>Descrição</th>
-                  <th>Estado de conservação</th>
-                  <th>Valor</th>
-                  <th>Quantidade</th>
-                  <th>Marca</th>
-                  <th>Tamanho</th>
-                  <th>Gênero</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} style={{ textAlign: "center" }}>
-                      Nenhum item adicionado ao lote
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <Image
-                          src={item.imagem || "/placeholder.svg"}
-                          alt={item.descricao}
-                          width={80}
-                          height={80}
-                          style={{ borderRadius: "10px" }}
-                        />
-                      </td>
-                      <td>{item.descricao}</td>
-                      <td>{item.estadoConservacao}</td>
-                      <td>R$ {item.preco.toFixed(2).replace(".", ",")}</td>
-                      <td>{item.quantidade}</td>
-                      <td>{item.marca || "-"}</td>
-                      <td>{item.tamanho || "-"}</td>
-                      <td>{item.genero}</td>
-                      <td>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button
-                            onClick={() => handleViewItem(item.id)}
-                            style={{ background: "none", border: "none", cursor: "pointer" }}
-                          >
-                            <Eye size={20} color="#4b5563" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteItem(item.id)}
-                            style={{ background: "none", border: "none", cursor: "pointer" }}
-                          >
-                            <Trash2 size={20} color="#ef4444" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-              {items.length > 0 && (
-                <tfoot>
-                  <tr>
-                    <td colSpan={3} style={{ textAlign: "right", fontWeight: "bold" }}>
-                      Total:
-                    </td>
-                    <td colSpan={6} style={{ fontWeight: "bold" }}>
-                      R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-
-          <div className="buttons-container">
-            <button className="pink-button" onClick={handleAddItem} disabled={loading}>
               Adicionar Item
-            </button>
-            <button
-              className="pink-button"
-              onClick={handleFinalizarLote}
-              disabled={loading || items.length === 0 || !fornecedoraId}
-            >
-              {loading ? "Processando..." : "Finalizar Lote"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
+            </Button>
+          </Box>
+        </Paper>
+
+        {/* Tabela de Itens */}
+        <TableContainer component={Paper} sx={{ mb: 3 }}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: "#ffd0e8" }}>
+                <TableCell>Descrição</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Valor</TableCell>
+                <TableCell>Quantidade</TableCell>
+                <TableCell>Marca</TableCell>
+                <TableCell>Tamanho</TableCell>
+                <TableCell>Gênero</TableCell>
+                <TableCell align="center">Ações</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center">
+                    Nenhum item adicionado ao lote
+                  </TableCell>
+                </TableRow>
+              ) : (
+                items.map((item) => (
+                  <TableRow key={item.id} hover>
+                    <TableCell>{item.descricao}</TableCell>
+                    <TableCell>{item.estadoConservacao}</TableCell>
+                    <TableCell>R$ {item.preco.toFixed(2).replace(".", ",")}</TableCell>
+                    <TableCell>{item.quantidade}</TableCell>
+                    <TableCell>{item.marca || "-"}</TableCell>
+                    <TableCell>{item.tamanho || "-"}</TableCell>
+                    <TableCell>{item.genero}</TableCell>
+                    <TableCell align="center">
+                      <IconButton onClick={() => handleViewItem(item.id)} color="primary">
+                        <Visibility />
+                      </IconButton>
+                      <IconButton onClick={() => handleDeleteItem(item.id)} color="error">
+                        <Delete />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+              {items.length > 0 && (
+                <TableRow>
+                  <TableCell colSpan={2} align="right" sx={{ fontWeight: "bold" }}>
+                    Total:
+                  </TableCell>
+                  <TableCell colSpan={6} sx={{ fontWeight: "bold" }}>
+                    R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Botão Finalizar */}
+        <Box sx={{ textAlign: "center" }}>
+          <Button
+            variant="contained"
+            onClick={handleFinalizarLote}
+            disabled={loading || items.length === 0 || !fornecedoraId}
+            sx={{
+              backgroundColor: "#ffd0e8",
+              color: "#333",
+              "&:hover": {
+                backgroundColor: "#ffb0d8",
+              },
+              px: 6,
+              py: 2,
+              borderRadius: 25,
+              fontSize: "1.1rem",
+            }}
+          >
+            {loading ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                Processando...
+              </>
+            ) : (
+              "Finalizar Lote"
+            )}
+          </Button>
+        </Box>
+
+        {/* Dialog de Debug */}
+        <Dialog open={debugDialog} onClose={() => setDebugDialog(false)} maxWidth="md" fullWidth>
+          <DialogTitle>Informações de Debug da API</DialogTitle>
+          <DialogContent>
+            <pre style={{ whiteSpace: "pre-wrap", fontSize: "12px" }}>{debugInfo}</pre>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDebugDialog(false)}>Fechar</Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </Box>
   )
 }
