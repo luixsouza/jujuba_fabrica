@@ -34,7 +34,7 @@ import SearchIcon from "@mui/icons-material/Search"
 import { useRouter } from "next/navigation"
 
 // Importando as funções da API
-import { getAllLotes , deletarLote } from "../api/lotes"
+import { getAllLotes, deletarLote } from "../api/lotes"
 
 const EstoquePage = () => {
   const [lotes, setLotes] = useState([])
@@ -59,10 +59,9 @@ const EstoquePage = () => {
   const fetchLotes = async () => {
     setLoading(true)
     try {
-      const response = await getAllLotes ()
-      if (response.data) {
-        // Formatando os dados recebidos da API
-        const lotesFormatados = response.data.map((lote) => ({
+      const response = await getAllLotes()
+      if (response && Array.isArray(response)) {
+        const lotesFormatados = response.map((lote) => ({
           id: lote.id,
           numero: `L${lote.id}`,
           data: lote.dataCriacao || new Date().toISOString(),
@@ -73,7 +72,6 @@ const EstoquePage = () => {
         setLotes([])
       }
     } catch (error) {
-      console.error("Erro ao buscar lotes:", error)
       setSnackbar({
         open: true,
         message: "Erro ao carregar lotes",
@@ -100,7 +98,6 @@ const EstoquePage = () => {
         severity: "success",
       })
     } catch (error) {
-      console.error("Erro ao excluir lote:", error)
       setSnackbar({
         open: true,
         message: "Falha ao excluir lote",
@@ -119,38 +116,21 @@ const EstoquePage = () => {
   }
 
   const handleNavigateToRegister = () => {
-    try {
-      router.push("./cadastrar_lote")
-    } catch (error) {
-      console.error("Erro ao navegar:", error)
-      // Fallback navigation
-      window.location.href = "./cadastrar_lote"
-    }
+    router.push("./cadastrar_lote")
   }
 
   const handleNavigateToView = (lote) => {
-    try {
-      router.push(`./visualizar_lote?id=${lote.id}`)
-    } catch (error) {
-      console.error("Erro ao navegar:", error)
-      window.location.href = `./visualizar_lote?id=${lote.id}`
-    }
+    router.push(`./visualizar_lote?id=${lote.id}`)
   }
 
   const handleNavigateToEdit = (id) => {
-    try {
-      router.push(`./editar_lote?id=${id}`)
-    } catch (error) {
-      console.error("Erro ao navegar:", error)
-      // Fallback navigation
-      window.location.href = `./editar_lote?id=${id}`
-    }
+    router.push(`./editar_lote?id=${id}`)
   }
 
   const handleChangePage = (event, newPage) => setPage(newPage)
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(Number.parseInt(event.target.value, 10))
+    setRowsPerPage(parseInt(event.target.value, 10))
     setPage(0)
   }
 
@@ -161,13 +141,13 @@ const EstoquePage = () => {
   const lotesFiltrados = useMemo(() => {
     return lotes.filter(
       (lote) =>
-        lote.numero.toString().toLowerCase().includes(search.toLowerCase()) ||
+        lote.numero.toLowerCase().includes(search.toLowerCase()) ||
         lote.fornecedora.toLowerCase().includes(search.toLowerCase()),
     )
   }, [lotes, search])
 
   const searchOptions = useMemo(() => {
-    return [...new Set(lotes.map((lote) => lote.numero.toString()))]
+    return [...new Set(lotes.map((lote) => lote.numero))]
   }, [lotes])
 
   return (
@@ -184,17 +164,17 @@ const EstoquePage = () => {
         }}
       >
         <Typography
-          variant="h4"
-          sx={{
-            justifyContent: "center",
-            alignItems: "center",
-            textAlign: "center",
-            fontWeight: "bold",
-            fontSize: "50px",
-            marginBottom: "50px",
-          }}
+            variant="h4"
+            sx={{
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              fontWeight: "bold",
+              fontSize: "50px",
+              color: "#000000",
+            }}
         >
-          Controle de Estoque
+          Lotes
         </Typography>
 
         <SearchField search={search} setSearch={setSearch} options={searchOptions} />
@@ -233,7 +213,6 @@ const EstoquePage = () => {
           </Button>
         </Box>
 
-        {/* Diálogo de confirmação para exclusão */}
         <Dialog
           open={openDialog}
           onClose={handleCancelDelete}
@@ -256,7 +235,6 @@ const EstoquePage = () => {
           </DialogActions>
         </Dialog>
 
-        {/* Snackbar para feedback */}
         <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
           <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
             {snackbar.message}
@@ -358,107 +336,108 @@ const LotesTable = ({
   handleNavigateToView,
   handleNavigateToEdit,
   loading,
-}) => (
-  <Card
-    sx={{
-      padding: "20px",
-      bgcolor: "white",
-      marginTop: "20px",
-      backgroundColor: "#F5F5F5",
-      borderRadius: "20px",
-      boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-    }}
-  >
-    <Typography
-      variant="h6"
+}) => {
+  return (
+    <Card
       sx={{
-        fontWeight: "bold",
-        textAlign: "LEFT",
-        marginBottom: "40px",
-        fontSize: "35px",
-        color: "#333",
-        marginTop: "20px",
+        borderRadius: "20px",
+        boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+        padding: "20px",
+        maxWidth: "100%",
+        overflowX: "auto",
       }}
     >
-      Lotes em Estoque
-    </Typography>
-
-    <TableContainer sx={{ maxHeight: "600px", borderRadius: "10px", overflow: "hidden" }}>
-      <Table stickyHeader>
-        <TableHead>
-          <TableRow>
-            {["Lotes", "Data", "Fornecedoras", "Ação"].map((header) => (
-              <TableCell
-                key={header}
-                sx={{
-                  fontSize: "18px",
-                  fontWeight: "normal",
-                  backgroundColor: "#FADADD",
-                  borderRight: "2px solid #F5F5F5",
-                  textAlign: "center",
-                }}
-              >
-                {header}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {loading ? (
+      <TableContainer>
+        <Table stickyHeader aria-label="lotes table">
+          <TableHead>
             <TableRow>
-              <TableCell colSpan={4} align="center">
-                <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-                  <CircularProgress size={40} sx={{ color: "#FADADD" }} />
-                </Box>
+              <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
+                Número do Lote
+              </TableCell>
+              <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
+                Data de Criação
+              </TableCell>
+              <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
+                Fornecedora
+              </TableCell>
+              <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
+                Ações
               </TableCell>
             </TableRow>
-          ) : lotesFiltrados.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={4} align="center">
-                Nenhum lote encontrado
-              </TableCell>
-            </TableRow>
-          ) : (
-            lotesFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((lote) => (
-              <TableRow key={lote.id} hover>
-                <TableCell align="center">{lote.numero}</TableCell>
-                <TableCell align="center">{new Date(lote.data).toLocaleDateString("pt-BR")}</TableCell>
-                <TableCell align="center">{lote.fornecedora}</TableCell>
-                <TableCell align="center">
-                  <IconButton onClick={() => handleNavigateToView(lote)} sx={{ marginRight: 1, color: "#00509E" }}>
-                    <VisibilityIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleNavigateToEdit(lote.id)} sx={{ marginRight: 1, color: "#00509E" }}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDeleteClick(lote.id)} sx={{ color: "#00509E" }}>
-                    <DeleteIcon />
-                  </IconButton>
+          </TableHead>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center">
+                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                    <CircularProgress size={40} sx={{ color: "#FADADD" }} />
+                  </Box>
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            ) : lotesFiltrados.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center">
+                  Nenhum lote encontrado.
+                </TableCell>
+              </TableRow>
+            ) : (
+              lotesFiltrados
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((lote) => (
+                  <TableRow key={lote.id}>
+                    <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
+                      {lote.numero}
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
+                      {new Date(lote.data).toLocaleDateString("pt-BR")}
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
+                      {lote.fornecedora}
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        aria-label="visualizar"
+                        onClick={() => handleNavigateToView(lote)}
+                        size="large"
+                        color="primary"
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                      <IconButton
+                        aria-label="editar"
+                        onClick={() => handleNavigateToEdit(lote.id)}
+                        size="large"
+                        color="secondary"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        aria-label="excluir"
+                        onClick={() => handleDeleteClick(lote.id)}
+                        size="large"
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-    <TablePagination
-      component="div"
-      count={lotesFiltrados.length}
-      page={page}
-      onPageChange={handleChangePage}
-      rowsPerPage={rowsPerPage}
-      onRowsPerPageChange={handleChangeRowsPerPage}
-      rowsPerPageOptions={[5, 10, 25]}
-      labelRowsPerPage="Itens por página"
-      labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-      sx={{
-        marginTop: "10px",
-        bgcolor: "#F5F5F5",
-        borderRadius: "10px",
-      }}
-    />
-  </Card>
-)
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={lotesFiltrados.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+    </Card>
+  )
+}
 
 export default EstoquePage

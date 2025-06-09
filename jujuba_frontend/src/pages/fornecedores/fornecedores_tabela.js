@@ -187,9 +187,10 @@ const FornecedoresPage = () => {
               textAlign: "center",
               fontWeight: "bold",
               fontSize: "50px",
+              color: "#000000",
             }}
           >
-            Fornecedores
+            Fornecedoras
           </Typography>
         </Box>
 

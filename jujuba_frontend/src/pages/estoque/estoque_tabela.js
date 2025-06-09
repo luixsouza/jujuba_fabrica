@@ -202,17 +202,17 @@ const EstoquePage = () => {
         }}
       >
         <Typography
-          variant="h4"
-          sx={{
-            justifyContent: "center",
-            alignItems: "center",
-            textAlign: "center",
-            fontWeight: "bold",
-            fontSize: "50px",
-            marginBottom: "50px",
-          }}
+            variant="h4"
+            sx={{
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              fontWeight: "bold",
+              fontSize: "50px",
+              color: "#000000",
+            }}
         >
-          Controle de Estoque
+          Estoque
         </Typography>
 
         <SearchField search={search} setSearch={setSearch} options={searchOptions} />
