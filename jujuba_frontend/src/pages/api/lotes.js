@@ -1,6 +1,4 @@
-const BASE_URL = 'http://localhost:8080/api/lotes';
-
-
+const BASE_URL = "http://localhost:8080/api/lotes"
 
 const ESTADOS_CONSERVACAO = {
   Ótimo: "OTIMO",
@@ -9,16 +7,12 @@ const ESTADOS_CONSERVACAO = {
   Ruim: "RUIM",
 }
 
-// Valores exatos aceitos pelo backend para Gênero
 const GENEROS = {
   Masculino: "MASCULINO",
   Feminino: "FEMININO",
   Unisex: "UNISSEX",
 }
 
-
-
-// Função para validar um produto
 const validarProduto = (produto, index) => {
   const erros = []
 
@@ -47,13 +41,12 @@ const validarProduto = (produto, index) => {
   return erros
 }
 
-export const createLote = async (fornecedoraId, produtos) => {
+const createLote = async (fornecedoraId, produtos) => {
   try {
     console.log("=== INÍCIO DEBUG LOTE ===")
     console.log("fornecedoraId recebido:", fornecedoraId)
     console.log("produtos recebidos:", produtos)
 
-    // Validações básicas
     if (!fornecedoraId) {
       throw new Error("fornecedoraId é obrigatório")
     }
@@ -62,7 +55,6 @@ export const createLote = async (fornecedoraId, produtos) => {
       throw new Error("produtos deve ser um array não vazio")
     }
 
-    // Validar cada produto
     const todosErros = []
     produtos.forEach((produto, index) => {
       const erros = validarProduto(produto, index)
@@ -73,7 +65,6 @@ export const createLote = async (fornecedoraId, produtos) => {
       throw new Error(`Erros de validação:\n${todosErros.join("\n")}`)
     }
 
-    // Converter produtos para o formato esperado pelo backend
     const produtosFormatados = produtos.map((produto, index) => {
       console.log(`Formatando produto ${index + 1}:`, produto)
 
@@ -81,7 +72,6 @@ export const createLote = async (fornecedoraId, produtos) => {
       const genero = GENEROS[produto.genero] || "UNISSEX"
 
       const produtoFormatado = {
-        // Remover o campo nome que não é esperado pelo backend
         descricao: produto.descricao?.trim(),
         preco: Number.parseFloat(produto.preco),
         quantidade: Number.parseInt(produto.quantidade),
@@ -116,9 +106,7 @@ export const createLote = async (fornecedoraId, produtos) => {
     })
 
     console.log("Status da resposta:", response.status)
-    console.log("Headers da resposta:", Object.fromEntries(response.headers.entries()))
 
-    // Ler a resposta como texto primeiro
     const responseText = await response.text()
     console.log("Resposta completa (texto):", responseText)
 
@@ -129,19 +117,15 @@ export const createLote = async (fornecedoraId, produtos) => {
         try {
           const errorData = JSON.parse(responseText)
           errorMessage = errorData.message || errorData.error || errorMessage
-          console.log("Erro parseado:", errorData)
         } catch (parseError) {
           errorMessage = responseText
-          console.log("Erro não é JSON válido:", responseText)
         }
       }
 
       throw new Error(errorMessage)
     }
 
-    // Tentar fazer parse da resposta de sucesso
     if (!responseText) {
-      console.log("Resposta vazia - assumindo sucesso")
       return {
         success: true,
         data: { message: "Lote criado com sucesso" },
@@ -150,200 +134,244 @@ export const createLote = async (fornecedoraId, produtos) => {
 
     try {
       const data = JSON.parse(responseText)
-      console.log("Resposta de sucesso parseada:", data)
       return {
         success: true,
         data: data,
       }
     } catch (parseError) {
-      console.error("Erro ao fazer parse da resposta de sucesso:", parseError)
-      // Se não conseguir fazer parse, mas a resposta foi 200, assumir sucesso
       return {
         success: true,
         data: { message: "Lote criado com sucesso", raw: responseText },
       }
     }
   } catch (error) {
-    console.error("=== ERRO FINAL ===")
     console.error("Erro ao cadastrar lote:", error)
-    console.error("Stack trace:", error.stack)
     throw error
   }
 }
 
-// Handler para Next.js API routes
-export default async function handler(req, res) {
-  // Adicionar CORS se necessário
-  res.setHeader("Access-Control-Allow-Origin", "*")
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end()
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method not allowed",
-      message: "Apenas POST é permitido",
-    })
-  }
-
+const getAllLotes = async () => {
   try {
-    console.log("=== API ROUTE DEBUG ===")
-    console.log("Body recebido:", req.body)
-    console.log("Headers:", req.headers)
+    console.log("=== INÍCIO DEBUG GET ALL LOTES ===")
+    console.log("URL:", BASE_URL)
 
-    const { fornecedoraId, produtos } = req.body
+    const response = await fetch(`${BASE_URL}`)
+    console.log("getAllLotes: Status da resposta:", response.status)
 
-    if (!fornecedoraId || !produtos || !Array.isArray(produtos)) {
-      return res.status(400).json({
-        error: "Dados inválidos",
-        message: "fornecedoraId e produtos (array) são obrigatórios",
-        received: { fornecedoraId, produtos: produtos ? "array" : typeof produtos },
-      })
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar os lotes. Status: ${response.status}`)
     }
 
-    const result = await createLote(fornecedoraId, produtos)
-    return res.status(200).json(result)
+    const data = await response.json()
+    console.log("getAllLotes: Dados recebidos do backend (antes da validação):", JSON.stringify(data, null, 2))
+
+    if (!Array.isArray(data)) {
+      console.error("getAllLotes: Resposta não é um array:", data)
+      throw new Error("Formato de resposta inválido - esperado um array")
+    }
+
+    const lotesFormatados = data
+      .map((lote, index) => {
+        console.log(`Processando lote ${index + 1}:`, lote)
+
+        if (!lote || typeof lote !== "object") {
+          console.warn(`Lote ${index + 1} tem estrutura inválida:`, lote)
+          return null
+        }
+
+        const loteFormatado = {
+          id: lote.id,
+          fornecedora: {
+            id: lote.fornecedora?.id || null,
+            nome: lote.fornecedora?.nome || "Nome não informado",
+          },
+          produtos: Array.isArray(lote.produtos)
+            ? lote.produtos.map((produto, produtoIndex) => {
+                console.log(`Processando produto ${produtoIndex + 1} do lote ${index + 1}:`, produto)
+
+                return {
+                  id: produto.id,
+                  nome: produto.descricao || produto.nome || "Produto sem nome",
+                  descricao: produto.descricao || "",
+                  preco: produto.preco || 0,
+                  quantidade: produto.quantidade || 0,
+                  marca: produto.marca || "",
+                  tamanho: produto.tamanho || "",
+                  estadoConservacao: produto.estadoConservacao || "",
+                  genero: produto.genero || "",
+                }
+              })
+            : [],
+          dataCriacao: lote.dataCriacao || lote.createdAt,
+          status: lote.status || "ATIVO",
+          totalProdutos: Array.isArray(lote.produtos) ? lote.produtos.length : 0,
+        }
+
+        console.log(`Lote ${index + 1} formatado:`, loteFormatado)
+        return loteFormatado
+      })
+      .filter((lote) => lote !== null)
+
+    console.log("=== LOTES FORMATADOS FINAIS ===")
+    console.log("Total de lotes:", lotesFormatados.length)
+
+    return lotesFormatados
   } catch (error) {
-    console.error("Erro na API route:", error)
-    return res.status(500).json({
-      error: "Erro interno",
-      message: error.message,
-    })
+    console.error("Erro ao listar lotes:", error)
+    throw error
   }
 }
 
-export const getAllLotes = async () => {
+const getLoteById = async (id) => {
   try {
-    const response = await fetch(`${BASE_URL}`);
+    console.log(`Buscando lote com ID: ${id}`)
+
+    const response = await fetch(`${BASE_URL}/${id}`)
 
     if (!response.ok) {
-      throw new Error('Erro ao buscar os lotes.');
+      throw new Error(`Erro ao buscar lote ${id}. Status: ${response.status}`)
     }
 
-    const data = await response.json();
+    const lote = await response.json()
+    console.log("Lote encontrado:", lote)
 
-    return data.map((lote) => ({
+    return {
       id: lote.id,
       fornecedora: {
-        id: lote.fornecedora.id,
-        nome: lote.fornecedora.nome,
+        id: lote.fornecedora?.id || null,
+        nome: lote.fornecedora?.nome || "Nome não informado",
       },
-      produtos: lote.produtos.map((produto) => ({
-        id: produto.id,
-        nome: produto.nome,
-      })),
-    }));
+      produtos: Array.isArray(lote.produtos)
+        ? lote.produtos.map((produto) => ({
+            id: produto.id,
+            nome: produto.descricao || produto.nome || "Produto sem nome",
+            descricao: produto.descricao || "",
+            preco: produto.preco || 0,
+            quantidade: produto.quantidade || 0,
+            marca: produto.marca || "",
+            tamanho: produto.tamanho || "",
+            estadoConservacao: produto.estadoConservacao || "",
+            genero: produto.genero || "",
+          }))
+        : [],
+      dataCriacao: lote.dataCriacao || lote.createdAt,
+      status: lote.status || "ATIVO",
+      totalProdutos: Array.isArray(lote.produtos) ? lote.produtos.length : 0,
+    }
   } catch (error) {
-    console.error('Erro ao listar lotes:', error);
-    throw error;
+    console.error(`Erro ao buscar lote ${id}:`, error)
+    throw error
   }
-};
+}
 
-
-export const getLoteById = async (id) => {
+const editLote = async (id, loteData) => {
   try {
-    const response = await fetch(`${BASE_URL}/${id}`);
-
-    if (!response.ok) {
-      throw new Error('Lote não encontrado.');
+    const formattedLoteData = {
+      fornecedora: {
+        id: loteData.fornecedora?.id || loteData.fornecedoraId,
+      },
+      produtos: Array.isArray(loteData.produtos)
+        ? loteData.produtos.map((produto) => ({
+            id: produto.id,
+            descricao: produto.descricao || produto.nome,
+            preco: Number.parseFloat(produto.preco),
+            quantidade: Number.parseInt(produto.quantidade),
+            marca: produto.marca || "",
+            tamanho: produto.tamanho || "",
+            estadoConservacao: produto.estadoConservacao || "BOM",
+            genero: produto.genero || "UNISSEX",
+          }))
+        : [],
     }
 
-    const data = await response.json();
-
-    return {
-      id: data.id,
-      fornecedora: {
-        id: data.fornecedora.id,
-        nome: data.fornecedora.nome,
-        contato: data.fornecedora.contato,
-        endereco: data.fornecedora.endereco,
-        chavePix: data.fornecedora.chavePix,
-        contratoUrl: data.fornecedora.contratoUrl,
-        dataNascimento: data.fornecedora.dataNascimento,
-      },
-      produtos: data.produtos.map((produto) => ({
-        id: produto.id,
-        nome: produto.nome,
-        descricao: produto.descricao,
-        preco: produto.preco,
-        quantidade: produto.quantidade,
-      })),
-    };
-  } catch (error) {
-    console.error('Erro ao buscar lote:', error);
-    throw error;
-  }
-};
-
-
-export const editLote = async (id, loteData) => {
-  try {
     const response = await fetch(`${BASE_URL}/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      body: JSON.stringify(loteData),
-    });
+      body: JSON.stringify(formattedLoteData),
+    })
+
+    const responseText = await response.text()
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Erro ao editar o lote.');
+      let errorMessage = `Erro HTTP ${response.status}`
+      if (responseText) {
+        try {
+          const errorData = JSON.parse(responseText)
+          errorMessage = errorData.message || errorData.error || errorMessage
+        } catch (parseError) {
+          errorMessage = responseText
+        }
+      }
+      throw new Error(errorMessage)
     }
 
-    const data = await response.json();
+    let data
+    try {
+      data = responseText ? JSON.parse(responseText) : {}
+    } catch (e) {
+      data = { message: "Lote editado com sucesso" }
+    }
 
     return {
-      id: data.id,
+      id: data.id || id,
       fornecedora: {
-        id: data.fornecedora.id,
-        nome: data.fornecedora.nome,
-        contato: data.fornecedora.contato,
-        endereco: data.fornecedora.endereco,
-        chavePix: data.fornecedora.chavePix,
-        contratoUrl: data.fornecedora.contratoUrl,
-        dataNascimento: data.fornecedora.dataNascimento,
+        id: data.fornecedora?.id || formattedLoteData.fornecedora.id,
+        nome: data.fornecedora?.nome || "Nome não disponível",
       },
-      produtos: data.produtos.map((produto) => ({
-        id: produto.id,
-        nome: produto.nome,
-        descricao: produto.descricao,
-        preco: produto.preco,
-        quantidade: produto.quantidade,
-      })),
-    };
+      produtos: Array.isArray(data.produtos) ? data.produtos : formattedLoteData.produtos,
+    }
   } catch (error) {
-    console.error('Erro ao editar lote:', error);
-    throw error;
+    console.error("Erro ao editar lote:", error)
+    throw error
   }
-};
+}
 
-export const deleteLote = async (id) => {
+const deletarLote = async (id) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}`, {
-      method: 'DELETE',
-    });
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+      },
+    })
+
+    const responseText = await response.text()
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Erro ao deletar o lote.');
+      let errorMessage = `Erro HTTP ${response.status}`
+      if (responseText) {
+        try {
+          const errorData = JSON.parse(responseText)
+          errorMessage = errorData.message || errorData.error || errorMessage
+        } catch (parseError) {
+          errorMessage = responseText
+        }
+      }
+      throw new Error(errorMessage)
     }
-    const data = await response.json();
+
+    let data
+    try {
+      data = responseText ? JSON.parse(responseText) : {}
+    } catch (e) {
+      data = { message: "Lote deletado com sucesso" }
+    }
 
     return {
       sucesso: true,
-      mensagem: data.message || 'Lote deletado com sucesso.',
+      mensagem: data.message || "Lote deletado com sucesso.",
       idDeletado: id,
-    };
+    }
   } catch (error) {
-    console.error('Erro ao deletar lote:', error);
-    throw error;
+    console.error("Erro ao deletar lote:", error)
+    throw error
   }
-};
-export const getFornecedoras = async () => {
+}
+
+const getFornecedoras = async () => {
   try {
     const response = await fetch("http://localhost:8080/api/fornecedoras")
 
@@ -368,4 +396,16 @@ export const getFornecedoras = async () => {
     console.error("Erro ao buscar fornecedoras:", error)
     return []
   }
+}
+
+// Exportar usando CommonJS para compatibilidade
+module.exports = {
+  createLote,
+  getAllLotes,
+  getLoteById,
+  editLote,
+  deletarLote,
+  getFornecedoras,
+  ESTADOS_CONSERVACAO,
+  GENEROS,
 }
