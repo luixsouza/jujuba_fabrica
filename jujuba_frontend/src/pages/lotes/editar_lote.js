@@ -41,8 +41,8 @@ import CancelIcon from "@mui/icons-material/Cancel"
 import AddIcon from "@mui/icons-material/Add"
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera"
 
-// Import API functions
-import { buscarLotePorId, atualizarLote, listarLotes } from "../api/lotes"
+// Import API functions - CORRIGIDO para usar as funções corretas do lotes.js
+import { getLoteById, editLote, getAllLotes } from "../api/lotes"
 
 // Import Sidebar component
 import Sidebar from "../../components/sidebar"
@@ -98,10 +98,10 @@ export default function EditandoLotePage() {
 
       try {
         setLoading(true)
-        const response = await buscarLotePorId(loteId)
+        // CORRIGIDO: getLoteById retorna diretamente o objeto do lote
+        const loteData = await getLoteById(loteId)
 
-        if (response.data) {
-          const loteData = response.data
+        if (loteData) {
           setFornecedoraId(loteData.fornecedora?.id || "")
 
           // Set fornecedor percentage if available
@@ -137,19 +137,19 @@ export default function EditandoLotePage() {
   // Fetch lotes for sidebar
   const fetchLotesSidebar = async () => {
     try {
-      const response = await listarLotes()
-      if (response.data) {
-        // Format lotes for sidebar display
-        const formattedLotes = response.data
-          .map((lote) => ({
-            id: lote.id,
-            codigo: `L${lote.id}`,
-            data: new Date(lote.dataCriacao).toLocaleDateString("pt-BR"),
-          }))
-          .slice(0, 5) // Limit to 5 lotes for sidebar
+      // CORRIGIDO: getAllLotes retorna diretamente o array
+      const lotes = await getAllLotes()
+      
+      // Format lotes for sidebar display
+      const formattedLotes = lotes
+        .map((lote) => ({
+          id: lote.id,
+          codigo: `L${lote.id}`,
+          data: new Date(lote.dataCriacao).toLocaleDateString("pt-BR"),
+        }))
+        .slice(0, 5) // Limit to 5 lotes for sidebar
 
-        setLotesSidebar(formattedLotes)
-      }
+      setLotesSidebar(formattedLotes)
     } catch (error) {
       console.error("Erro ao buscar lotes para barra lateral:", error)
     }
@@ -304,8 +304,25 @@ export default function EditandoLotePage() {
     try {
       setLoading(true)
 
+      // CORRIGIDO: Preparar dados no formato esperado pela função editLote
+      const loteData = {
+        fornecedora: {
+          id: fornecedoraId,
+        },
+        produtos: items.map((item) => ({
+          id: item.id,
+          descricao: item.descricao,
+          preco: Number.parseFloat(item.preco),
+          quantidade: Number.parseInt(item.quantidade) || 1,
+          marca: item.marca || "",
+          tamanho: item.tamanho || "",
+          estadoConservacao: item.estadoConservacao || "BOM",
+          genero: item.genero || "UNISSEX",
+        })),
+      }
+
       // Call API to update lote
-      await atualizarLote(loteId, fornecedoraId, items)
+      await editLote(loteId, loteData)
 
       setOpenFinishDialog(false)
       showSnackbar("Lote atualizado com sucesso!", "success")
@@ -481,7 +498,7 @@ export default function EditandoLotePage() {
                           }}
                         />
                       ) : (
-                        `R$ ${item.preco.toFixed(2).replace(".", ",")}`
+                        `R$ ${item.preco?.toFixed(2) || "0,00"}`
                       )}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: "0.95rem" }}>
@@ -493,7 +510,6 @@ export default function EditandoLotePage() {
                           onChange={handleEditChange}
                           variant="outlined"
                           size="small"
-                          disabled
                         />
                       ) : (
                         item.id
@@ -503,8 +519,8 @@ export default function EditandoLotePage() {
                       {editingItemId === item.id ? (
                         <FormControl fullWidth size="small">
                           <Select name="genero" value={editedItem.genero} onChange={handleEditChange}>
-                            <MenuItem value="Masc">Masc</MenuItem>
-                            <MenuItem value="Fem">Fem</MenuItem>
+                            <MenuItem value="Masculino">Masculino</MenuItem>
+                            <MenuItem value="Feminino">Feminino</MenuItem>
                             <MenuItem value="Unisex">Unisex</MenuItem>
                           </Select>
                         </FormControl>
@@ -513,33 +529,25 @@ export default function EditandoLotePage() {
                       )}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: "0.95rem" }}>
-                      {item.fornecedorPercentage}%
+                      {item.fornecedorPercentage || fornecedorPercentage}%
                     </TableCell>
                     <TableCell sx={{ textAlign: "center" }}>
                       <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
                         {editingItemId === item.id ? (
                           <>
-                            <IconButton size="small" color="primary" onClick={handleSaveEdit}>
+                            <IconButton size="small" onClick={handleSaveEdit} sx={{ color: "green" }}>
                               <SaveIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" color="error" onClick={handleCancelEdit}>
+                            <IconButton size="small" onClick={handleCancelEdit} sx={{ color: "red" }}>
                               <CancelIcon fontSize="small" />
                             </IconButton>
                           </>
                         ) : (
                           <>
-                            <IconButton
-                              size="small"
-                              sx={{ color: "text.secondary" }}
-                              onClick={() => handleViewItem(item.id)}
-                            >
+                            <IconButton size="small" onClick={() => handleViewItem(item.id)} sx={{ color: "blue" }}>
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
-                            <IconButton
-                              size="small"
-                              sx={{ color: "text.secondary" }}
-                              onClick={() => handleEditItem(item)}
-                            >
+                            <IconButton size="small" onClick={() => handleEditItem(item)} sx={{ color: "orange" }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
                           </>
@@ -550,8 +558,10 @@ export default function EditandoLotePage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} sx={{ textAlign: "center", py: 3 }}>
-                    {loading ? "Carregando itens..." : "Nenhum item encontrado neste lote"}
+                  <TableCell colSpan={8} sx={{ textAlign: "center", py: 4 }}>
+                    <Typography variant="h6" color="textSecondary">
+                      Nenhum produto encontrado neste lote
+                    </Typography>
                   </TableCell>
                 </TableRow>
               )}
@@ -559,73 +569,56 @@ export default function EditandoLotePage() {
           </Table>
         </TableContainer>
 
-        {/* Fornecedor Button */}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <Button
-            variant="contained"
-            onClick={handleOpenFornecedorDialog}
-            sx={{
-              bgcolor: "white",
-              color: "black",
-              px: 3,
-              py: 1,
-              borderRadius: 1,
-              fontSize: "1rem",
-              fontWeight: "bold",
-              boxShadow: 1,
-              "&:hover": {
-                bgcolor: "#f5f5f5",
-              },
-            }}
-          >
-            % FORNECEDOR
-          </Button>
-        </Box>
-
-        {/* Bottom Buttons */}
-        <Box sx={{ mt: "auto", display: "flex", justifyContent: "space-between", p: 2 }}>
+        {/* Action Buttons */}
+        <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 3, mb: 3 }}>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleOpenNewItemDialog}
-            disabled={loading}
             sx={{
               bgcolor: "#ffd0e8",
               color: "black",
+              fontWeight: "bold",
+              borderRadius: 3,
               px: 3,
               py: 1.5,
-              borderRadius: 28,
-              fontWeight: "bold",
-              fontSize: "1.1rem",
               "&:hover": {
-                bgcolor: "#ffb0d8",
-              },
-              "&.Mui-disabled": {
-                bgcolor: "#f5f5f5",
-                color: "#999",
+                bgcolor: "#ffb3d9",
               },
             }}
           >
-            Novo Item
+            Adicionar Item
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleOpenFornecedorDialog}
+            sx={{
+              bgcolor: "#ffd0e8",
+              color: "black",
+              fontWeight: "bold",
+              borderRadius: 3,
+              px: 3,
+              py: 1.5,
+              "&:hover": {
+                bgcolor: "#ffb3d9",
+              },
+            }}
+          >
+            Editar % Fornecedor
           </Button>
           <Button
             variant="contained"
             onClick={handleOpenFinishDialog}
-            disabled={loading || !hasChanges}
+            disabled={!hasChanges}
             sx={{
-              bgcolor: "#ffd0e8",
-              color: "black",
+              bgcolor: hasChanges ? "#4caf50" : "#cccccc",
+              color: "white",
+              fontWeight: "bold",
+              borderRadius: 3,
               px: 3,
               py: 1.5,
-              borderRadius: 28,
-              fontWeight: "bold",
-              fontSize: "1.1rem",
               "&:hover": {
-                bgcolor: "#ffb0d8",
-              },
-              "&.Mui-disabled": {
-                bgcolor: "#f5f5f5",
-                color: "#999",
+                bgcolor: hasChanges ? "#45a049" : "#cccccc",
               },
             }}
           >
@@ -634,31 +627,31 @@ export default function EditandoLotePage() {
         </Box>
       </Box>
 
+      {/* Dialogs */}
       {/* Fornecedor Percentage Dialog */}
       <Dialog open={openFornecedorDialog} onClose={handleCloseFornecedorDialog}>
-        <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.2rem" }}>Porcentagem do Fornecedor</DialogTitle>
+        <DialogTitle>Editar Porcentagem do Fornecedor</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <TextField
-              fullWidth
-              label="Porcentagem"
-              type="number"
-              value={fornecedorPercentage}
-              onChange={(e) => setFornecedorPercentage(e.target.value)}
-              InputProps={{
-                endAdornment: <InputAdornment position="end">%</InputAdornment>,
-              }}
-            />
-            <Typography variant="caption" sx={{ display: "block", mt: 1, color: "text.secondary" }}>
-              Esta porcentagem será aplicada a todos os itens do lote.
-            </Typography>
-          </Box>
+          <DialogContentText>
+            Defina a porcentagem que será aplicada a todos os itens do lote para o fornecedor.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Porcentagem (%)"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={fornecedorPercentage}
+            onChange={(e) => setFornecedorPercentage(e.target.value)}
+            InputProps={{
+              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+            }}
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseFornecedorDialog} color="inherit">
-            Cancelar
-          </Button>
-          <Button onClick={handleSaveFornecedorPercentage} color="primary" variant="contained">
+          <Button onClick={handleCloseFornecedorDialog}>Cancelar</Button>
+          <Button onClick={handleSaveFornecedorPercentage} variant="contained">
             Salvar
           </Button>
         </DialogActions>
@@ -666,41 +659,36 @@ export default function EditandoLotePage() {
 
       {/* New Item Dialog */}
       <Dialog open={openNewItemDialog} onClose={handleCloseNewItemDialog} maxWidth="md" fullWidth>
-        <DialogTitle
-          sx={{
-            fontWeight: "bold",
-            fontSize: "1.4rem",
-            bgcolor: "#ffd0e8",
-            color: "black",
-            py: 2,
-          }}
-        >
-          Adicionar Novo Item
-        </DialogTitle>
-        <DialogContent sx={{ p: 3 }}>
-          <Grid container spacing={3} sx={{ mt: 0.5 }}>
-            <Grid item xs={12} md={6}>
-              <Box
-                sx={{
-                  height: 200,
-                  border: "1px dashed #ccc",
-                  borderRadius: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mb: 2,
+        <DialogTitle>Adicionar Novo Item</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Descrição"
+                name="descricao"
+                value={newItem.descricao}
+                onChange={handleNewItemChange}
+                variant="outlined"
+                required
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Preço"
+                name="preco"
+                type="number"
+                value={newItem.preco}
+                onChange={handleNewItemChange}
+                variant="outlined"
+                required
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">R$</InputAdornment>,
                 }}
-              >
-                <PhotoCameraIcon sx={{ fontSize: 40, color: "#999", mb: 1 }} />
-                <Typography variant="body1" sx={{ color: "#666" }}>
-                  Clique para adicionar uma imagem
-                </Typography>
-                <Typography variant="caption" sx={{ color: "#999" }}>
-                  ou arraste e solte aqui
-                </Typography>
-              </Box>
-
+              />
+            </Grid>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="Código do Produto"
@@ -708,11 +696,10 @@ export default function EditandoLotePage() {
                 value={newItem.id}
                 onChange={handleNewItemChange}
                 variant="outlined"
-                margin="normal"
-                disabled
               />
-
-              <FormControl fullWidth margin="normal">
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
                 <InputLabel>Estado de Conservação</InputLabel>
                 <Select
                   name="estadoConservacao"
@@ -725,50 +712,38 @@ export default function EditandoLotePage() {
                   <MenuItem value="Regular">Regular</MenuItem>
                 </Select>
               </FormControl>
-
-              <FormControl fullWidth margin="normal">
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
                 <InputLabel>Gênero</InputLabel>
                 <Select name="genero" value={newItem.genero} onChange={handleNewItemChange} label="Gênero">
-                  <MenuItem value="Masc">Masculino</MenuItem>
-                  <MenuItem value="Fem">Feminino</MenuItem>
+                  <MenuItem value="Masculino">Masculino</MenuItem>
+                  <MenuItem value="Feminino">Feminino</MenuItem>
                   <MenuItem value="Unisex">Unisex</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-
-            <Grid item xs={12} md={6}>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Descrição do Item"
-                name="descricao"
-                value={newItem.descricao}
+                label="Marca"
+                name="marca"
+                value={newItem.marca}
                 onChange={handleNewItemChange}
                 variant="outlined"
-                margin="normal"
-                multiline
-                rows={4}
-                required
-                error={!newItem.descricao && newItem.descricao !== undefined}
-                helperText={!newItem.descricao && newItem.descricao !== undefined ? "Descrição é obrigatória" : ""}
               />
-
+            </Grid>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Valor (R$)"
-                name="preco"
-                type="number"
-                value={newItem.preco}
+                label="Tamanho"
+                name="tamanho"
+                value={newItem.tamanho}
                 onChange={handleNewItemChange}
                 variant="outlined"
-                margin="normal"
-                required
-                error={!newItem.preco && newItem.preco !== undefined}
-                helperText={!newItem.preco && newItem.preco !== undefined ? "Valor é obrigatório" : ""}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">R$</InputAdornment>,
-                }}
               />
-
+            </Grid>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="Quantidade"
@@ -777,41 +752,15 @@ export default function EditandoLotePage() {
                 value={newItem.quantidade}
                 onChange={handleNewItemChange}
                 variant="outlined"
-                margin="normal"
-                InputProps={{
-                  inputProps: { min: 1 },
-                }}
               />
-
+            </Grid>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Marca"
-                name="marca"
-                value={newItem.marca}
-                onChange={handleNewItemChange}
-                variant="outlined"
-                margin="normal"
-              />
-
-              <TextField
-                fullWidth
-                label="Tamanho"
-                name="tamanho"
-                value={newItem.tamanho}
-                onChange={handleNewItemChange}
-                variant="outlined"
-                margin="normal"
-              />
-
-              <TextField
-                fullWidth
-                label="Porcentagem do Fornecedor"
-                name="fornecedorPercentage"
-                type="number"
+                label="% Fornecedor"
                 value={newItem.fornecedorPercentage}
-                onChange={handleNewItemChange}
                 variant="outlined"
-                margin="normal"
+                disabled
                 InputProps={{
                   endAdornment: <InputAdornment position="end">%</InputAdornment>,
                 }}
@@ -819,48 +768,32 @@ export default function EditandoLotePage() {
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={handleCloseNewItemDialog} color="inherit" variant="outlined">
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleAddNewItem}
-            color="primary"
-            variant="contained"
-            sx={{
-              bgcolor: "#ffd0e8",
-              color: "black",
-              fontWeight: "bold",
-              "&:hover": {
-                bgcolor: "#ffb0d8",
-              },
-            }}
-          >
-            Adicionar Item
+        <DialogActions>
+          <Button onClick={handleCloseNewItemDialog}>Cancelar</Button>
+          <Button onClick={handleAddNewItem} variant="contained">
+            Adicionar
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Finish Editing Dialog */}
+      {/* Finish Dialog */}
       <Dialog open={openFinishDialog} onClose={handleCloseFinishDialog}>
-        <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.2rem" }}>Finalizar Edição do Lote</DialogTitle>
+        <DialogTitle>Finalizar Edição do Lote</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Você realizou alterações neste lote. Deseja finalizar a edição e salvar as alterações?
+            Tem certeza que deseja finalizar a edição do lote? Todas as alterações serão salvas.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseFinishDialog} color="inherit">
-            Cancelar
-          </Button>
-          <Button onClick={handleFinishLote} color="primary" variant="contained" disabled={loading}>
-            {loading ? "Processando..." : "Finalizar"}
+          <Button onClick={handleCloseFinishDialog}>Cancelar</Button>
+          <Button onClick={handleFinishLote} variant="contained" color="primary">
+            Finalizar
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for notifications */}
-      <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={handleCloseSnackbar}>
+      {/* Snackbar */}
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar}>
         <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: "100%" }}>
           {snackbarMessage}
         </Alert>
