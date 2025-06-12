@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-// Correct MUI imports
+// Material-UI imports
 import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
 import Button from "@mui/material/Button"
@@ -31,7 +31,7 @@ import Snackbar from "@mui/material/Snackbar"
 import Alert from "@mui/material/Alert"
 import CircularProgress from "@mui/material/CircularProgress"
 
-// Correct MUI icons imports
+// Material-UI icons
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import HomeIcon from "@mui/icons-material/Home"
 import VisibilityIcon from "@mui/icons-material/Visibility"
@@ -39,24 +39,25 @@ import EditIcon from "@mui/icons-material/Edit"
 import SaveIcon from "@mui/icons-material/Save"
 import CancelIcon from "@mui/icons-material/Cancel"
 import AddIcon from "@mui/icons-material/Add"
-import PhotoCameraIcon from "@mui/icons-material/PhotoCamera"
+import DeleteIcon from "@mui/icons-material/Delete"
 
-// Import API functions - CORRIGIDO para usar as funções corretas do lotes.js
-import { getLoteById, editLote, getAllLotes } from "../api/lotes"
+// Import API functions
+import { getLoteById, editLote, getAllLotes, getFornecedoras, ESTADOS_CONSERVACAO, GENEROS } from "../api/lotes"
 
 // Import Sidebar component
 import Sidebar from "../../components/sidebar"
 
-export default function EditandoLotePage() {
+export default function EditarLotePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const loteId = searchParams.get("id") || ""
 
+  // State management
   const [editingItemId, setEditingItemId] = useState(null)
-  const [fornecedorPercentage, setFornecedorPercentage] = useState("30")
-  const [openFornecedorDialog, setOpenFornecedorDialog] = useState(false)
   const [openNewItemDialog, setOpenNewItemDialog] = useState(false)
   const [openFinishDialog, setOpenFinishDialog] = useState(false)
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState(null)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
@@ -64,96 +65,99 @@ export default function EditandoLotePage() {
   const [originalItems, setOriginalItems] = useState([])
   const [items, setItems] = useState([])
   const [lotesSidebar, setLotesSidebar] = useState([])
-  const [fornecedoraId, setFornecedoraId] = useState("")
+  const [fornecedoras, setFornecedoras] = useState([])
+  const [selectedFornecedora, setSelectedFornecedora] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   // State for edited item
   const [editedItem, setEditedItem] = useState({
     descricao: "",
-    estadoConservacao: "",
+    estadoConservacao: "BOM",
     preco: 0,
-    id: "",
-    genero: "",
-    fornecedorPercentage: "",
+    quantidade: 1,
+    marca: "",
+    tamanho: "",
+    genero: "UNISSEX",
   })
 
   // State for new item
   const [newItem, setNewItem] = useState({
     descricao: "",
-    estadoConservacao: "Ótimo",
+    estadoConservacao: "BOM",
     preco: "",
-    id: "",
-    genero: "Unisex",
-    fornecedorPercentage: fornecedorPercentage,
     quantidade: 1,
     marca: "",
     tamanho: "",
+    genero: "UNISSEX",
   })
 
-  // Fetch lote data when component mounts
+  // Fetch initial data
   useEffect(() => {
-    const fetchLoteData = async () => {
-      if (!loteId) return
+    const fetchInitialData = async () => {
+      if (!loteId) {
+        setError("ID do lote não fornecido")
+        setLoading(false)
+        return
+      }
 
       try {
         setLoading(true)
-        // CORRIGIDO: getLoteById retorna diretamente o objeto do lote
-        const loteData = await getLoteById(loteId)
 
+        // Fetch lote data, fornecedoras, and sidebar lotes in parallel
+        const [loteData, fornecedorasData, lotesData] = await Promise.all([
+          getLoteById(loteId),
+          getFornecedoras(),
+          getAllLotes(),
+        ])
+
+        // Set lote data
         if (loteData) {
-          setFornecedoraId(loteData.fornecedora?.id || "")
+          setSelectedFornecedora(loteData.fornecedora?.id?.toString() || "")
 
-          // Set fornecedor percentage if available
-          if (loteData.fornecedora?.percentual) {
-            setFornecedorPercentage(loteData.fornecedora.percentual.toString())
-          }
-
-          // Format items data
           if (loteData.produtos && Array.isArray(loteData.produtos)) {
             const formattedItems = loteData.produtos.map((produto) => ({
-              ...produto,
-              fornecedorPercentage: loteData.fornecedora?.percentual?.toString() || fornecedorPercentage,
+              id: produto.id,
+              descricao: produto.descricao || produto.nome || "",
+              preco: Number(produto.preco) || 0,
+              quantidade: Number(produto.quantidade) || 1,
+              marca: produto.marca || "",
+              tamanho: produto.tamanho || "",
+              estadoConservacao: produto.estadoConservacao || "BOM",
+              genero: produto.genero || "UNISSEX",
             }))
 
             setItems(formattedItems)
-            // Store original items to track changes
             setOriginalItems(JSON.parse(JSON.stringify(formattedItems)))
           }
         }
+
+        // Set fornecedoras
+        setFornecedoras(Array.isArray(fornecedorasData) ? fornecedorasData : [])
+
+        // Set sidebar lotes
+        const formattedLotes = Array.isArray(lotesData)
+          ? lotesData
+              .map((lote) => ({
+                id: lote.id,
+                codigo: `L${lote.id}`,
+                data: lote.dataCriacao ? new Date(lote.dataCriacao).toLocaleDateString("pt-BR") : "Data não disponível",
+              }))
+              .slice(0, 5)
+          : []
+
+        setLotesSidebar(formattedLotes)
       } catch (error) {
-        console.error("Erro ao buscar dados do lote:", error)
-        setError("Não foi possível carregar os dados do lote.")
+        console.error("Erro ao buscar dados:", error)
+        setError(`Erro ao carregar dados: ${error.message}`)
         showSnackbar("Erro ao carregar dados do lote", "error")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchLoteData()
-    fetchLotesSidebar()
+    fetchInitialData()
   }, [loteId])
-
-  // Fetch lotes for sidebar
-  const fetchLotesSidebar = async () => {
-    try {
-      // CORRIGIDO: getAllLotes retorna diretamente o array
-      const lotes = await getAllLotes()
-      
-      // Format lotes for sidebar display
-      const formattedLotes = lotes
-        .map((lote) => ({
-          id: lote.id,
-          codigo: `L${lote.id}`,
-          data: new Date(lote.dataCriacao).toLocaleDateString("pt-BR"),
-        }))
-        .slice(0, 5) // Limit to 5 lotes for sidebar
-
-      setLotesSidebar(formattedLotes)
-    } catch (error) {
-      console.error("Erro ao buscar lotes para barra lateral:", error)
-    }
-  }
 
   // Check for changes
   useEffect(() => {
@@ -163,14 +167,28 @@ export default function EditandoLotePage() {
     }
   }, [items, originalItems])
 
+  // Navigation handlers
   const handleGoBack = () => {
-    router.back()
+    if (hasChanges) {
+      if (confirm("Você tem alterações não salvas. Deseja realmente sair?")) {
+        router.back()
+      }
+    } else {
+      router.back()
+    }
   }
 
   const handleGoHome = () => {
-    router.push("/")
+    if (hasChanges) {
+      if (confirm("Você tem alterações não salvas. Deseja realmente sair?")) {
+        router.push("/")
+      }
+    } else {
+      router.push("/")
+    }
   }
 
+  // Item handlers
   const handleViewItem = (itemId) => {
     router.push(`/estoque/visualizar_produto?id=${itemId}`)
   }
@@ -181,27 +199,57 @@ export default function EditandoLotePage() {
       descricao: item.descricao,
       estadoConservacao: item.estadoConservacao,
       preco: item.preco,
-      id: item.id,
+      quantidade: item.quantidade,
+      marca: item.marca,
+      tamanho: item.tamanho,
       genero: item.genero,
-      fornecedorPercentage: item.fornecedorPercentage || fornecedorPercentage,
-      marca: item.marca || "",
-      tamanho: item.tamanho || "",
-      quantidade: item.quantidade || 1,
     })
   }
 
   const handleCancelEdit = () => {
     setEditingItemId(null)
+    setEditedItem({
+      descricao: "",
+      estadoConservacao: "BOM",
+      preco: 0,
+      quantidade: 1,
+      marca: "",
+      tamanho: "",
+      genero: "UNISSEX",
+    })
   }
 
   const handleSaveEdit = () => {
     // Validate required fields
-    if (!editedItem.descricao || !editedItem.preco) {
-      showSnackbar("Descrição e valor são campos obrigatórios", "error")
+    if (!editedItem.descricao?.trim()) {
+      showSnackbar("Descrição é obrigatória", "error")
       return
     }
 
-    setItems(items.map((item) => (item.id === editingItemId ? { ...item, ...editedItem } : item)))
+    if (!editedItem.preco || editedItem.preco <= 0) {
+      showSnackbar("Preço deve ser maior que zero", "error")
+      return
+    }
+
+    if (!editedItem.quantidade || editedItem.quantidade <= 0) {
+      showSnackbar("Quantidade deve ser maior que zero", "error")
+      return
+    }
+
+    // Update item in the list
+    setItems(
+      items.map((item) =>
+        item.id === editingItemId
+          ? {
+              ...item,
+              ...editedItem,
+              preco: Number(editedItem.preco),
+              quantidade: Number(editedItem.quantidade),
+            }
+          : item,
+      ),
+    )
+
     setEditingItemId(null)
     showSnackbar("Item atualizado com sucesso", "success")
   }
@@ -210,45 +258,42 @@ export default function EditandoLotePage() {
     const { name, value } = e.target
     setEditedItem((prev) => ({
       ...prev,
-      [name]: name === "preco" ? Number.parseFloat(value) || 0 : value,
+      [name]: value,
     }))
   }
 
+  const handleDeleteItem = (item) => {
+    setItemToDelete(item)
+    setOpenDeleteDialog(true)
+  }
+
+  const confirmDeleteItem = () => {
+    if (itemToDelete) {
+      setItems(items.filter((item) => item.id !== itemToDelete.id))
+      setOpenDeleteDialog(false)
+      setItemToDelete(null)
+      showSnackbar("Item removido com sucesso", "success")
+    }
+  }
+
+  // New item handlers
   const handleNewItemChange = (e) => {
     const { name, value } = e.target
     setNewItem((prev) => ({
       ...prev,
-      [name]: name === "preco" ? value : value,
+      [name]: value,
     }))
   }
 
-  const handleOpenFornecedorDialog = () => {
-    setOpenFornecedorDialog(true)
-  }
-
-  const handleCloseFornecedorDialog = () => {
-    setOpenFornecedorDialog(false)
-  }
-
-  const handleSaveFornecedorPercentage = () => {
-    // Update all items with the new percentage
-    setItems(
-      items.map((item) => ({
-        ...item,
-        fornecedorPercentage,
-      })),
-    )
-    setOpenFornecedorDialog(false)
-    showSnackbar("Porcentagem do fornecedor atualizada para todos os itens", "success")
-  }
-
   const handleOpenNewItemDialog = () => {
-    // Generate a random code for the new item
-    const randomId = `PROD${Math.floor(Math.random() * 900000) + 100000}`
     setNewItem({
-      ...newItem,
-      id: randomId,
-      fornecedorPercentage: fornecedorPercentage,
+      descricao: "",
+      estadoConservacao: "BOM",
+      preco: "",
+      quantidade: 1,
+      marca: "",
+      tamanho: "",
+      genero: "UNISSEX",
     })
     setOpenNewItemDialog(true)
   }
@@ -259,41 +304,58 @@ export default function EditandoLotePage() {
 
   const handleAddNewItem = () => {
     // Validate required fields
-    if (!newItem.descricao || !newItem.preco) {
-      showSnackbar("Descrição e valor são campos obrigatórios", "error")
+    if (!newItem.descricao?.trim()) {
+      showSnackbar("Descrição é obrigatória", "error")
       return
     }
 
+    if (!newItem.preco || Number(newItem.preco) <= 0) {
+      showSnackbar("Preço deve ser maior que zero", "error")
+      return
+    }
+
+    if (!newItem.quantidade || Number(newItem.quantidade) <= 0) {
+      showSnackbar("Quantidade deve ser maior que zero", "error")
+      return
+    }
+
+    // Generate temporary ID for new item
+    const tempId = `TEMP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
     const newItemWithId = {
-      ...newItem,
-      preco: Number.parseFloat(newItem.preco) || 0,
+      id: tempId,
+      descricao: newItem.descricao.trim(),
+      preco: Number(newItem.preco),
+      quantidade: Number(newItem.quantidade),
+      marca: newItem.marca?.trim() || "",
+      tamanho: newItem.tamanho?.trim() || "",
+      estadoConservacao: newItem.estadoConservacao,
+      genero: newItem.genero,
     }
 
     setItems([...items, newItemWithId])
     setOpenNewItemDialog(false)
-
-    // Reset new item form
-    setNewItem({
-      descricao: "",
-      estadoConservacao: "Ótimo",
-      preco: "",
-      id: "",
-      genero: "Unisex",
-      fornecedorPercentage: fornecedorPercentage,
-      quantidade: 1,
-      marca: "",
-      tamanho: "",
-    })
-
     showSnackbar("Novo item adicionado com sucesso", "success")
   }
 
+  // Finish editing handlers
   const handleOpenFinishDialog = () => {
-    if (hasChanges) {
-      setOpenFinishDialog(true)
-    } else {
+    if (!hasChanges) {
       showSnackbar("Nenhuma alteração foi feita no lote", "info")
+      return
     }
+
+    if (!selectedFornecedora) {
+      showSnackbar("Selecione uma fornecedora antes de finalizar", "error")
+      return
+    }
+
+    if (items.length === 0) {
+      showSnackbar("Adicione pelo menos um produto ao lote", "error")
+      return
+    }
+
+    setOpenFinishDialog(true)
   }
 
   const handleCloseFinishDialog = () => {
@@ -304,28 +366,36 @@ export default function EditandoLotePage() {
     try {
       setLoading(true)
 
-      // CORRIGIDO: Preparar dados no formato esperado pela função editLote
+      // Prepare data according to API format
       const loteData = {
         fornecedora: {
-          id: fornecedoraId,
+          id: Number(selectedFornecedora),
         },
         produtos: items.map((item) => ({
-          id: item.id,
+          id: item.id.toString().startsWith("TEMP_") ? undefined : item.id,
           descricao: item.descricao,
-          preco: Number.parseFloat(item.preco),
-          quantidade: Number.parseInt(item.quantidade) || 1,
+          preco: Number(item.preco),
+          quantidade: Number(item.quantidade),
           marca: item.marca || "",
           tamanho: item.tamanho || "",
-          estadoConservacao: item.estadoConservacao || "BOM",
-          genero: item.genero || "UNISSEX",
+          estadoConservacao: item.estadoConservacao,
+          genero: item.genero,
         })),
       }
 
+      console.log("Enviando dados para API:", loteData)
+
       // Call API to update lote
-      await editLote(loteId, loteData)
+      const result = await editLote(loteId, loteData)
+
+      console.log("Resposta da API:", result)
 
       setOpenFinishDialog(false)
       showSnackbar("Lote atualizado com sucesso!", "success")
+
+      // Update original items to reflect saved state
+      setOriginalItems(JSON.parse(JSON.stringify(items)))
+      setHasChanges(false)
 
       // Redirect after a short delay
       setTimeout(() => {
@@ -333,11 +403,12 @@ export default function EditandoLotePage() {
       }, 1500)
     } catch (error) {
       console.error("Erro ao atualizar lote:", error)
-      showSnackbar("Erro ao atualizar lote. Por favor, tente novamente.", "error")
+      showSnackbar(`Erro ao atualizar lote: ${error.message}`, "error")
       setLoading(false)
     }
   }
 
+  // Utility functions
   const showSnackbar = (message, severity = "success") => {
     setSnackbarMessage(message)
     setSnackbarSeverity(severity)
@@ -348,12 +419,29 @@ export default function EditandoLotePage() {
     setSnackbarOpen(false)
   }
 
+  const getEstadoConservacaoLabel = (value) => {
+    const entry = Object.entries(ESTADOS_CONSERVACAO).find(([key, val]) => val === value)
+    return entry ? entry[0] : value
+  }
+
+  const getGeneroLabel = (value) => {
+    const entry = Object.entries(GENEROS).find(([key, val]) => val === value)
+    return entry ? entry[0] : value
+  }
+
+  // Loading state
   if (loading && !items.length) {
     return (
       <Box
-        sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", bgcolor: "#a3e0f5" }}
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          bgcolor: "#a3e0f5",
+        }}
       >
-        <CircularProgress />
+        <CircularProgress size={60} />
       </Box>
     )
   }
@@ -372,27 +460,66 @@ export default function EditandoLotePage() {
           display: "flex",
           flexDirection: "column",
           maxWidth: "calc(100% - 244px)",
-          px: 4, // Add horizontal padding
+          px: 4,
         }}
       >
         {/* Header */}
-        <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <IconButton sx={{ color: "black" }} onClick={handleGoBack}>
-            <ArrowBackIcon fontSize="medium" />
-          </IconButton>
-          <Box sx={{ textAlign: "center" }}>
-            <Typography variant="h4" sx={{ fontWeight: "bold", fontSize: "2rem" }}>
-              Editando
-            </Typography>
-            <Box sx={{ bgcolor: "white", borderRadius: 1, px: 2, py: 0.8, display: "inline-block" }}>
-              <Typography sx={{ fontWeight: "bold", fontSize: "1.4rem" }}>Lote: {loteId}</Typography>
-            </Box>
-          </Box>
-          <IconButton sx={{ color: "black" }} onClick={handleGoHome}>
-            <HomeIcon fontSize="medium" />
-          </IconButton>
-        </Box>
+        <Box
+  sx={{
+    p: 2,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#9AE4FF",
+    marginTop: "50px",
+  }}
+>
+  <IconButton sx={{ color: "black" }} onClick={handleGoBack}>
+    <ArrowBackIcon fontSize="medium" />
+  </IconButton>
 
+  <Box sx={{ flex: 1, textAlign: "center" }}>
+    <Typography
+      variant="h4"
+      sx={{
+        fontWeight: "bold",
+        fontSize: "50px",
+        color: "#000000",
+      }}
+    >
+      Editando Lote
+    </Typography>
+
+    <Box
+  sx={{
+    bgcolor: "white",
+    borderRadius: 1,
+    px: 2,
+    py: 0.8,
+    display: "inline-block",
+    mt: 1,
+    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.2)", // sombra
+  }}
+>
+  <Typography
+    sx={{
+      fontWeight: "bold",
+      fontSize: "1.4rem",
+      color: "#2B2B2B", // cor escura para o texto
+    }}
+  >
+    Lote: {loteId}
+  </Typography>
+</Box>
+
+  </Box>
+
+  <IconButton sx={{ color: "black" }} onClick={handleGoHome}>
+    <HomeIcon fontSize="medium" />
+  </IconButton>
+</Box>
+
+        {/* Error Alert */}
         {error && (
           <Box sx={{ mx: "auto", mt: 2, width: "95%", maxWidth: "1200px" }}>
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -401,7 +528,26 @@ export default function EditandoLotePage() {
           </Box>
         )}
 
-        {/* Table */}
+        {/* Fornecedora Selection */}
+        <Box sx={{ mx: "auto", mt: 2, width: "95%", maxWidth: "1200px" }}>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Fornecedora</InputLabel>
+            <Select
+              value={selectedFornecedora}
+              onChange={(e) => setSelectedFornecedora(e.target.value)}
+              label="Fornecedora"
+              sx={{ bgcolor: "white" }}
+            >
+              {fornecedoras.map((fornecedora) => (
+                <MenuItem key={fornecedora.id} value={fornecedora.id.toString()}>
+                  {fornecedora.nome}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Products Table */}
         <TableContainer
           component={Paper}
           sx={{
@@ -409,33 +555,33 @@ export default function EditandoLotePage() {
             mt: 2,
             borderRadius: 3,
             overflow: "hidden",
-            width: "95%", // Reduce width to 95% of the container
-            maxWidth: "1200px", // Add a max-width
+            width: "95%",
+            maxWidth: "1200px",
           }}
         >
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
-                  Imagem
-                </TableCell>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
                   Descrição
                 </TableCell>
                 <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
-                  Estado de conservação
+                  Estado
                 </TableCell>
                 <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
-                  Valor
+                  Preço
                 </TableCell>
                 <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
-                  Código do Produto
+                  Quantidade
+                </TableCell>
+                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                  Marca
+                </TableCell>
+                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                  Tamanho
                 </TableCell>
                 <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
                   Gênero
-                </TableCell>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
-                  % Fornecedor
                 </TableCell>
                 <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
                   Ações
@@ -446,12 +592,7 @@ export default function EditandoLotePage() {
               {items.length > 0 ? (
                 items.map((item) => (
                   <TableRow key={item.id} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-                    <TableCell sx={{ textAlign: "center" }}>
-                      <Box sx={{ display: "flex", justifyContent: "center" }}>
-                        <Box sx={{ width: "40px", height: "40px", bgcolor: "grey.200", borderRadius: 1 }}></Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ fontSize: "0.95rem", whiteSpace: "pre-line" }}>
+                    <TableCell sx={{ fontSize: "0.95rem" }}>
                       {editingItemId === item.id ? (
                         <TextField
                           fullWidth
@@ -474,13 +615,15 @@ export default function EditandoLotePage() {
                             value={editedItem.estadoConservacao}
                             onChange={handleEditChange}
                           >
-                            <MenuItem value="Ótimo">Ótimo</MenuItem>
-                            <MenuItem value="Bom">Bom</MenuItem>
-                            <MenuItem value="Regular">Regular</MenuItem>
+                            {Object.entries(ESTADOS_CONSERVACAO).map(([label, value]) => (
+                              <MenuItem key={value} value={value}>
+                                {label}
+                              </MenuItem>
+                            ))}
                           </Select>
                         </FormControl>
                       ) : (
-                        item.estadoConservacao
+                        getEstadoConservacaoLabel(item.estadoConservacao)
                       )}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: "0.95rem" }}>
@@ -498,38 +641,66 @@ export default function EditandoLotePage() {
                           }}
                         />
                       ) : (
-                        `R$ ${item.preco?.toFixed(2) || "0,00"}`
+                        `R$ ${Number(item.preco).toFixed(2)}`
                       )}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: "0.95rem" }}>
                       {editingItemId === item.id ? (
                         <TextField
                           fullWidth
-                          name="id"
-                          value={editedItem.id}
+                          name="quantidade"
+                          type="number"
+                          value={editedItem.quantidade}
                           onChange={handleEditChange}
                           variant="outlined"
                           size="small"
                         />
                       ) : (
-                        item.id
+                        item.quantidade
+                      )}
+                    </TableCell>
+                    <TableCell sx={{ textAlign: "center", fontSize: "0.95rem" }}>
+                      {editingItemId === item.id ? (
+                        <TextField
+                          fullWidth
+                          name="marca"
+                          value={editedItem.marca}
+                          onChange={handleEditChange}
+                          variant="outlined"
+                          size="small"
+                        />
+                      ) : (
+                        item.marca || "-"
+                      )}
+                    </TableCell>
+                    <TableCell sx={{ textAlign: "center", fontSize: "0.95rem" }}>
+                      {editingItemId === item.id ? (
+                        <TextField
+                          fullWidth
+                          name="tamanho"
+                          value={editedItem.tamanho}
+                          onChange={handleEditChange}
+                          variant="outlined"
+                          size="small"
+                        />
+                      ) : (
+                        item.tamanho || "-"
                       )}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: "0.95rem" }}>
                       {editingItemId === item.id ? (
                         <FormControl fullWidth size="small">
                           <Select name="genero" value={editedItem.genero} onChange={handleEditChange}>
-                            <MenuItem value="Masculino">Masculino</MenuItem>
-                            <MenuItem value="Feminino">Feminino</MenuItem>
-                            <MenuItem value="Unisex">Unisex</MenuItem>
+                            {Object.entries(GENEROS).map(([label, value]) => (
+                              <MenuItem key={value} value={value}>
+                                {label}
+                              </MenuItem>
+                            ))}
                           </Select>
                         </FormControl>
                       ) : (
-                        item.genero
+                        getGeneroLabel(item.genero)
                       )}
-                    </TableCell>
-                    <TableCell sx={{ textAlign: "center", fontSize: "0.95rem" }}>
-                      {item.fornecedorPercentage || fornecedorPercentage}%
                     </TableCell>
                     <TableCell sx={{ textAlign: "center" }}>
                       <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
@@ -549,6 +720,9 @@ export default function EditandoLotePage() {
                             </IconButton>
                             <IconButton size="small" onClick={() => handleEditItem(item)} sx={{ color: "orange" }}>
                               <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" onClick={() => handleDeleteItem(item)} sx={{ color: "red" }}>
+                              <DeleteIcon fontSize="small" />
                             </IconButton>
                           </>
                         )}
@@ -587,85 +761,38 @@ export default function EditandoLotePage() {
               },
             }}
           >
-            Adicionar Item
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleOpenFornecedorDialog}
-            sx={{
-              bgcolor: "#ffd0e8",
-              color: "black",
-              fontWeight: "bold",
-              borderRadius: 3,
-              px: 3,
-              py: 1.5,
-              "&:hover": {
-                bgcolor: "#ffb3d9",
-              },
-            }}
-          >
-            Editar % Fornecedor
+            Adicionar Produto
           </Button>
           <Button
             variant="contained"
             onClick={handleOpenFinishDialog}
-            disabled={!hasChanges}
+            disabled={!hasChanges || loading}
             sx={{
-              bgcolor: hasChanges ? "#4caf50" : "#cccccc",
+              bgcolor: hasChanges && !loading ? "#4caf50" : "#cccccc",
               color: "white",
               fontWeight: "bold",
               borderRadius: 3,
               px: 3,
               py: 1.5,
               "&:hover": {
-                bgcolor: hasChanges ? "#45a049" : "#cccccc",
+                bgcolor: hasChanges && !loading ? "#45a049" : "#cccccc",
               },
             }}
           >
-            Finalizar Edição
+            {loading ? <CircularProgress size={20} color="inherit" /> : "Salvar Alterações"}
           </Button>
         </Box>
       </Box>
 
-      {/* Dialogs */}
-      {/* Fornecedor Percentage Dialog */}
-      <Dialog open={openFornecedorDialog} onClose={handleCloseFornecedorDialog}>
-        <DialogTitle>Editar Porcentagem do Fornecedor</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Defina a porcentagem que será aplicada a todos os itens do lote para o fornecedor.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Porcentagem (%)"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={fornecedorPercentage}
-            onChange={(e) => setFornecedorPercentage(e.target.value)}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">%</InputAdornment>,
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseFornecedorDialog}>Cancelar</Button>
-          <Button onClick={handleSaveFornecedorPercentage} variant="contained">
-            Salvar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       {/* New Item Dialog */}
       <Dialog open={openNewItemDialog} onClose={handleCloseNewItemDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Adicionar Novo Item</DialogTitle>
+        <DialogTitle>Adicionar Novo Produto</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Descrição"
+                label="Descrição *"
                 name="descricao"
                 value={newItem.descricao}
                 onChange={handleNewItemChange}
@@ -676,7 +803,7 @@ export default function EditandoLotePage() {
             <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Preço"
+                label="Preço *"
                 name="preco"
                 type="number"
                 value={newItem.preco}
@@ -691,11 +818,13 @@ export default function EditandoLotePage() {
             <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Código do Produto"
-                name="id"
-                value={newItem.id}
+                label="Quantidade *"
+                name="quantidade"
+                type="number"
+                value={newItem.quantidade}
                 onChange={handleNewItemChange}
                 variant="outlined"
+                required
               />
             </Grid>
             <Grid item xs={6}>
@@ -707,9 +836,11 @@ export default function EditandoLotePage() {
                   onChange={handleNewItemChange}
                   label="Estado de Conservação"
                 >
-                  <MenuItem value="Ótimo">Ótimo</MenuItem>
-                  <MenuItem value="Bom">Bom</MenuItem>
-                  <MenuItem value="Regular">Regular</MenuItem>
+                  {Object.entries(ESTADOS_CONSERVACAO).map(([label, value]) => (
+                    <MenuItem key={value} value={value}>
+                      {label}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -717,9 +848,11 @@ export default function EditandoLotePage() {
               <FormControl fullWidth>
                 <InputLabel>Gênero</InputLabel>
                 <Select name="genero" value={newItem.genero} onChange={handleNewItemChange} label="Gênero">
-                  <MenuItem value="Masculino">Masculino</MenuItem>
-                  <MenuItem value="Feminino">Feminino</MenuItem>
-                  <MenuItem value="Unisex">Unisex</MenuItem>
+                  {Object.entries(GENEROS).map(([label, value]) => (
+                    <MenuItem key={value} value={value}>
+                      {label}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -743,29 +876,6 @@ export default function EditandoLotePage() {
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Quantidade"
-                name="quantidade"
-                type="number"
-                value={newItem.quantidade}
-                onChange={handleNewItemChange}
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="% Fornecedor"
-                value={newItem.fornecedorPercentage}
-                variant="outlined"
-                disabled
-                InputProps={{
-                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                }}
-              />
-            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
@@ -776,18 +886,34 @@ export default function EditandoLotePage() {
         </DialogActions>
       </Dialog>
 
-      {/* Finish Dialog */}
-      <Dialog open={openFinishDialog} onClose={handleCloseFinishDialog}>
-        <DialogTitle>Finalizar Edição do Lote</DialogTitle>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+        <DialogTitle>Confirmar Exclusão</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Tem certeza que deseja finalizar a edição do lote? Todas as alterações serão salvas.
+            Tem certeza que deseja remover o produto "{itemToDelete?.descricao}" do lote?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)}>Cancelar</Button>
+          <Button onClick={confirmDeleteItem} variant="contained" color="error">
+            Remover
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Finish Dialog */}
+      <Dialog open={openFinishDialog} onClose={handleCloseFinishDialog}>
+        <DialogTitle>Salvar Alterações do Lote</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Tem certeza que deseja salvar todas as alterações feitas no lote? Esta ação não pode ser desfeita.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseFinishDialog}>Cancelar</Button>
           <Button onClick={handleFinishLote} variant="contained" color="primary">
-            Finalizar
+            Salvar Alterações
           </Button>
         </DialogActions>
       </Dialog>
