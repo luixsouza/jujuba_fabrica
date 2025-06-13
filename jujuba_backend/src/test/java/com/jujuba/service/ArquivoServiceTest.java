@@ -56,10 +56,31 @@ class ArquivoServiceTest {
     }
 
     @Test
-    public void shouldThrowExceptionWhenPerformNegativeBid() {
+    public void salvarContrato_deveLancarExcecaoQuandoArquivoInvalido() {
         MultipartFile fileMock = Mockito.mock(MultipartFile.class);
 
         IOException result = assertThrows(IOException.class, () -> subject.salvarContrato(fileMock));
         assertTrue(result.getMessage().contains("Arquivo inválido."));
     }
+    
+    @Test
+    void salvarImagem_deveLancarExcecaoQuandoArquivoVazio() {
+    MultipartFile fileMock = Mockito.mock(MultipartFile.class);
+    when(fileMock.isEmpty()).thenReturn(true);
+
+    IOException exception = assertThrows(IOException.class, () -> subject.salvarImagem(fileMock));
+    assertTrue(exception.getMessage().contains("Arquivo inválido."));
+}
+
+
+    @Test
+    void salvarImagem_deveLancarExcecaoQuandoNomeNulo() {
+    MultipartFile fileMock = Mockito.mock(MultipartFile.class);
+    when(fileMock.isEmpty()).thenReturn(false);
+    when(fileMock.getOriginalFilename()).thenReturn(null);
+
+    IOException exception = assertThrows(IOException.class, () -> subject.salvarImagem(fileMock));
+    assertTrue(exception.getMessage().contains("Arquivo inválido."));
+    }
+
 }
