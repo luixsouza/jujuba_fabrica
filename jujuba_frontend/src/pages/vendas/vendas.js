@@ -39,7 +39,7 @@ import {
   QrCode as QrCodeIcon,
   Category as CategoryIcon,
 } from "@mui/icons-material"
-import { listarTodasVendas, buscarVendaPorId } from "../api/vendas"
+import { listarVendas, buscarVendaPorId } from "../api/vendas"
 import Sidebar from "../../components/sidebar"
 
 export default function VendasPage() {
@@ -57,7 +57,7 @@ export default function VendasPage() {
   useEffect(() => {
     const fetchVendas = async () => {
       try {
-        const response = await listarTodasVendas()
+        const response = await listarVendas()
         if (response.data) {
           setProdutos(response.data)
           const codigos = response.data.map((item) => item.id || "")
