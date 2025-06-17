@@ -1,11 +1,33 @@
+# Etapa 1: Build
 FROM maven:3.8.5-openjdk-17 AS build
+
 WORKDIR /app
+
+# Copiar apenas o pom.xml primeiro e baixar dependências para cache
 COPY pom.xml .
-RUN mvn dependency:go-offline
+RUN mvn dependency:go-offline -B
+
+# Copiar o restante do código
 COPY src ./src
-RUN mvn clean package -DskipTests
+
+# Compilar o projeto (sem testes para agilizar a build)
+RUN mvn clean package -DskipTests -B
+
+# Etapa 2: Imagem final para produção
 FROM openjdk:17-jdk-slim
+
+# Criar um usuário não-root por segurança
+RUN addgroup --system spring && adduser --system --ingroup spring spring
+
 WORKDIR /app
+
+# Copiar apenas o JAR final da etapa de build
 COPY --from=build /app/target/jujuba-0.0.1-SNAPSHOT.jar app.jar
+
+# Trocar para o usuário não-root
+USER spring:spring
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Evita a substituição do ENTRYPOINT em ambientes como Kubernetes
+ENTRYPOINT ["java","-jar","app.jar"]
