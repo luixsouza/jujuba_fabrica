@@ -18,7 +18,9 @@ services:
       timeout: 5s
 
   backend:
-    image: luixsouza/jujuba_backend:latest
+    build:
+      context: ./jujuba_backend
+      dockerfile: Dockerfile 
     container_name: jujuba_backend
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/jujuba_brecho?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -45,7 +47,6 @@ services:
       NEXT_PUBLIC_API_URL: http://backend:8080/
     volumes:
       - ./jujuba_frontend:/app
-      - /app/node_modules
     networks:
       - app-network
     command: npm run dev
