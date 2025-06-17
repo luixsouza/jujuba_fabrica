@@ -88,21 +88,21 @@ export default function Sidebar({ lotes = [] }) {
           </ListItem>
         </Tooltip>
 
-        <Tooltip title="Acessar Caixa" placement="right" arrow>
-          <ListItem button sx={getMenuItemStyle("caixa")} onClick={() => handleNavigation("../../vendas/vendas", "caixa")}>
+        <Tooltip title="Vendas" placement="right" arrow>
+          <ListItem button sx={getMenuItemStyle("Vendas")} onClick={() => handleNavigation("../../vendas/vendas", "Vendas")}>
             <ListItemIcon sx={{ minWidth: "40px" }}>
               <DollarSign {...iconStyle} color="black" />
             </ListItemIcon>
             <ListItemText
-              primary="Caixa"
+              primary="Vendas"
               sx={{
                 color: "black",
                 "& .MuiListItemText-primary": {
-                  fontWeight: activeItem === "caixa" ? 600 : 400,
+                  fontWeight: activeItem === "Vendas" ? 600 : 400,
                 },
               }}
             />
-            {activeItem === "caixa" && <ChevronRight size={16} color="black" />}
+            {activeItem === "Vendas" && <ChevronRight size={16} color="black" />}
           </ListItem>
         </Tooltip>
 
