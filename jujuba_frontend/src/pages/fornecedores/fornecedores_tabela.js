@@ -215,65 +215,62 @@ const FornecedoresPage = () => {
               setSearchTerm(newValue || "")
             }}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Pesquisar fornecedora"
-                variant="outlined"
-                color="blue"
-                size="medium"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  width: "100%",
-                  maxWidth: "1800px",
+             <TextField
+              {...params}
+              placeholder="Pesquisar fornecedora"
+              variant="outlined"
+              size="medium"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
+                  </InputAdornment>
+                ),
+                sx: {
+                  height: "60px",
+                  display: "flex",
+                  alignItems: "center", // garante centralização vertical
+                  pl: 1,
+                },
+              }}
+              sx={{
+                width: "100%",
+                maxWidth: "1800px",
+                backgroundColor: "#F5F5F5",
+                marginBottom: "50px",
+                marginTop: "50px",
+                borderRadius: "10px",
+                "& .MuiOutlinedInput-root": {
                   backgroundColor: "#F5F5F5",
-                  marginBottom: "50px",
-                  marginTop: "50px",
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#F5F5F5",
-                    color: "#000000",
-                    height: "80px",
-                    "& fieldset": {
-                      borderColor: "#CCCCCC",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#00509E",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#00509E",
-                    },
-                    boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+                  color: "#000000",
+                  borderRadius: "10px",
+                  "& fieldset": {
+                    borderColor: "#CCCCCC",
                   },
-                  "& .MuiInputBase-input": {
-                    color: "#000000",
-                    padding: "0 20px",
-                    fontSize: "18px",
+                  "&:hover fieldset": {
+                    borderColor: "#00509E",
                   },
-                  "& .MuiInputLabel-root": {
-                    fontSize: "20px",
-                    color: "#000000",
-                    transform: "translate(20px, 28px)",
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#00509E",
                   },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#00509E",
-                  },
-                  "& .MuiInputLabel-shrink": {
-                    transform: "translate(20px, -6px) scale(0.75)",
-                  },
-                }}
-              />
+                  boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
+                },
+                "& .MuiInputBase-input": {
+                  padding: "14px 20px", // altura e alinhamento horizontal
+                  fontSize: "18px",
+                },
+              }}
+            />
+
+
             )}
             sx={{
               width: "100%",
               maxWidth: "1800px",
             }}
           />
+
         </Box>
 
         <Card
@@ -299,112 +296,126 @@ const FornecedoresPage = () => {
           >
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                    }}
-                  >
-                    Nome
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                    }}
-                  >
-                    Contato
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                    }}
-                  >
-                    Endereço
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                    }}
-                  >
-                    Chave Pix
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                    }}
-                  >
-                    Ações
-                  </TableCell>
-                </TableRow>
-              </TableHead>
+              <TableRow>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5", // LINHA BRANCA ENTRE COLUNAS
+                  }}
+                >
+                  Nome
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                >
+                  Contato
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                >
+                  Endereço
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                >
+                  Chave Pix
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                  }}
+                >
+                  Ações
+                </TableCell>
+              </TableRow>
+            </TableHead>
               <TableBody>
-                {filteredFornecedores.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((fornecedora) => (
-                  <TableRow key={fornecedora.id}>
-                    <TableCell
-                      sx={{
-                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                        padding: { xs: "8px 4px", sm: "16px 8px" },
-                        textAlign: "center",
-                      }}
-                    >
-                      {fornecedora.nome}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                        padding: { xs: "8px 4px", sm: "16px 8px" },
-                        textAlign: "center",
-                      }}
-                    >
-                      {fornecedora.contato}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                        padding: { xs: "8px 4px", sm: "16px 8px" },
-                        textAlign: "center",
-                      }}
-                    >
-                      {fornecedora.endereco}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                        padding: { xs: "8px 4px", sm: "16px 8px" },
-                        textAlign: "center",
-                      }}
-                    >
-                      {fornecedora.chavePix}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={() => handleNavigation(fornecedora.id)}
-                        sx={{ marginRight: 1, color: "#00509E" }}
+                {filteredFornecedores
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((fornecedora) => (
+                    <TableRow key={fornecedora.id}>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
                       >
-                        <VisibilityIcon />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleEditNavigation(fornecedora.id)}
-                        sx={{ marginRight: 1, color: "#00509E" }}
+                        {fornecedora.nome}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
                       >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton onClick={() => handleDeleteClick(fornecedora)} sx={{ color: "#d32f2f" }}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        {fornecedora.contato}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        {fornecedora.endereco}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        {fornecedora.chavePix}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 1,
+                          padding: "8px",
+                          minWidth: "150px", // ajuste se quiser
+                        }}
+                      >
+                        <IconButton onClick={() => handleNavigation(fornecedora.id)} sx={{ color: "#00509E" }}>
+                          <VisibilityIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleEditNavigation(fornecedora.id)} sx={{ color: "#00509E" }}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleDeleteClick(fornecedora)} sx={{ color: "#d32f2f" }}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </TableContainer>
