@@ -39,7 +39,7 @@ export default function Sidebar({ lotes = [] }) {
     <div className="sidebar">
       <div className="logo-container">
         <div className="logo">
-          <Image src="/jujba2.png" alt="Jujuba Logo" width={140} height={140} priority />
+          <Image src="/Imagens/LogoJujuba.png" alt="Jujuba Logo" width={245} height={142} priority />
         </div>
       </div>
 

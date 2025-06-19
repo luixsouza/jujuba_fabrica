@@ -3,7 +3,17 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Box, Typography, Button, TextField, Container, Paper, InputAdornment, IconButton } from "@mui/material"
+import Image from "next/image"
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Container,
+  Paper,
+  InputAdornment,
+  IconButton,
+} from "@mui/material"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff"
 
@@ -63,48 +73,88 @@ export default function Login() {
               padding: 4,
             }}
           >
-            {/* Clouds */}
-            <Box
-              sx={{
+            {/* Nuvens com imagem */}
+            <Image
+              src="/Imagens/Nuvem.png"
+              alt="Nuvem"
+              width={110}
+              height={70}
+              style={{
                 position: "absolute",
                 top: "15%",
                 left: "15%",
-                width: "60px",
-                height: "30px",
-                backgroundColor: "white",
-                borderRadius: "30px",
+                objectFit: "contain",
               }}
             />
-            <Box
-              sx={{
+            <Image
+              src="/Imagens/Nuvem.png"
+              alt="Nuvem"
+              width={110}
+              height={70}
+              style={{
                 position: "absolute",
                 bottom: "20%",
                 right: "20%",
-                width: "80px",
-                height: "40px",
-                backgroundColor: "white",
-                borderRadius: "40px",
+                objectFit: "contain",
               }}
             />
-            <Box
-              sx={{
+            <Image
+              src="/Imagens/Nuvem.png"
+              alt="Nuvem"
+              width={70}
+              height={50}
+              style={{
                 position: "absolute",
                 top: "70%",
                 left: "25%",
-                width: "50px",
-                height: "25px",
-                backgroundColor: "white",
-                borderRadius: "25px",
+                objectFit: "contain",
+              }}
+            />
+            {/* Nuvens adicionais */}
+            <Image
+              src="/Imagens/Nuvem.png"
+              alt="Nuvem extra"
+              width={90}
+              height={60}
+              style={{
+                position: "absolute",
+                top: "10%",
+                right: "10%",
+                objectFit: "contain",
+              }}
+            />
+            <Image
+              src="/Imagens/Nuvem.png"
+              alt="Nuvem extra"
+              width={100}
+              height={65}
+              style={{
+                position: "absolute",
+                bottom: "10%",
+                left: "10%",
+                objectFit: "contain",
+              }}
+            />
+            <Image
+              src="/Imagens/Nuvem.png"
+              alt="Nuvem extra"
+              width={80}
+              height={50}
+              style={{
+                position: "absolute",
+                top: "40%",
+                left: "5%",
+                objectFit: "contain",
               }}
             />
 
-            {/* Logo */}
+            {/* Logo com imagem */}
             <Box
               sx={{
                 width: "180px",
                 height: "180px",
                 borderRadius: "50%",
-                backgroundColor: "#FFD700",
+                backgroundColor: "#FFF9ac",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
@@ -121,23 +171,20 @@ export default function Login() {
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  border: "4px solid white",
+                  overflow: "hidden",
                 }}
               >
-                <Typography
-                  sx={{
-                    fontFamily: "'Comic Sans MS', cursive",
-                    fontSize: "24px",
-                    color: "#FF69B4",
-                    fontWeight: "bold",
-                  }}
-                >
-                  jujuba
-                </Typography>
+                <Image
+                  src="/Imagens/LogoJujuba.png"
+                  alt="Logo"
+                  width={345}
+                  height={242}
+                  style={{ borderRadius: "50%" }}
+                />
               </Box>
             </Box>
 
-            {/* Circular rings around the logo */}
+            {/* Anéis ao redor da logo com profundidade (sem pulsação) */}
             {[1, 2, 3, 4].map((i) => (
               <Box
                 key={i}
@@ -146,11 +193,14 @@ export default function Login() {
                   width: `${180 + i * 20}px`,
                   height: `${180 + i * 20}px`,
                   borderRadius: "50%",
-                  border: "1px solid rgba(255, 255, 255, 0.5)",
+                  border: `1px solid rgba(255, 255, 255, ${1 - i * 0.2})`,
+                  boxShadow: `0 0 ${2 * i}px rgba(0, 0, 0, ${0.1 - i * 0.02})`,
+                  backdropFilter: "blur(1px)",
                   zIndex: 0,
                 }}
               />
             ))}
+
           </Box>
 
           {/* Right side - Login form */}
