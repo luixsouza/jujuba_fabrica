@@ -110,6 +110,43 @@ export default function Login() {
                 objectFit: "contain",
               }}
             />
+            {/* Nuvens adicionais */}
+            <Image
+              src="/Imagens/Nuvem.png"
+              alt="Nuvem extra"
+              width={90}
+              height={60}
+              style={{
+                position: "absolute",
+                top: "10%",
+                right: "10%",
+                objectFit: "contain",
+              }}
+            />
+            <Image
+              src="/Imagens/Nuvem.png"
+              alt="Nuvem extra"
+              width={100}
+              height={65}
+              style={{
+                position: "absolute",
+                bottom: "10%",
+                left: "10%",
+                objectFit: "contain",
+              }}
+            />
+            <Image
+              src="/Imagens/Nuvem.png"
+              alt="Nuvem extra"
+              width={80}
+              height={50}
+              style={{
+                position: "absolute",
+                top: "40%",
+                left: "5%",
+                objectFit: "contain",
+              }}
+            />
 
             {/* Logo com imagem */}
             <Box
@@ -134,12 +171,11 @@ export default function Login() {
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  border: "4px solid white",
                   overflow: "hidden",
                 }}
               >
                 <Image
-                  src="/Imagens/image-Photoroom.png"
+                  src="/Imagens/LogoJujuba.png"
                   alt="Logo"
                   width={345}
                   height={242}
@@ -148,7 +184,7 @@ export default function Login() {
               </Box>
             </Box>
 
-            {/* Anéis ao redor da logo */}
+            {/* Anéis ao redor da logo com profundidade (sem pulsação) */}
             {[1, 2, 3, 4].map((i) => (
               <Box
                 key={i}
@@ -157,11 +193,14 @@ export default function Login() {
                   width: `${180 + i * 20}px`,
                   height: `${180 + i * 20}px`,
                   borderRadius: "50%",
-                  border: "1px solid rgba(255, 255, 255, 0.5)",
+                  border: `1px solid rgba(255, 255, 255, ${1 - i * 0.2})`,
+                  boxShadow: `0 0 ${2 * i}px rgba(0, 0, 0, ${0.1 - i * 0.02})`,
+                  backdropFilter: "blur(1px)",
                   zIndex: 0,
                 }}
               />
             ))}
+
           </Box>
 
           {/* Right side - Login form */}
