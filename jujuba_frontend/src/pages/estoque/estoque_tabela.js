@@ -11,7 +11,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
   TablePagination,
   TextField,
   Button,
@@ -27,9 +26,6 @@ import {
   CircularProgress,
 } from "@mui/material"
 import Sidebar from "../../components/sidebar"
-import EditIcon from "@mui/icons-material/Edit"
-import DeleteIcon from "@mui/icons-material/Delete"
-import VisibilityIcon from "@mui/icons-material/Visibility"
 import SearchIcon from "@mui/icons-material/Search"
 import { useRouter } from "next/navigation"
 
@@ -42,8 +38,6 @@ const EstoquePage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
-  const [openDialog, setOpenDialog] = useState(false)
-  const [loteToDelete, setLoteToDelete] = useState(null)
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -59,14 +53,11 @@ const EstoquePage = () => {
   const fetchLotes = async () => {
     setLoading(true)
     try {
-      // Usando a função getAllLotes com o mapeamento específico
       const lotesData = await getAllLotes()
-
-      // Formatando os dados conforme o mapeamento da API
       const lotesFormatados = lotesData.map((lote) => ({
         id: lote.id,
         numero: `L${lote.id}`,
-        data: new Date().toISOString(), // Como não há data na API, usando data atual
+        data: new Date().toISOString(),
         fornecedora: lote.fornecedora?.nome || "Fornecedora não especificada",
         fornecedoraId: lote.fornecedora?.id,
         totalProdutos: lote.produtos?.length || 0,
@@ -92,76 +83,11 @@ const EstoquePage = () => {
     }
   }
 
-  const handleDeleteClick = (id) => {
-    setLoteToDelete(id)
-    setOpenDialog(true)
-  }
-
-  const handleConfirmDelete = async () => {
-    try {
-      setLoading(true)
-
-      // Usando a função deleteLote com o mapeamento específico
-      const response = await deleteLote(loteToDelete)
-
-      if (response.sucesso) {
-        // Remove o lote da lista local após sucesso na API
-        setLotes((prev) => prev.filter((lote) => lote.id !== loteToDelete))
-        setSnackbar({
-          open: true,
-          message: response.mensagem,
-          severity: "success",
-        })
-      } else {
-        setSnackbar({
-          open: true,
-          message: response.mensagem || "Erro ao excluir lote",
-          severity: "error",
-        })
-      }
-    } catch (error) {
-      console.error("Erro ao excluir lote:", error)
-      setSnackbar({
-        open: true,
-        message: "Falha ao excluir lote",
-        severity: "error",
-      })
-    } finally {
-      setLoading(false)
-      setOpenDialog(false)
-      setLoteToDelete(null)
-    }
-  }
-
-  const handleCancelDelete = () => {
-    setOpenDialog(false)
-    setLoteToDelete(null)
-  }
-
   const handleNavigateToRegister = () => {
     try {
       router.push("./cadastrar_lote")
     } catch (error) {
-      console.error("Erro ao navegar:", error)
       window.location.href = "./cadastrar_lote"
-    }
-  }
-
-  const handleNavigateToView = (lote) => {
-    try {
-      router.push(`./visualizar_lote?id=${lote.id}`)
-    } catch (error) {
-      console.error("Erro ao navegar:", error)
-      window.location.href = `./visualizar_lote?id=${lote.id}`
-    }
-  }
-
-  const handleNavigateToEdit = (id) => {
-    try {
-      router.push(`./editar_lote?id=${id}`)
-    } catch (error) {
-      console.error("Erro ao navegar:", error)
-      window.location.href = `./editar_lote?id=${id}`
     }
   }
 
@@ -202,15 +128,15 @@ const EstoquePage = () => {
         }}
       >
         <Typography
-            variant="h4"
-            sx={{
-              justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
-              fontWeight: "bold",
-              fontSize: "50px",
-              color: "#000000",
-            }}
+          variant="h4"
+          sx={{
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
+            fontWeight: "bold",
+            fontSize: "50px",
+            color: "#000000",
+          }}
         >
           Estoque
         </Typography>
@@ -223,9 +149,6 @@ const EstoquePage = () => {
           rowsPerPage={rowsPerPage}
           handleChangePage={handleChangePage}
           handleChangeRowsPerPage={handleChangeRowsPerPage}
-          handleDeleteClick={handleDeleteClick}
-          handleNavigateToView={handleNavigateToView}
-          handleNavigateToEdit={handleNavigateToEdit}
           loading={loading}
         />
 
@@ -251,30 +174,6 @@ const EstoquePage = () => {
           </Button>
         </Box>
 
-        {/* Diálogo de confirmação para exclusão */}
-        <Dialog
-          open={openDialog}
-          onClose={handleCancelDelete}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title">{"Confirmar exclusão"}</DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              Tem certeza que deseja excluir este lote? Esta ação não pode ser desfeita.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCancelDelete} color="primary">
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmDelete} color="error" autoFocus>
-              Excluir
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Snackbar para feedback */}
         <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
           <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
             {snackbar.message}
@@ -372,9 +271,6 @@ const LotesTable = ({
   rowsPerPage,
   handleChangePage,
   handleChangeRowsPerPage,
-  handleDeleteClick,
-  handleNavigateToView,
-  handleNavigateToEdit,
   loading,
 }) => (
   <Card
@@ -405,7 +301,7 @@ const LotesTable = ({
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            {["Lotes", "Fornecedora", "Total de Produtos", "Ação"].map((header) => (
+            {["Lotes", "Fornecedora", "Total de Produtos"].map((header) => (
               <TableCell
                 key={header}
                 sx={{
@@ -424,7 +320,7 @@ const LotesTable = ({
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={4} align="center">
+              <TableCell colSpan={3} align="center">
                 <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
                   <CircularProgress size={40} sx={{ color: "#FADADD" }} />
                 </Box>
@@ -432,7 +328,7 @@ const LotesTable = ({
             </TableRow>
           ) : lotesFiltrados.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} align="center">
+              <TableCell colSpan={3} align="center">
                 Nenhum lote encontrado
               </TableCell>
             </TableRow>
@@ -450,17 +346,6 @@ const LotesTable = ({
                       {lote.totalProdutos === 1 ? "produto" : "produtos"}
                     </Typography>
                   </Box>
-                </TableCell>
-                <TableCell align="center">
-                  <IconButton onClick={() => handleNavigateToView(lote)} sx={{ marginRight: 1, color: "#00509E" }}>
-                    <VisibilityIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleNavigateToEdit(lote.id)} sx={{ marginRight: 1, color: "#00509E" }}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDeleteClick(lote.id)} sx={{ color: "#00509E" }}>
-                    <DeleteIcon />
-                  </IconButton>
                 </TableCell>
               </TableRow>
             ))
