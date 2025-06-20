@@ -190,7 +190,7 @@ const FornecedoresPage = () => {
               color: "#000000",
             }}
           >
-            Fornecedoras
+            Fornecedores
           </Typography>
         </Box>
 
@@ -217,7 +217,7 @@ const FornecedoresPage = () => {
             renderInput={(params) => (
              <TextField
               {...params}
-              placeholder="Pesquisar fornecedora"
+              placeholder="Pesquisar fornecedores"
               variant="outlined"
               size="medium"
               InputProps={{
