@@ -33,7 +33,6 @@ import VisibilityIcon from "@mui/icons-material/Visibility"
 import SearchIcon from "@mui/icons-material/Search"
 import { useRouter } from "next/navigation"
 
-// Importando as funções da API específicas
 import { getAllLotes, deleteLote } from "../api/lotes"
 
 const EstoquePage = () => {
@@ -59,14 +58,11 @@ const EstoquePage = () => {
   const fetchLotes = async () => {
     setLoading(true)
     try {
-      // Usando a função getAllLotes com o mapeamento específico
       const lotesData = await getAllLotes()
-
-      // Formatando os dados conforme o mapeamento da API
       const lotesFormatados = lotesData.map((lote) => ({
         id: lote.id,
         numero: `L${lote.id}`,
-        data: new Date().toISOString(), // Como não há data na API, usando data atual
+        data: new Date().toISOString(),
         fornecedora: lote.fornecedora?.nome || "Fornecedora não especificada",
         fornecedoraId: lote.fornecedora?.id,
         totalProdutos: lote.produtos?.length || 0,
@@ -100,32 +96,17 @@ const EstoquePage = () => {
   const handleConfirmDelete = async () => {
     try {
       setLoading(true)
-
-      // Usando a função deleteLote com o mapeamento específico
       const response = await deleteLote(loteToDelete)
 
       if (response.sucesso) {
-        // Remove o lote da lista local após sucesso na API
         setLotes((prev) => prev.filter((lote) => lote.id !== loteToDelete))
-        setSnackbar({
-          open: true,
-          message: response.mensagem,
-          severity: "success",
-        })
+        setSnackbar({ open: true, message: response.mensagem, severity: "success" })
       } else {
-        setSnackbar({
-          open: true,
-          message: response.mensagem || "Erro ao excluir lote",
-          severity: "error",
-        })
+        setSnackbar({ open: true, message: response.mensagem || "Erro ao excluir lote", severity: "error" })
       }
     } catch (error) {
       console.error("Erro ao excluir lote:", error)
-      setSnackbar({
-        open: true,
-        message: "Falha ao excluir lote",
-        severity: "error",
-      })
+      setSnackbar({ open: true, message: "Falha ao excluir lote", severity: "error" })
     } finally {
       setLoading(false)
       setOpenDialog(false)
@@ -138,55 +119,26 @@ const EstoquePage = () => {
     setLoteToDelete(null)
   }
 
-  const handleNavigateToRegister = () => {
-    try {
-      router.push("./cadastrar_lote")
-    } catch (error) {
-      console.error("Erro ao navegar:", error)
-      window.location.href = "./cadastrar_lote"
-    }
-  }
-
-  const handleNavigateToView = (lote) => {
-    try {
-      router.push(`./visualizar_lote?id=${lote.id}`)
-    } catch (error) {
-      console.error("Erro ao navegar:", error)
-      window.location.href = `./visualizar_lote?id=${lote.id}`
-    }
-  }
-
-  const handleNavigateToEdit = (id) => {
-    try {
-      router.push(`./editar_lote?id=${id}`)
-    } catch (error) {
-      console.error("Erro ao navegar:", error)
-      window.location.href = `./editar_lote?id=${id}`
-    }
-  }
+  const handleNavigateToRegister = () => router.push("./cadastrar_lote")
+  const handleNavigateToView = (lote) => router.push(`./visualizar_lote?id=${lote.id}`)
+  const handleNavigateToEdit = (id) => router.push(`./editar_lote?id=${id}`)
 
   const handleChangePage = (event, newPage) => setPage(newPage)
-
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(Number.parseInt(event.target.value, 10))
+    setRowsPerPage(parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false })
-  }
+  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false })
 
-  const lotesFiltrados = useMemo(() => {
-    return lotes.filter(
-      (lote) =>
-        lote.numero.toString().toLowerCase().includes(search.toLowerCase()) ||
-        lote.fornecedora.toLowerCase().includes(search.toLowerCase()),
-    )
-  }, [lotes, search])
+  const lotesFiltrados = useMemo(() =>
+    lotes.filter((lote) =>
+      lote.numero.toLowerCase().includes(search.toLowerCase()) ||
+      lote.fornecedora.toLowerCase().includes(search.toLowerCase())
+    ), [lotes, search]
+  )
 
-  const searchOptions = useMemo(() => {
-    return [...new Set(lotes.map((lote) => lote.numero.toString()))]
-  }, [lotes])
+  const searchOptions = useMemo(() => [...new Set(lotes.map((lote) => lote.numero.toString()))], [lotes])
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
@@ -194,26 +146,17 @@ const EstoquePage = () => {
       <Box
         sx={{
           flex: 1,
-          marginLeft: "244px",
-          padding: "20px",
-          height: "150vh",
-          overflow: "hidden",
-          marginTop: "50px",
+          marginLeft: { xs: 0, sm: "290px" },
+          paddingTop: "3rem",
+          paddingX: { xs: "1rem", sm: "2rem" },
+          backgroundColor: "#9AE4FF",
         }}
       >
-        <Typography
-            variant="h4"
-            sx={{
-              justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
-              fontWeight: "bold",
-              fontSize: "50px",
-              color: "#000000",
-            }}
-        >
-          Estoque
-        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "80px" }}>
+          <Typography variant="h4" sx={{ fontWeight: "bold", fontSize: "50px", color: "#000000" }}>
+            Estoque
+          </Typography>
+        </Box>
 
         <SearchField search={search} setSearch={setSearch} options={searchOptions} />
 
@@ -251,30 +194,19 @@ const EstoquePage = () => {
           </Button>
         </Box>
 
-        {/* Diálogo de confirmação para exclusão */}
-        <Dialog
-          open={openDialog}
-          onClose={handleCancelDelete}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title">{"Confirmar exclusão"}</DialogTitle>
+        <Dialog open={openDialog} onClose={handleCancelDelete}>
+          <DialogTitle>Confirmar exclusão</DialogTitle>
           <DialogContent>
-            <DialogContentText id="alert-dialog-description">
+            <DialogContentText>
               Tem certeza que deseja excluir este lote? Esta ação não pode ser desfeita.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCancelDelete} color="primary">
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmDelete} color="error" autoFocus>
-              Excluir
-            </Button>
+            <Button onClick={handleCancelDelete}>Cancelar</Button>
+            <Button onClick={handleConfirmDelete} color="error">Excluir</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Snackbar para feedback */}
         <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
           <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
             {snackbar.message}
@@ -286,37 +218,32 @@ const EstoquePage = () => {
 }
 
 const SearchField = ({ search, setSearch, options }) => (
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      marginBottom: "30px",
-    }}
-  >
+  <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "30px" }}>
     <Autocomplete
       freeSolo
       options={options}
       value={search}
-      onChange={(event, newValue) => {
-        setSearch(newValue || "")
-      }}
-      onInputChange={(event, newValue) => {
-        setSearch(newValue || "")
-      }}
+      onChange={(e, newValue) => setSearch(newValue || "")}
+      onInputChange={(e, newValue) => setSearch(newValue || "")}
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Pesquisar lote"
+          placeholder="Pesquisar lote"
           variant="outlined"
           size="medium"
           InputProps={{
             ...params.InputProps,
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon />
+                <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
               </InputAdornment>
             ),
+            sx: {
+              height: "60px",
+              display: "flex",
+              alignItems: "center",
+              pl: 1,
+            },
           }}
           sx={{
             width: "100%",
@@ -324,84 +251,50 @@ const SearchField = ({ search, setSearch, options }) => (
             backgroundColor: "#F5F5F5",
             marginBottom: "50px",
             marginTop: "50px",
+            borderRadius: "10px",
             "& .MuiOutlinedInput-root": {
               backgroundColor: "#F5F5F5",
               color: "#000000",
-              height: "80px",
-              "& fieldset": {
-                borderColor: "#CCCCCC",
-              },
-              "&:hover fieldset": {
-                borderColor: "#00509E",
-              },
-              "&.Mui-focused fieldset": {
-                borderColor: "#00509E",
-              },
-              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+              borderRadius: "10px",
+              "& fieldset": { borderColor: "#CCCCCC" },
+              "&:hover fieldset": { borderColor: "#00509E" },
+              "&.Mui-focused fieldset": { borderColor: "#00509E" },
+              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
             },
             "& .MuiInputBase-input": {
-              color: "#000000",
-              padding: "0 20px",
+              padding: "14px 20px",
               fontSize: "18px",
-            },
-            "& .MuiInputLabel-root": {
-              fontSize: "20px",
-              color: "#000000",
-              transform: "translate(20px, 28px)",
-            },
-            "& .MuiInputLabel-root.Mui-focused": {
-              color: "#00509E",
-            },
-            "& .MuiInputLabel-shrink": {
-              transform: "translate(20px, -6px) scale(0.75)",
             },
           }}
         />
       )}
-      sx={{
-        width: "100%",
-        maxWidth: "1800px",
-      }}
+      sx={{ width: "100%", maxWidth: "1800px" }}
     />
   </Box>
 )
 
-const LotesTable = ({
-  lotesFiltrados,
-  page,
-  rowsPerPage,
-  handleChangePage,
-  handleChangeRowsPerPage,
-  handleDeleteClick,
-  handleNavigateToView,
-  handleNavigateToEdit,
-  loading,
-}) => (
+const LotesTable = ({ lotesFiltrados, page, rowsPerPage, handleChangePage, handleChangeRowsPerPage, handleDeleteClick, handleNavigateToView, handleNavigateToEdit, loading }) => (
   <Card
     sx={{
       padding: "20px",
       bgcolor: "white",
-      marginTop: "20px",
-      backgroundColor: "#F5F5F5",
-      borderRadius: "20px",
       boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+      borderRadius: "25px",
+      backgroundColor: "#F5F5F5",
+      width: "100%",
+      margin: "0 auto",
+      border: "2px solid #B0B0B0",
     }}
   >
-    <Typography
-      variant="h6"
+    <TableContainer
       sx={{
-        fontWeight: "bold",
-        textAlign: "LEFT",
-        marginBottom: "40px",
-        fontSize: "35px",
-        color: "#333",
-        marginTop: "20px",
+        maxHeight: "600px",
+        borderRadius: "10px",
+        overflow: "auto",
+        backgroundColor: "#F5F5F5",
+        width: "100%",
       }}
     >
-      Lotes em Estoque
-    </Typography>
-
-    <TableContainer sx={{ maxHeight: "600px", borderRadius: "10px", overflow: "hidden" }}>
       <Table stickyHeader>
         <TableHead>
           <TableRow>
@@ -458,7 +351,7 @@ const LotesTable = ({
                   <IconButton onClick={() => handleNavigateToEdit(lote.id)} sx={{ marginRight: 1, color: "#00509E" }}>
                     <EditIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleDeleteClick(lote.id)} sx={{ color: "#00509E" }}>
+                  <IconButton onClick={() => handleDeleteClick(lote.id)} sx={{ color: "#d32f2f" }}>
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
@@ -468,7 +361,6 @@ const LotesTable = ({
         </TableBody>
       </Table>
     </TableContainer>
-
     <TablePagination
       component="div"
       count={lotesFiltrados.length}
@@ -477,15 +369,8 @@ const LotesTable = ({
       rowsPerPage={rowsPerPage}
       onRowsPerPageChange={handleChangeRowsPerPage}
       rowsPerPageOptions={[5, 10, 25]}
-      labelRowsPerPage="Itens por página"
-      labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-      sx={{
-        marginTop: "10px",
-        bgcolor: "#F5F5F5",
-        borderRadius: "10px",
-      }}
     />
   </Card>
 )
 
-export default EstoquePage
+export default EstoquePage;

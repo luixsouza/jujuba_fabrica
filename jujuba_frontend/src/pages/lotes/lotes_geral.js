@@ -156,40 +156,258 @@ const EstoquePage = () => {
       <Box
         sx={{
           flex: 1,
-          marginLeft: "250px",
-          padding: "20px",
-          height: "150vh",
-          overflow: "hidden",
-          marginTop: "50px",
+          marginLeft: { xs: 0, sm: "290px" },
+          paddingTop: "3rem",
+          paddingX: { xs: "1rem", sm: "2rem" },
+          transition: "margin-left 0.3s ease",
         }}
       >
-        <Typography
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "80px",
+          }}
+        >
+          <Typography
             variant="h4"
             sx={{
-              justifyContent: "center",
-              alignItems: "center",
               textAlign: "center",
               fontWeight: "bold",
               fontSize: "50px",
               color: "#000000",
             }}
+          >
+            Lotes
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: "30px",
+            width: "100%",
+          }}
         >
-          Lotes
-        </Typography>
+          <Autocomplete
+            freeSolo
+            options={searchOptions}
+            value={search}
+            onChange={(event, newValue) => {
+              setSearch(newValue || "")
+            }}
+            onInputChange={(event, newValue) => {
+              setSearch(newValue || "")
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Pesquisar lote"
+                variant="outlined"
+                size="medium"
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    height: "60px",
+                    display: "flex",
+                    alignItems: "center",
+                    pl: 1,
+                  },
+                }}
+                sx={{
+                  width: "100%",
+                  maxWidth: "1800px",
+                  backgroundColor: "#F5F5F5",
+                  marginBottom: "50px",
+                  marginTop: "50px",
+                  borderRadius: "10px",
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#F5F5F5",
+                    color: "#000000",
+                    borderRadius: "10px",
+                    "& fieldset": {
+                      borderColor: "#CCCCCC",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#00509E",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#00509E",
+                    },
+                    boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
+                  },
+                  "& .MuiInputBase-input": {
+                    padding: "14px 20px",
+                    fontSize: "18px",
+                  },
+                }}
+              />
+            )}
+            sx={{
+              width: "100%",
+              maxWidth: "1800px",
+            }}
+          />
+        </Box>
 
-        <SearchField search={search} setSearch={setSearch} options={searchOptions} />
-
-        <LotesTable
-          lotesFiltrados={lotesFiltrados}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          handleChangePage={handleChangePage}
-          handleChangeRowsPerPage={handleChangeRowsPerPage}
-          handleDeleteClick={handleDeleteClick}
-          handleNavigateToView={handleNavigateToView}
-          handleNavigateToEdit={handleNavigateToEdit}
-          loading={loading}
-        />
+        <Card
+          sx={{
+            padding: "20px",
+            bgcolor: "white",
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            borderRadius: "25px",
+            backgroundColor: "#F5F5F5",
+            width: "100%",
+            margin: "0 auto",
+            border: "2px solid #B0B0B0",
+          }}
+        >
+          <TableContainer
+            sx={{
+              maxHeight: "600px",
+              borderRadius: "10px",
+              overflow: "auto",
+              backgroundColor: "#F5F5F5",
+              width: "100%",
+            }}
+          >
+            <Table stickyHeader aria-label="lotes table">
+              <TableHead>
+                <TableRow>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Número do Lote
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Data de Criação
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Fornecedora
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                    }}
+                  >
+                    Ações
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">
+                      <CircularProgress sx={{ color: "#FADADD" }} />
+                    </TableCell>
+                  </TableRow>
+                ) : lotesFiltrados.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" sx={{ fontSize: "16px" }}>
+                      Nenhum lote encontrado
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  lotesFiltrados
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((lote) => (
+                      <TableRow key={lote.id}>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontSize: "18px",
+                            padding: { xs: "8px 4px", sm: "16px 8px" },
+                          }}
+                        >
+                          {lote.numero}
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontSize: "18px",
+                            padding: { xs: "8px 4px", sm: "16px 8px" },
+                          }}
+                        >
+                          {new Date(lote.data).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontSize: "18px",
+                            padding: { xs: "8px 4px", sm: "16px 8px" },
+                          }}
+                        >
+                          {lote.fornecedora}
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: 1,
+                            padding: "8px",
+                          }}
+                        >
+                          <IconButton onClick={() => handleNavigateToView(lote)} sx={{ color: "#00509E" }}>
+                            <VisibilityIcon />
+                          </IconButton>
+                          <IconButton onClick={() => handleNavigateToEdit(lote.id)} sx={{ color: "#00509E" }}>
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton onClick={() => handleDeleteClick(lote.id)} sx={{ color: "#d32f2f" }}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={lotesFiltrados.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        </Card>
 
         <Box sx={{ display: "flex", justifyContent: "center", marginTop: "30px" }}>
           <Button
@@ -199,7 +417,7 @@ const EstoquePage = () => {
               boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
               border: "2px solid #FADADD",
               fontWeight: "bold",
-              fontSize: "20px",
+              fontSize: "17px",
               borderRadius: "60px",
               padding: "10px 0",
               width: "300px",
@@ -207,7 +425,6 @@ const EstoquePage = () => {
               textTransform: "none",
             }}
             onClick={handleNavigateToRegister}
-            variant="contained"
           >
             Cadastrar Lote
           </Button>
@@ -242,201 +459,6 @@ const EstoquePage = () => {
         </Snackbar>
       </Box>
     </Box>
-  )
-}
-
-const SearchField = ({ search, setSearch, options }) => (
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      marginBottom: "30px",
-    }}
-  >
-    <Autocomplete
-      freeSolo
-      options={options}
-      value={search}
-      onChange={(event, newValue) => {
-        setSearch(newValue || "")
-      }}
-      onInputChange={(event, newValue) => {
-        setSearch(newValue || "")
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Pesquisar lote"
-          variant="outlined"
-          size="medium"
-          InputProps={{
-            ...params.InputProps,
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: "100%",
-            maxWidth: "1800px",
-            backgroundColor: "#F5F5F5",
-            marginBottom: "50px",
-            marginTop: "50px",
-            "& .MuiOutlinedInput-root": {
-              backgroundColor: "#F5F5F5",
-              color: "#000000",
-              height: "80px",
-              "& fieldset": {
-                borderColor: "#CCCCCC",
-              },
-              "&:hover fieldset": {
-                borderColor: "#00509E",
-              },
-              "&.Mui-focused fieldset": {
-                borderColor: "#00509E",
-              },
-              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-            },
-            "& .MuiInputBase-input": {
-              color: "#000000",
-              padding: "0 20px",
-              fontSize: "18px",
-            },
-            "& .MuiInputLabel-root": {
-              fontSize: "20px",
-              color: "#000000",
-              transform: "translate(20px, 28px)",
-            },
-            "& .MuiInputLabel-root.Mui-focused": {
-              color: "#00509E",
-            },
-            "& .MuiInputLabel-shrink": {
-              transform: "translate(20px, -6px) scale(0.75)",
-            },
-          }}
-        />
-      )}
-      sx={{
-        width: "100%",
-        maxWidth: "1800px",
-      }}
-    />
-  </Box>
-)
-
-const LotesTable = ({
-  lotesFiltrados,
-  page,
-  rowsPerPage,
-  handleChangePage,
-  handleChangeRowsPerPage,
-  handleDeleteClick,
-  handleNavigateToView,
-  handleNavigateToEdit,
-  loading,
-}) => {
-  return (
-    <Card
-      sx={{
-        borderRadius: "20px",
-        boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-        padding: "20px",
-        maxWidth: "100%",
-        overflowX: "auto",
-      }}
-    >
-      <TableContainer>
-        <Table stickyHeader aria-label="lotes table">
-          <TableHead>
-            <TableRow>
-              <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
-                Número do Lote
-              </TableCell>
-              <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
-                Data de Criação
-              </TableCell>
-              <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
-                Fornecedora
-              </TableCell>
-              <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
-                Ações
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-                    <CircularProgress size={40} sx={{ color: "#FADADD" }} />
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ) : lotesFiltrados.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Nenhum lote encontrado.
-                </TableCell>
-              </TableRow>
-            ) : (
-              lotesFiltrados
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((lote) => (
-                  <TableRow key={lote.id}>
-                    <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
-                      {lote.numero}
-                    </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
-                      {new Date(lote.data).toLocaleDateString("pt-BR")}
-                    </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: "normal", fontSize: "20px" }}>
-                      {lote.fornecedora}
-                    </TableCell>
-                    <TableCell align="center">
-                      <IconButton
-                        aria-label="visualizar"
-                        onClick={() => handleNavigateToView(lote)}
-                        size="large"
-                        color="primary"
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                      <IconButton
-                        aria-label="editar"
-                        onClick={() => handleNavigateToEdit(lote.id)}
-                        size="large"
-                        color="secondary"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        aria-label="excluir"
-                        onClick={() => handleDeleteClick(lote.id)}
-                        size="large"
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={lotesFiltrados.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
-    </Card>
   )
 }
 
