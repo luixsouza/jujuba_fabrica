@@ -26,6 +26,8 @@ import {
   Chip,
   DialogContentText,
   CircularProgress,
+  Snackbar, 
+  Alert,    
 } from "@mui/material"
 import {
   Search as SearchIcon,
@@ -43,8 +45,13 @@ import {
   Warning as WarningIcon,
 } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
-// Importações corrigidas para usar os nomes das funções exportadas em api/carrinho.js
-import { removerDoCarrinho, listarCarrinho, limparCarrinho } from "../api/carrinho"
+import {
+  adicionarAoCarrinho,
+  removerDoCarrinho,
+  listarCarrinho,
+  limparCarrinho
+} from "../../api/carrinho";
+import { finalizarVendaSimples } from "../../api/vendas"
 
 export default function CarrinhoPage() {
   const router = useRouter()
@@ -59,6 +66,11 @@ export default function CarrinhoPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchOptions, setSearchOptions] = useState([])
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   // Carregar itens do carrinho ao iniciar
   useEffect(() => {
@@ -102,7 +114,7 @@ export default function CarrinhoPage() {
   }
 
   const handleVenderParaFornecedor = () => {
-    router.push("/vendas/vender_fornecedor")
+    router.push("/vendas/vender_fornecedor") // Redireciona para a página de venda para fornecedor
   }
 
   const handleConfirmDeleteItem = (id) => {
@@ -122,9 +134,19 @@ export default function CarrinhoPage() {
         if (result.sucesso && result.carrinho) {
           setCartItems(result.carrinho.itens)
           setTotalValue(result.carrinho.valorTotal)
+          setSnackbar({
+            open: true,
+            message: `"${itemToDelete.produto.descricao}" removido do carrinho!`,
+            severity: "success",
+          });
         } else {
           console.error("Erro ao remover item do carrinho:", result.mensagem)
           setError("Não foi possível remover o item do carrinho: " + result.mensagem)
+          setSnackbar({
+            open: true,
+            message: `Erro ao remover item: ${result.mensagem}`,
+            severity: "error",
+          });
         }
 
         // Se o item sendo removido também é o item selecionado na modal de visualização, fechar a modal
@@ -134,6 +156,11 @@ export default function CarrinhoPage() {
       } catch (error) {
         console.error("Erro ao remover item do carrinho:", error)
         setError("Não foi possível remover o item do carrinho. Verifique a conexão com o servidor.")
+        setSnackbar({
+          open: true,
+          message: "Erro ao remover item. Verifique a conexão com o servidor.",
+          severity: "error",
+        });
       } finally {
         setLoading(false)
       }
@@ -160,28 +187,43 @@ export default function CarrinhoPage() {
     try {
       setLoading(true)
       setError(null); // Limpa erros anteriores
-      // Aqui você pode implementar a lógica para finalizar a venda
-      // Por exemplo, chamar uma API para registrar a venda
 
-      // Limpar o carrinho após a venda
-      const result = await limparCarrinho() // Usando limparCarrinho
+      // Chama a função do backend para finalizar a venda simples
+      const result = await finalizarVendaSimples();
+
       if (result.sucesso) {
-        // Atualizar a lista de itens do carrinho (que agora deve estar vazia)
+        // Limpar o carrinho no frontend após a venda bem-sucedida
         setCartItems([])
         setTotalValue(0)
 
         // Fechar o modal de venda
         setOpenSellModal(false)
 
-        // Redirecionar para uma página de confirmação ou voltar para a página de vendas
-        router.push("/vendas/confirmacao")
+        setSnackbar({
+          open: true,
+          message: "Venda finalizada com sucesso!",
+          severity: "success",
+        });
+
+        // Redirecionar para uma página de confirmação ou para o histórico de vendas
+        router.push("/vendas"); // Redireciona para a página de histórico de vendas
       } else {
         console.error("Erro ao finalizar venda:", result.mensagem)
         setError("Não foi possível finalizar a venda: " + result.mensagem)
+        setSnackbar({
+          open: true,
+          message: `Erro ao finalizar venda: ${result.mensagem}`,
+          severity: "error",
+        });
       }
     } catch (error) {
       console.error("Erro ao finalizar venda:", error)
       setError("Não foi possível finalizar a venda. Verifique a conexão com o servidor.")
+      setSnackbar({
+        open: true,
+        message: "Erro ao finalizar venda. Verifique a conexão com o servidor.",
+        severity: "error",
+      });
     } finally {
       setLoading(false)
     }
@@ -189,10 +231,11 @@ export default function CarrinhoPage() {
 
   const handleSearch = (event, newValue) => {
     setSearch(newValue || "")
-
-    // Filtrar itens do carrinho com base no termo de pesquisa
-    // A filtragem já é feita em filteredCartItems, então não precisamos de lógica extra aqui
   }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   // Filtra os itens do carrinho para exibição na tabela
   const filteredCartItems = cartItems.filter(item =>

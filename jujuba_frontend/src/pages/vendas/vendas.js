@@ -25,12 +25,13 @@ import {
   Chip,
   TableContainer,
   TablePagination,
-  Badge,
+  Snackbar, // Adicionado para feedback
+  Alert,    // Adicionado para feedback
+  CircularProgress
 } from "@mui/material"
 import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
-  ShoppingCart as ShoppingCartIcon,
   ArrowBack as ArrowBackIcon,
   Home as HomeIcon,
   Close as CloseIcon,
@@ -40,54 +41,59 @@ import {
   QrCode as QrCodeIcon,
   Category as CategoryIcon,
 } from "@mui/icons-material"
-import { listarProdutos } from "../api/produtos"
-import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho" // Importar listarCarrinho
+import { listarVendasRealizadas } from "../api/vendas" // Importa a função real
 import Sidebar from "../../components/sidebar"
 
 export default function VendasPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [openProductModal, setOpenProductModal] = useState(false)
-  const [produtos, setProdutos] = useState([])
+  const [vendasRealizadas, setVendasRealizadas] = useState([])
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [searchOptions, setSearchOptions] = useState([])
-  const [cartItemCount, setCartItemCount] = useState(0) // Novo estado para a contagem do carrinho
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [loading, setLoading] = useState(true); // Novo estado de loading
+  const [snackbar, setSnackbar] = useState({ // Novo estado para snackbar
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
-  // Efeito para buscar TODOS os produtos e a contagem inicial do carrinho na montagem do componente
+  // Efeito para buscar o histórico de vendas na montagem do componente
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchVendasHistorico = async () => {
+      setLoading(true);
       try {
-        // Buscar todos os produtos
-        const productsResponse = await listarProdutos()
-        if (productsResponse.sucesso && productsResponse.produtos) {
-          setProdutos(productsResponse.produtos)
-          const options = productsResponse.produtos.flatMap(p => [
-            p.id?.toString(),
-            p.descricao,
-            p.marca,
-            p.genero
+        const response = await listarVendasRealizadas();
+        if (response.sucesso && response.vendas) {
+          setVendasRealizadas(response.vendas);
+          const options = response.vendas.flatMap(p => [
+            p.id?.toString(), p.descricao, p.marca, p.genero
           ]).filter(Boolean);
           setSearchOptions([...new Set(options)]);
         } else {
-          console.error("Erro ao buscar produtos:", productsResponse.mensagem)
-        }
-
-        // Buscar a contagem inicial do carrinho
-        const cartResponse = await listarCarrinho()
-        if (cartResponse.sucesso && cartResponse.carrinho) {
-          setCartItemCount(cartResponse.carrinho.totalItens)
-        } else {
-          console.error("Erro ao buscar contagem do carrinho:", cartResponse.mensagem)
+          console.error("Erro ao buscar histórico de vendas:", response.mensagem);
+          setSnackbar({
+            open: true,
+            message: `Erro ao carregar histórico: ${response.mensagem}`,
+            severity: "error",
+          });
         }
       } catch (error) {
-        console.error("Erro ao carregar dados iniciais:", error)
+        console.error("Erro ao carregar histórico de vendas:", error);
+        setSnackbar({
+          open: true,
+          message: "Erro ao carregar histórico de vendas. Verifique a conexão com o servidor.",
+          severity: "error",
+        });
+      } finally {
+        setLoading(false);
       }
-    }
+    };
 
-    fetchInitialData()
-  }, []) // Array de dependências vazio para rodar apenas uma vez na montagem
+    fetchVendasHistorico();
+  }, []);
 
   const handleOpenProductModal = (produto) => {
     setProdutoSelecionado(produto)
@@ -96,52 +102,6 @@ export default function VendasPage() {
 
   const handleCloseProductModal = () => {
     setOpenProductModal(false)
-  }
-
-  // Função para adicionar ao carrinho e navegar para a página do carrinho
-  const handleGoToCart = async () => {
-    if (produtoSelecionado) {
-      try {
-        const result = await adicionarAoCarrinho(produtoSelecionado, 1)
-        if (result.sucesso) {
-          console.log("Produto adicionado ao carrinho com sucesso!", result.carrinho)
-          setOpenProductModal(false)
-          setCartItemCount(result.carrinho.totalItens) // Atualiza a contagem
-          router.push("/vendas/carrinho")
-        } else {
-          console.error("Erro ao adicionar produto ao carrinho:", result.mensagem)
-          alert(`Erro ao adicionar produto ao carrinho: ${result.mensagem}`)
-        }
-      } catch (error) {
-        console.error("Erro inesperado ao adicionar produto ao carrinho:", error)
-        alert("Ocorreu um erro inesperado ao adicionar o produto ao carrinho.")
-      }
-    } else {
-      router.push("/vendas/carrinho")
-    }
-  }
-
-  // Função para adicionar ao carrinho (ícone na tabela)
-  const handleAddToCart = async (produto) => {
-    try {
-      const result = await adicionarAoCarrinho(produto, 1)
-      if (result.sucesso) {
-        console.log("Produto adicionado ao carrinho com sucesso!", result.carrinho)
-        setCartItemCount(result.carrinho.totalItens) // Atualiza a contagem
-        alert(`"${produto.descricao}" adicionado ao carrinho!`)
-      } else {
-        console.error("Erro ao adicionar produto ao carrinho:", result.mensagem)
-        alert(`Erro ao adicionar produto ao carrinho: ${result.mensagem}`)
-      }
-    } catch (error) {
-      console.error("Erro inesperado ao adicionar produto ao carrinho:", error)
-      alert("Ocorreu um erro inesperado ao adicionar o produto ao carrinho.")
-    }
-  }
-
-  // Nova função para navegar diretamente para a página do carrinho
-  const handleNavigateToCart = () => {
-    router.push("/vendas/carrinho")
   }
 
   const handleChangePage = (event, newPage) => {
@@ -153,48 +113,23 @@ export default function VendasPage() {
     setPage(0)
   }
 
-  const filteredProdutos = produtos.filter((produto) => {
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const filteredVendas = vendasRealizadas.filter((venda) => {
     const query = searchQuery.toLowerCase();
     return (
-      produto.id?.toString().toLowerCase().includes(query) ||
-      produto.descricao?.toLowerCase().includes(query) ||
-      produto.marca?.toLowerCase().includes(query) ||
-      produto.genero?.toLowerCase().includes(query)
+      venda.id?.toString().toLowerCase().includes(query) ||
+      venda.descricao?.toLowerCase().includes(query) ||
+      venda.marca?.toLowerCase().includes(query) ||
+      venda.genero?.toLowerCase().includes(query)
     );
   });
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}> {/* Cor de fundo */}
       <Sidebar />
-
-      {/* Botão do Carrinho no canto superior direito */}
-      <Box
-        sx={{
-          position: 'fixed',
-          top: 72, // Ajustado para mover mais para baixo
-          right: 140, // Ajustado para mover mais para a esquerda
-          zIndex: 1000,
-        }}
-      >
-        <IconButton
-          onClick={handleNavigateToCart}
-          sx={{
-            bgcolor: '#FADADD', // Cor rosa padrão
-            color: '#333', // Cor do ícone
-            '&:hover': {
-              bgcolor: '#ffb6c1', // Cor rosa mais clara ao passar o mouse
-            },
-            borderRadius: '50%', // Botão redondo
-            width: 56, // Largura fixa
-            height: 56, // Altura fixa
-            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Sombra para destaque
-          }}
-        >
-          <Badge badgeContent={cartItemCount} color="error"> {/* Badge para a contagem */}
-            <ShoppingCartIcon sx={{ fontSize: 30 }} />
-          </Badge>
-        </IconButton>
-      </Box>
 
       <Box
         sx={{
@@ -208,7 +143,7 @@ export default function VendasPage() {
           transition: "margin-left 0.3s ease",
         }}
       >
-        {/* Header - Ajustado para o padrão de Fornecedores */}
+        {/* Header - Padrão de Fornecedores */}
         <Box
           sx={{
             display: "flex",
@@ -228,11 +163,11 @@ export default function VendasPage() {
               color: "#000000", // Cor do texto
             }}
           >
-            Vendas
+             Vendas
           </Typography>
         </Box>
 
-        {/* Search Bar - Ajustado para o padrão de Fornecedores */}
+        {/* Search Bar - Padrão de Fornecedores */}
         <Box
           sx={{
             display: "flex",
@@ -255,7 +190,7 @@ export default function VendasPage() {
             renderInput={(params) => (
               <TextField
                 {...params}
-                placeholder="Pesquisar produtos por ID, descrição, marca ou gênero"
+                placeholder="Pesquisar vendas por ID, descrição, marca ou gênero"
                 variant="outlined"
                 size="medium"
                 InputProps={{
@@ -308,7 +243,7 @@ export default function VendasPage() {
           />
         </Box>
 
-        {/* Products Table - Ajustado para o padrão de Fornecedores */}
+        {/* Tabela de Histórico de Vendas - Padrão de Fornecedores */}
         <Card
           sx={{
             padding: "20px",
@@ -416,26 +351,23 @@ export default function VendasPage() {
                       fontSize: "18px",
                       textAlign: "center",
                       backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
                     }}
                   >
                     Valor
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                    }}
-                  >
-                    Ações
-                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredProdutos.length > 0 ? (
-                  filteredProdutos.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((produto, index) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center">
+                      <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                        <CircularProgress size={40} sx={{ color: "#FADADD" }} />
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredVendas.length > 0 ? (
+                  filteredVendas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((venda, index) => (
                     <TableRow key={index}>
                       <TableCell
                         sx={{
@@ -444,7 +376,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {produto.id}
+                        {venda.id}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -453,7 +385,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {produto.descricao}
+                        {venda.descricao}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -462,7 +394,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {produto.marca || "-"}
+                        {venda.marca || "-"}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -471,7 +403,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {produto.tamanho || "-"}
+                        {venda.tamanho || "-"}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -480,7 +412,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {produto.genero || "-"}
+                        {venda.genero || "-"}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -489,7 +421,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {produto.estadoConservacao}
+                        {venda.estadoConservacao}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -498,7 +430,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {produto.quantidade || 1}
+                        {venda.quantidade || 1}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -507,31 +439,14 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        R$ {produto.preco ? produto.preco.toFixed(2).replace(".", ",") : "0,00"}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          gap: 1,
-                          padding: "8px",
-                          minWidth: "150px",
-                        }}
-                      >
-                        <IconButton onClick={() => handleOpenProductModal(produto)} sx={{ color: "#00509E" }}>
-                          <VisibilityIcon />
-                        </IconButton>
-                        <IconButton onClick={() => handleAddToCart(produto)} sx={{ color: "#00509E" }}>
-                          <ShoppingCartIcon />
-                        </IconButton>
+                        R$ {venda.preco ? venda.preco.toFixed(2).replace(".", ",") : "0,00"}
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} sx={{ textAlign: "center", py: 4 }}>
-                      Nenhum produto encontrado
+                    <TableCell colSpan={8} sx={{ textAlign: "center", py: 4 }}>
+                      Nenhum item vendido encontrado
                     </TableCell>
                   </TableRow>
                 )}
@@ -541,7 +456,7 @@ export default function VendasPage() {
 
           <TablePagination
             component="div"
-            count={filteredProdutos.length}
+            count={filteredVendas.length}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
@@ -553,7 +468,7 @@ export default function VendasPage() {
         </Card>
       </Box>
 
-      {/* Modal de Visualização do Produto */}
+      {/* Modal de Visualização do Produto (mantido, mas sem botão de carrinho) */}
       <Dialog
         open={openProductModal}
         onClose={handleCloseProductModal}
@@ -578,7 +493,7 @@ export default function VendasPage() {
               }}
             >
               <Typography variant="h5" sx={{ fontWeight: 700, color: "#333" }}>
-                Detalhes do Produto
+                Detalhes do Produto Vendido
               </Typography>
               <IconButton onClick={handleCloseProductModal} size="large" sx={{ color: "#333" }}>
                 <CloseIcon />
@@ -705,28 +620,30 @@ export default function VendasPage() {
               >
                 Fechar
               </Button>
-              <Button
-                variant="contained"
-                startIcon={<ShoppingCartIcon />}
-                onClick={handleGoToCart}
-                sx={{
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1,
-                  bgcolor: "#FADADD",
-                  color: "#333",
-                  fontWeight: 600,
-                  "&:hover": {
-                    bgcolor: "#ffb6c1",
-                  },
-                }}
-              >
-                Adicionar ao Carrinho
-              </Button>
             </DialogActions>
           </>
         )}
       </Dialog>
+
+      {/* Snackbar para feedback */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{
+            width: "100%",
+            borderRadius: "10px",
+            fontWeight: "bold",
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
