@@ -43,7 +43,8 @@ import {
   Warning as WarningIcon,
 } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
-import { removerProdutoDoCarrinho, listarProdutosDoCarrinho, calcularTotalCarrinho, limparCarrinho } from "../api/carrinho"
+// Importações corrigidas para usar os nomes das funções exportadas em api/carrinho.js
+import { removerDoCarrinho, listarCarrinho, limparCarrinho } from "../api/carrinho"
 
 export default function CarrinhoPage() {
   const router = useRouter()
@@ -64,19 +65,26 @@ export default function CarrinhoPage() {
     const fetchCartItems = async () => {
       try {
         setLoading(true)
-        const items = await listarProdutosDoCarrinho()
-        setCartItems(items)
+        setError(null); // Limpa erros anteriores
+        const response = await listarCarrinho() // Usando listarCarrinho
+        if (response.sucesso && response.carrinho) {
+          setCartItems(response.carrinho.itens)
+          setTotalValue(response.carrinho.valorTotal) // Usando valorTotal retornado pela API
 
-        // Extrair opções de pesquisa dos itens do carrinho
-        const options = items.map((item) => item.descricao)
-        setSearchOptions([...new Set(options)])
-
-        // Calcular o valor total do carrinho
-        const total = await calcularTotalCarrinho()
-        setTotalValue(total)
+          // Extrair opções de pesquisa dos itens do carrinho
+          const options = response.carrinho.itens.map((item) => item.produto.descricao) // Acessando a descrição do produto dentro do item
+          setSearchOptions([...new Set(options)])
+        } else {
+          console.error("Erro ao carregar itens do carrinho:", response.mensagem)
+          setError("Não foi possível carregar os itens do carrinho: " + response.mensagem)
+          setCartItems([]); // Garante que a lista esteja vazia em caso de erro
+          setTotalValue(0);
+        }
       } catch (error) {
         console.error("Erro ao carregar itens do carrinho:", error)
-        setError("Não foi possível carregar os itens do carrinho.")
+        setError("Não foi possível carregar os itens do carrinho. Verifique a conexão com o servidor.")
+        setCartItems([]);
+        setTotalValue(0);
       } finally {
         setLoading(false)
       }
@@ -99,7 +107,7 @@ export default function CarrinhoPage() {
 
   const handleConfirmDeleteItem = (id) => {
     // Encontrar o item a ser removido para mostrar no diálogo de confirmação
-    const item = cartItems.find((item) => item.id === id)
+    const item = cartItems.find((item) => item.produto.id === id) // Acessando o ID do produto dentro do item
     setItemToDelete(item)
     setOpenDeleteConfirmation(true)
   }
@@ -108,23 +116,24 @@ export default function CarrinhoPage() {
     if (itemToDelete) {
       try {
         setLoading(true)
-        await removerProdutoDoCarrinho(itemToDelete.id)
+        setError(null); // Limpa erros anteriores
+        const result = await removerDoCarrinho(itemToDelete.produto.id) // Usando removerDoCarrinho e ID do produto
 
-        // Atualizar a lista de itens do carrinho
-        const updatedItems = await listarProdutosDoCarrinho()
-        setCartItems(updatedItems)
-
-        // Atualizar o valor total
-        const total = await calcularTotalCarrinho()
-        setTotalValue(total)
+        if (result.sucesso && result.carrinho) {
+          setCartItems(result.carrinho.itens)
+          setTotalValue(result.carrinho.valorTotal)
+        } else {
+          console.error("Erro ao remover item do carrinho:", result.mensagem)
+          setError("Não foi possível remover o item do carrinho: " + result.mensagem)
+        }
 
         // Se o item sendo removido também é o item selecionado na modal de visualização, fechar a modal
-        if (selectedItem && selectedItem.id === itemToDelete.id) {
+        if (selectedItem && selectedItem.produto.id === itemToDelete.produto.id) { // Acessando ID do produto
           setOpenViewModal(false)
         }
       } catch (error) {
         console.error("Erro ao remover item do carrinho:", error)
-        setError("Não foi possível remover o item do carrinho.")
+        setError("Não foi possível remover o item do carrinho. Verifique a conexão com o servidor.")
       } finally {
         setLoading(false)
       }
@@ -150,24 +159,29 @@ export default function CarrinhoPage() {
   const handleFinalizarVenda = async () => {
     try {
       setLoading(true)
+      setError(null); // Limpa erros anteriores
       // Aqui você pode implementar a lógica para finalizar a venda
       // Por exemplo, chamar uma API para registrar a venda
 
       // Limpar o carrinho após a venda
-      await limparCarrinho()
+      const result = await limparCarrinho() // Usando limparCarrinho
+      if (result.sucesso) {
+        // Atualizar a lista de itens do carrinho (que agora deve estar vazia)
+        setCartItems([])
+        setTotalValue(0)
 
-      // Atualizar a lista de itens do carrinho (que agora deve estar vazia)
-      setCartItems([])
-      setTotalValue(0)
+        // Fechar o modal de venda
+        setOpenSellModal(false)
 
-      // Fechar o modal de venda
-      setOpenSellModal(false)
-
-      // Redirecionar para uma página de confirmação ou voltar para a página de vendas
-      router.push("/vendas/confirmacao")
+        // Redirecionar para uma página de confirmação ou voltar para a página de vendas
+        router.push("/vendas/confirmacao")
+      } else {
+        console.error("Erro ao finalizar venda:", result.mensagem)
+        setError("Não foi possível finalizar a venda: " + result.mensagem)
+      }
     } catch (error) {
       console.error("Erro ao finalizar venda:", error)
-      setError("Não foi possível finalizar a venda.")
+      setError("Não foi possível finalizar a venda. Verifique a conexão com o servidor.")
     } finally {
       setLoading(false)
     }
@@ -177,60 +191,65 @@ export default function CarrinhoPage() {
     setSearch(newValue || "")
 
     // Filtrar itens do carrinho com base no termo de pesquisa
-    if (newValue) {
-      const filteredItems = cartItems.filter((item) => item.descricao.toLowerCase().includes(newValue.toLowerCase()))
-      // Aqui você pode decidir se quer atualizar a lista exibida ou não
-      // Por enquanto, vamos apenas exibir no console
-      console.log("Itens filtrados:", filteredItems)
-    }
+    // A filtragem já é feita em filteredCartItems, então não precisamos de lógica extra aqui
   }
 
+  // Filtra os itens do carrinho para exibição na tabela
+  const filteredCartItems = cartItems.filter(item =>
+    item.produto.descricao.toLowerCase().includes(search.toLowerCase())
+  );
+
+
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#a8e1ff" }}>
+    <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}> {/* Cor de fundo */}
       {/* Importando o componente Sidebar */}
       <Sidebar />
 
       {/* Main Content */}
-      <Box sx={{ ml: "244px", flex: 1, p: 2, pt: 4 }}>
-        {/* Header */}
+      <Box
+        sx={{
+          flex: 1,
+          marginLeft: { xs: 0, sm: "290px" }, // Ajuste para a sidebar
+          maxHeight: "1000px",
+          overflow: "auto",
+          backgroundColor: "#9AE4FF", // Cor de fundo
+          paddingTop: "3rem",
+          paddingX: { xs: "1rem", sm: "2rem" },
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        {/* Header - Ajustado para o padrão de Fornecedores */}
         <Box
           sx={{
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            mb: 2,
-            px: 1,
-            mt: 2, // Reduzido para mover os ícones para cima
+            justifyContent: "center",
+            marginBottom: "80px", // Espaçamento abaixo do título
           }}
         >
-          <IconButton onClick={() => router.back()} sx={{ color: "#333", p: 1 }}>
-            <ArrowBackIcon />
-          </IconButton>
           <Typography
-            variant="h5"
+            variant="h4" // Tamanho do título
             sx={{
-              color: "#333",
-              fontWeight: 700,
-              position: "absolute",
-              left: "55%",
-              transform: "translateX(-50%)",
-              fontSize: "3rem",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              fontWeight: "bold", // Negrito
+              fontSize: "50px", // Tamanho da fonte
+              color: "#000000", // Cor do texto
             }}
           >
-            Vendas
+            Carrinho
           </Typography>
-          <IconButton sx={{ color: "#333", p: 1 }}>
-            <HomeIcon />
-          </IconButton>
         </Box>
 
-        {/* Search Bar - Novo estilo */}
+        {/* Search Bar - Estilo da VendasPage/FornecedoresPage */}
         <Box
           sx={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             marginBottom: "30px",
+            width: "100%",
           }}
         >
           <Autocomplete
@@ -244,16 +263,22 @@ export default function CarrinhoPage() {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Pesquisar produto"
+                placeholder="Pesquisar produto no carrinho" // Placeholder mais específico
                 variant="outlined"
                 size="medium"
                 InputProps={{
                   ...params.InputProps,
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
                     </InputAdornment>
                   ),
+                  sx: {
+                    height: "60px",
+                    display: "flex",
+                    alignItems: "center",
+                    pl: 1,
+                  },
                 }}
                 sx={{
                   width: "100%",
@@ -261,10 +286,11 @@ export default function CarrinhoPage() {
                   backgroundColor: "#F5F5F5",
                   marginBottom: "50px",
                   marginTop: "50px",
+                  borderRadius: "10px",
                   "& .MuiOutlinedInput-root": {
                     backgroundColor: "#F5F5F5",
                     color: "#000000",
-                    height: "80px",
+                    borderRadius: "10px",
                     "& fieldset": {
                       borderColor: "#CCCCCC",
                     },
@@ -274,23 +300,11 @@ export default function CarrinhoPage() {
                     "&.Mui-focused fieldset": {
                       borderColor: "#00509E",
                     },
-                    boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+                    boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
                   },
                   "& .MuiInputBase-input": {
-                    color: "#000000",
-                    padding: "0 20px",
+                    padding: "14px 20px",
                     fontSize: "18px",
-                  },
-                  "& .MuiInputLabel-root": {
-                    fontSize: "20px",
-                    color: "#000000",
-                    transform: "translate(20px, 28px)",
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#00509E",
-                  },
-                  "& .MuiInputLabel-shrink": {
-                    transform: "translate(20px, -6px) scale(0.75)",
                   },
                 }}
               />
@@ -302,14 +316,17 @@ export default function CarrinhoPage() {
           />
         </Box>
 
-        {/* Cart Section */}
+        {/* Cart Section - Ajustado para o padrão de Fornecedores */}
         <Card
           sx={{
-            borderRadius: 4,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-            bgcolor: "#fff5f7",
-            overflow: "visible",
-            p: 2,
+            padding: "20px",
+            bgcolor: "white",
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            borderRadius: "25px",
+            backgroundColor: "#F5F5F5",
+            width: "100%",
+            margin: "0 auto", // Centraliza o card
+            border: "2px solid #B0B0B0", // Borda do card
           }}
         >
           <CardContent sx={{ p: 1 }}>
@@ -345,65 +362,55 @@ export default function CarrinhoPage() {
                 <TableHead>
                   <TableRow>
                     <TableCell
+                      align="center"
                       sx={{
-                        width: "25%",
-                        color: "#333",
-                        fontWeight: 500,
-                        fontSize: "0.9rem",
-                        borderBottom: "1px solid #e0e0e0",
-                        p: 1,
+                        fontSize: "18px",
+                        textAlign: "center",
+                        backgroundColor: "#FADADD", // Cor de fundo rosa
+                        borderRight: "2px solid #F5F5F5", // Linha branca entre colunas
                       }}
                     >
                       Descrição
                     </TableCell>
                     <TableCell
+                      align="center"
                       sx={{
-                        width: "25%",
-                        color: "#333",
-                        fontWeight: 500,
-                        fontSize: "0.9rem",
-                        borderBottom: "1px solid #e0e0e0",
-                        p: 1,
+                        fontSize: "18px",
                         textAlign: "center",
+                        backgroundColor: "#FADADD",
+                        borderRight: "2px solid #F5F5F5",
                       }}
                     >
                       Estado de conservação
                     </TableCell>
                     <TableCell
+                      align="center"
                       sx={{
-                        width: "15%",
-                        color: "#333",
-                        fontWeight: 500,
-                        fontSize: "0.9rem",
-                        borderBottom: "1px solid #e0e0e0",
-                        p: 1,
+                        fontSize: "18px",
                         textAlign: "center",
+                        backgroundColor: "#FADADD",
+                        borderRight: "2px solid #F5F5F5",
                       }}
                     >
                       Valor
                     </TableCell>
                     <TableCell
+                      align="center"
                       sx={{
-                        width: "15%",
-                        color: "#333",
-                        fontWeight: 500,
-                        fontSize: "0.9rem",
-                        borderBottom: "1px solid #e0e0e0",
-                        p: 1,
+                        fontSize: "18px",
                         textAlign: "center",
+                        backgroundColor: "#FADADD",
+                        borderRight: "2px solid #F5F5F5",
                       }}
                     >
                       Lote
                     </TableCell>
                     <TableCell
+                      align="center"
                       sx={{
-                        width: "20%",
-                        color: "#333",
-                        fontWeight: 500,
-                        fontSize: "0.9rem",
-                        borderBottom: "1px solid #e0e0e0",
-                        p: 1,
+                        fontSize: "18px",
                         textAlign: "center",
+                        backgroundColor: "#FADADD",
                       }}
                     >
                       Ações
@@ -411,13 +418,13 @@ export default function CarrinhoPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {cartItems.length > 0 ? (
-                    cartItems.map((item, index) => (
+                  {filteredCartItems.length > 0 ? (
+                    filteredCartItems.map((item, index) => (
                       <TableRow
-                        key={item.id}
+                        key={item.produto.id} // Usando item.produto.id como chave
                         sx={{
                           bgcolor: "#f9f9f9",
-                          borderBottom: index < cartItems.length - 1 ? "1px solid #e0e0e0" : "none",
+                          borderBottom: index < filteredCartItems.length - 1 ? "1px solid #e0e0e0" : "none",
                         }}
                       >
                         <TableCell
@@ -428,7 +435,7 @@ export default function CarrinhoPage() {
                             borderBottom: "none",
                           }}
                         >
-                          {item.descricao}
+                          {item.produto.descricao}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -439,7 +446,7 @@ export default function CarrinhoPage() {
                             borderBottom: "none",
                           }}
                         >
-                          {item.estadoConservacao}
+                          {item.produto.estadoConservacao}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -450,7 +457,7 @@ export default function CarrinhoPage() {
                             borderBottom: "none",
                           }}
                         >
-                          R$ {item.preco.toFixed(2).replace(".", ",")}
+                          R$ {item.produto.preco.toFixed(2).replace(".", ",")}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -461,7 +468,7 @@ export default function CarrinhoPage() {
                             borderBottom: "none",
                           }}
                         >
-                          {item.lote || "-"}
+                          {item.produto.lote || "-"}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -474,7 +481,7 @@ export default function CarrinhoPage() {
                             <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleViewItem(item)}>
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleConfirmDeleteItem(item.id)}>
+                            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleConfirmDeleteItem(item.produto.id)}>
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Box>
@@ -765,7 +772,7 @@ export default function CarrinhoPage() {
                   <Box sx={{ mt: 3 }}>
                     <Chip
                       icon={<CheckCircleIcon />}
-                      label={selectedItem.estadoConservacao}
+                      label={selectedItem.produto.estadoConservacao} // Acessando estadoConservacao do produto
                       color="success"
                       sx={{ fontWeight: 600, fontSize: "1rem", py: 2.5, px: 1 }}
                     />
@@ -775,13 +782,13 @@ export default function CarrinhoPage() {
                 {/* Informações do Produto */}
                 <Grid item xs={12} md={8}>
                   <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: "#333" }}>
-                    {selectedItem.descricao}
+                    {selectedItem.produto.descricao}
                   </Typography>
 
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <AttachMoneyIcon sx={{ color: "#00509E", mr: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600, color: "#00509E" }}>
-                      R$ {selectedItem.preco.toFixed(2).replace(".", ",")}
+                      R$ {selectedItem.produto.preco.toFixed(2).replace(".", ",")}
                     </Typography>
                   </Box>
 
@@ -790,7 +797,7 @@ export default function CarrinhoPage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <QrCodeIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Código:</strong> {selectedItem.id}
+                          <strong>Código:</strong> {selectedItem.produto.id}
                         </Typography>
                       </Box>
                     </Grid>
@@ -798,7 +805,7 @@ export default function CarrinhoPage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <InventoryIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Lote:</strong> {selectedItem.lote || "-"}
+                          <strong>Lote:</strong> {selectedItem.produto.lote || "-"}
                         </Typography>
                       </Box>
                     </Grid>
@@ -806,16 +813,16 @@ export default function CarrinhoPage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <CategoryIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Categoria:</strong> {selectedItem.categoria || "-"}
+                          <strong>Categoria:</strong> {selectedItem.produto.categoria || "-"}
                         </Typography>
                       </Box>
                     </Grid>
-                    {selectedItem.dataEntrada && (
+                    {selectedItem.produto.dataEntrada && (
                       <Grid item xs={6}>
                         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                           <CalendarMonthIcon sx={{ color: "#666", mr: 1 }} />
                           <Typography variant="body1">
-                            <strong>Data de Entrada:</strong> {selectedItem.dataEntrada}
+                            <strong>Data de Entrada:</strong> {selectedItem.produto.dataEntrada}
                           </Typography>
                         </Box>
                       </Grid>
@@ -831,32 +838,32 @@ export default function CarrinhoPage() {
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Marca:</strong> {selectedItem.marca}
+                        <strong>Marca:</strong> {selectedItem.produto.marca}
                       </Typography>
                     </Grid>
-                    {selectedItem.cor && (
+                    {selectedItem.produto.cor && (
                       <Grid item xs={6}>
                         <Typography variant="body2" sx={{ mb: 1 }}>
-                          <strong>Cor:</strong> {selectedItem.cor}
+                          <strong>Cor:</strong> {selectedItem.produto.cor}
                         </Typography>
                       </Grid>
                     )}
-                    {selectedItem.fornecedor && (
+                    {selectedItem.produto.fornecedor && (
                       <Grid item xs={12}>
                         <Typography variant="body2" sx={{ mb: 1 }}>
-                          <strong>Fornecedor:</strong> {selectedItem.fornecedor}
+                          <strong>Fornecedor:</strong> {selectedItem.produto.fornecedor}
                         </Typography>
                       </Grid>
                     )}
                   </Grid>
 
-                  {selectedItem.observacoes && (
+                  {selectedItem.produto.observacoes && (
                     <Box sx={{ mt: 3, bgcolor: "#f5f5f5", p: 2, borderRadius: 2 }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                         Observações
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {selectedItem.observacoes}
+                        {selectedItem.produto.observacoes}
                       </Typography>
                     </Box>
                   )}
@@ -884,7 +891,7 @@ export default function CarrinhoPage() {
               </Button>
               <Button
                 variant="contained"
-                onClick={() => handleConfirmDeleteItem(selectedItem.id)}
+                onClick={() => handleConfirmDeleteItem(selectedItem.produto.id)} // Acessando ID do produto
                 sx={{
                   borderRadius: 2,
                   px: 3,
@@ -933,7 +940,7 @@ export default function CarrinhoPage() {
           <DialogContentText>
             {itemToDelete ? (
               <>
-                Tem certeza que deseja remover <strong>{itemToDelete.descricao}</strong> do carrinho?
+                Tem certeza que deseja remover <strong>{itemToDelete.produto.descricao}</strong> do carrinho?
               </>
             ) : (
               "Tem certeza que deseja remover este item do carrinho?"

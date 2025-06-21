@@ -7,7 +7,6 @@ import {
   Typography,
   TextField,
   Card,
-  CardContent,
   IconButton,
   InputAdornment,
   Table,
@@ -15,7 +14,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Container,
   Autocomplete,
   Dialog,
   DialogTitle,
@@ -25,6 +23,9 @@ import {
   Grid,
   Divider,
   Chip,
+  TableContainer,
+  TablePagination,
+  Badge,
 } from "@mui/material"
 import {
   Search as SearchIcon,
@@ -39,55 +40,54 @@ import {
   QrCode as QrCodeIcon,
   Category as CategoryIcon,
 } from "@mui/icons-material"
-import { listarVendas, buscarVendaPorId } from "../api/vendas"
+import { listarProdutos } from "../api/produtos"
+import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho" // Importar listarCarrinho
 import Sidebar from "../../components/sidebar"
 
 export default function VendasPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
-  const [search, setSearch] = useState("")
-  const [searchTerm, setSearchTerm] = useState("")
   const [openProductModal, setOpenProductModal] = useState(false)
   const [produtos, setProdutos] = useState([])
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [searchOptions, setSearchOptions] = useState([])
-  const [carrinhoItems, setCarrinhoItems] = useState([])
+  const [cartItemCount, setCartItemCount] = useState(0) // Novo estado para a contagem do carrinho
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
 
-  
+  // Efeito para buscar TODOS os produtos e a contagem inicial do carrinho na montagem do componente
   useEffect(() => {
-    const fetchVendas = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await listarVendas()
-        if (response.data) {
-          setProdutos(response.data)
-          const codigos = response.data.map((item) => item.id || "")
-          setSearchOptions([...new Set(codigos)].filter(Boolean))
+        // Buscar todos os produtos
+        const productsResponse = await listarProdutos()
+        if (productsResponse.sucesso && productsResponse.produtos) {
+          setProdutos(productsResponse.produtos)
+          const options = productsResponse.produtos.flatMap(p => [
+            p.id?.toString(),
+            p.descricao,
+            p.marca,
+            p.genero
+          ]).filter(Boolean);
+          setSearchOptions([...new Set(options)]);
+        } else {
+          console.error("Erro ao buscar produtos:", productsResponse.mensagem)
+        }
+
+        // Buscar a contagem inicial do carrinho
+        const cartResponse = await listarCarrinho()
+        if (cartResponse.sucesso && cartResponse.carrinho) {
+          setCartItemCount(cartResponse.carrinho.totalItens)
+        } else {
+          console.error("Erro ao buscar contagem do carrinho:", cartResponse.mensagem)
         }
       } catch (error) {
-        console.error("Erro ao buscar vendas:", error)
+        console.error("Erro ao carregar dados iniciais:", error)
       }
     }
 
-    fetchVendas()
-  }, [])
-  useEffect(() => {
-    const buscarProduto = async () => {
-      if (!searchTerm) return
-
-      try {
-        const response = await buscarVendaPorId(searchTerm)
-        if (response.data) {
-          setProdutos([response.data])
-        }
-      } catch (error) {
-        console.error("Erro ao buscar produto:", error)
-      }
-    }
-
-    if (searchTerm) {
-      buscarProduto()
-    }
-  }, [searchTerm])
+    fetchInitialData()
+  }, []) // Array de dependências vazio para rodar apenas uma vez na montagem
 
   const handleOpenProductModal = (produto) => {
     setProdutoSelecionado(produto)
@@ -98,357 +98,459 @@ export default function VendasPage() {
     setOpenProductModal(false)
   }
 
-  const handleGoToCart = () => {
+  // Função para adicionar ao carrinho e navegar para a página do carrinho
+  const handleGoToCart = async () => {
     if (produtoSelecionado) {
-      // Adicionar ao carrinho
-      setCarrinhoItems((prev) => [...prev, { ...produtoSelecionado, quantidade: 1 }])
+      try {
+        const result = await adicionarAoCarrinho(produtoSelecionado, 1)
+        if (result.sucesso) {
+          console.log("Produto adicionado ao carrinho com sucesso!", result.carrinho)
+          setOpenProductModal(false)
+          setCartItemCount(result.carrinho.totalItens) // Atualiza a contagem
+          router.push("/vendas/carrinho")
+        } else {
+          console.error("Erro ao adicionar produto ao carrinho:", result.mensagem)
+          alert(`Erro ao adicionar produto ao carrinho: ${result.mensagem}`)
+        }
+      } catch (error) {
+        console.error("Erro inesperado ao adicionar produto ao carrinho:", error)
+        alert("Ocorreu um erro inesperado ao adicionar o produto ao carrinho.")
+      }
+    } else {
+      router.push("/vendas/carrinho")
     }
-    setOpenProductModal(false)
+  }
+
+  // Função para adicionar ao carrinho (ícone na tabela)
+  const handleAddToCart = async (produto) => {
+    try {
+      const result = await adicionarAoCarrinho(produto, 1)
+      if (result.sucesso) {
+        console.log("Produto adicionado ao carrinho com sucesso!", result.carrinho)
+        setCartItemCount(result.carrinho.totalItens) // Atualiza a contagem
+        alert(`"${produto.descricao}" adicionado ao carrinho!`)
+      } else {
+        console.error("Erro ao adicionar produto ao carrinho:", result.mensagem)
+        alert(`Erro ao adicionar produto ao carrinho: ${result.mensagem}`)
+      }
+    } catch (error) {
+      console.error("Erro inesperado ao adicionar produto ao carrinho:", error)
+      alert("Ocorreu um erro inesperado ao adicionar o produto ao carrinho.")
+    }
+  }
+
+  // Nova função para navegar diretamente para a página do carrinho
+  const handleNavigateToCart = () => {
     router.push("/vendas/carrinho")
   }
 
-  const handleAddToCart = (produto) => {
-    setCarrinhoItems((prev) => [...prev, { ...produto, quantidade: 1 }])
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage)
   }
 
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(Number.parseInt(event.target.value, 10))
+    setPage(0)
+  }
+
+  const filteredProdutos = produtos.filter((produto) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      produto.id?.toString().toLowerCase().includes(query) ||
+      produto.descricao?.toLowerCase().includes(query) ||
+      produto.marca?.toLowerCase().includes(query) ||
+      produto.genero?.toLowerCase().includes(query)
+    );
+  });
+
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#a8e1ff" }}>
-      {/* Importando o componente Sidebar */}
+    <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}> {/* Cor de fundo */}
       <Sidebar />
 
-      {/* Main Content */}
-      <Box sx={{ ml: "244px", flex: 1, p: 2, pt: 4 }}>
-        {/* Header - Moved down */}
+      {/* Botão do Carrinho no canto superior direito */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 72, // Ajustado para mover mais para baixo
+          right: 140, // Ajustado para mover mais para a esquerda
+          zIndex: 1000,
+        }}
+      >
+        <IconButton
+          onClick={handleNavigateToCart}
+          sx={{
+            bgcolor: '#FADADD', // Cor rosa padrão
+            color: '#333', // Cor do ícone
+            '&:hover': {
+              bgcolor: '#ffb6c1', // Cor rosa mais clara ao passar o mouse
+            },
+            borderRadius: '50%', // Botão redondo
+            width: 56, // Largura fixa
+            height: 56, // Altura fixa
+            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Sombra para destaque
+          }}
+        >
+          <Badge badgeContent={cartItemCount} color="error"> {/* Badge para a contagem */}
+            <ShoppingCartIcon sx={{ fontSize: 30 }} />
+          </Badge>
+        </IconButton>
+      </Box>
+
+      <Box
+        sx={{
+          flex: 1,
+          marginLeft: { xs: 0, sm: "290px" }, // Ajuste para a sidebar
+          maxHeight: "1000px",
+          overflow: "auto",
+          backgroundColor: "#9AE4FF", // Cor de fundo
+          paddingTop: "3rem",
+          paddingX: { xs: "1rem", sm: "2rem" },
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        {/* Header - Ajustado para o padrão de Fornecedores */}
         <Box
           sx={{
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            mb: 4,
-            px: 1,
-            mt: 2,
+            justifyContent: "center",
+            marginBottom: "80px", // Espaçamento abaixo do título
           }}
         >
-          <IconButton onClick={() => router.back()} sx={{ color: "#333", p: 1 }}>
-            <ArrowBackIcon />
-          </IconButton>
           <Typography
-            variant="h5"
+            variant="h4" // Tamanho do título
             sx={{
-              color: "#333",
-              fontWeight: 700,
-              position: "absolute",
-              left: "55%",
-              transform: "translateX(-50%)",
-              fontSize: "3rem",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              fontWeight: "bold", // Negrito
+              fontSize: "50px", // Tamanho da fonte
+              color: "#000000", // Cor do texto
             }}
           >
             Vendas
           </Typography>
-          <IconButton sx={{ color: "#333", p: 1 }}>
-            <HomeIcon />
-          </IconButton>
         </Box>
 
-        {/* Container to center and reduce width */}
-        <Container maxWidth="md" sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          {/* Search Bar - New Implementation */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              marginBottom: "30px",
-              width: "125%",
+        {/* Search Bar - Ajustado para o padrão de Fornecedores */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: "30px",
+            width: "100%",
+          }}
+        >
+          <Autocomplete
+            freeSolo
+            options={searchOptions}
+            value={searchQuery}
+            onChange={(event, newValue) => {
+              setSearchQuery(newValue || "")
             }}
-          >
-            <Autocomplete
-              freeSolo
-              options={searchOptions}
-              value={search}
-              onChange={(event, newValue) => {
-                setSearch(newValue || "")
-                setSearchTerm(newValue || "")
-                setSearchQuery(newValue || "")
-              }}
-              onInputChange={(event, newValue) => {
-                setSearch(newValue || "")
-                setSearchTerm(newValue || "")
-                setSearchQuery(newValue || "")
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Pesquisar código"
-                  variant="outlined"
-                  color="primary"
-                  size="medium"
-                  InputProps={{
-                    ...params.InputProps,
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    width: "100%",
-                    maxWidth: "1800px",
+            onInputChange={(event, newValue) => {
+              setSearchQuery(newValue || "")
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Pesquisar produtos por ID, descrição, marca ou gênero"
+                variant="outlined"
+                size="medium"
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    height: "60px",
+                    display: "flex",
+                    alignItems: "center",
+                    pl: 1,
+                  },
+                }}
+                sx={{
+                  width: "100%",
+                  maxWidth: "1800px",
+                  backgroundColor: "#F5F5F5",
+                  marginBottom: "50px",
+                  marginTop: "50px",
+                  borderRadius: "10px",
+                  "& .MuiOutlinedInput-root": {
                     backgroundColor: "#F5F5F5",
-                    marginBottom: "50px",
-                    marginTop: "50px",
-                    "& .MuiOutlinedInput-root": {
-                      backgroundColor: "#F5F5F5",
-                      color: "#000000",
-                      height: "80px",
-                      "& fieldset": {
-                        borderColor: "#CCCCCC",
-                      },
-                      "&:hover fieldset": {
-                        borderColor: "#00509E",
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "#00509E",
-                      },
-                      boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+                    color: "#000000",
+                    borderRadius: "10px",
+                    "& fieldset": {
+                      borderColor: "#CCCCCC",
                     },
-                    "& .MuiInputBase-input": {
-                      color: "#000000",
-                      padding: "0 20px",
-                      fontSize: "18px",
+                    "&:hover fieldset": {
+                      borderColor: "#00509E",
                     },
-                    "& .MuiInputLabel-root": {
-                      fontSize: "20px",
-                      color: "#000000",
-                      transform: "translate(20px, 28px)",
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#00509E",
                     },
-                    "& .MuiInputLabel-root.Mui-focused": {
-                      color: "#00509E",
-                    },
-                    "& .MuiInputLabel-shrink": {
-                      transform: "translate(20px, -6px) scale(0.75)",
-                    },
-                  }}
-                />
-              )}
-              sx={{
-                width: "100%",
-                maxWidth: "1800px",
-              }}
-            />
-          </Box>
-
-          {/* Products Section - Reduced width */}
-          <Card
+                    boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
+                  },
+                  "& .MuiInputBase-input": {
+                    padding: "14px 20px",
+                    fontSize: "18px",
+                  },
+                }}
+              />
+            )}
             sx={{
-              borderRadius: 4,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-              bgcolor: "#f8f9fa",
-              overflow: "hidden",
-              p: 0,
-              width: "125%",
+              width: "100%",
+              maxWidth: "1800px",
+            }}
+          />
+        </Box>
+
+        {/* Products Table - Ajustado para o padrão de Fornecedores */}
+        <Card
+          sx={{
+            padding: "20px",
+            bgcolor: "white",
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            borderRadius: "25px",
+            backgroundColor: "#F5F5F5",
+            width: "100%",
+            margin: "0 auto", // Centraliza o card
+            border: "2px solid #B0B0B0", // Borda do card
+          }}
+        >
+          <TableContainer
+            sx={{
+              maxHeight: "600px",
+              borderRadius: "10px",
+              overflow: "auto",
+              backgroundColor: "#F5F5F5",
+              width: "100%",
             }}
           >
-            <CardContent sx={{ p: 0 }}>
-              {/* Table */}
-              <Table>
-                <TableHead>
-                  <TableRow
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell
+                    align="center"
                     sx={{
-                      bgcolor: "#ffccd5",
-                      height: "70px",
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD", // Cor de fundo rosa
+                      borderRight: "2px solid #F5F5F5", // Linha branca entre colunas
                     }}
                   >
-                    <TableCell
-                      sx={{
-                        color: "#666",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        p: 1,
-                        pl: 2,
-                        borderBottom: "none",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      Imagem
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#666",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        p: 1,
-                        borderBottom: "none",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      Descrição
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#666",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        p: 1,
-                        borderBottom: "none",
-                        textAlign: "center",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      Estado de conservação
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#666",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        p: 1,
-                        borderBottom: "none",
-                        textAlign: "center",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      Valor
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#666",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        p: 1,
-                        borderBottom: "none",
-                        textAlign: "center",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      Código do Produto
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#666",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        p: 1,
-                        borderBottom: "none",
-                        textAlign: "center",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      Lote
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "#666",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        p: 1,
-                        borderBottom: "none",
-                        textAlign: "center",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      Ações
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {produtos.length > 0 ? (
-                    produtos.map((produto, index) => (
-                      <TableRow key={index} sx={{ bgcolor: "white" }}>
-                        <TableCell
-                          sx={{
-                            p: 1,
-                            pl: 2,
-                            borderBottom: "none",
-                          }}
-                        >
-                          {/* Placeholder for image */}
-                          <Box sx={{ width: 40, height: 40, bgcolor: "#f5f5f5", borderRadius: 1 }}></Box>
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontSize: "0.85rem",
-                            color: "#555",
-                            p: 1,
-                            borderBottom: "none",
-                          }}
-                        >
-                          {produto.descricao}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontSize: "0.85rem",
-                            color: "#555",
-                            p: 1,
-                            textAlign: "center",
-                            borderBottom: "none",
-                          }}
-                        >
-                          {produto.estadoConservacao}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontSize: "0.85rem",
-                            color: "#555",
-                            p: 1,
-                            textAlign: "center",
-                            borderBottom: "none",
-                          }}
-                        >
-                          R$ {produto.preco ? produto.preco.toFixed(2).replace(".", ",") : "0,00"}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontSize: "0.85rem",
-                            color: "#555",
-                            p: 1,
-                            textAlign: "center",
-                            borderBottom: "none",
-                          }}
-                        >
-                          {produto.id}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            fontSize: "0.85rem",
-                            color: "#555",
-                            p: 1,
-                            textAlign: "center",
-                            borderBottom: "none",
-                          }}
-                        >
-                          {produto.lote || "-"}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            p: 1,
-                            textAlign: "center",
-                            borderBottom: "none",
-                          }}
-                        >
-                          <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleOpenProductModal(produto)}>
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => handleAddToCart(produto)}>
-                              <ShoppingCartIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow sx={{ bgcolor: "white" }}>
-                      <TableCell colSpan={7} sx={{ textAlign: "center", py: 4 }}>
-                        Nenhum produto encontrado
+                    ID
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Descrição
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Marca
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Tamanho
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Gênero
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Estado
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Quantidade
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Valor
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                    }}
+                  >
+                    Ações
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredProdutos.length > 0 ? (
+                  filteredProdutos.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((produto, index) => (
+                    <TableRow key={index}>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        {produto.id}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        {produto.descricao}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        {produto.marca || "-"}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        {produto.tamanho || "-"}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        {produto.genero || "-"}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        {produto.estadoConservacao}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        {produto.quantidade || 1}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                        }}
+                      >
+                        R$ {produto.preco ? produto.preco.toFixed(2).replace(".", ",") : "0,00"}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 1,
+                          padding: "8px",
+                          minWidth: "150px",
+                        }}
+                      >
+                        <IconButton onClick={() => handleOpenProductModal(produto)} sx={{ color: "#00509E" }}>
+                          <VisibilityIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleAddToCart(produto)} sx={{ color: "#00509E" }}>
+                          <ShoppingCartIcon />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </Container>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={9} sx={{ textAlign: "center", py: 4 }}>
+                      Nenhum produto encontrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          <TablePagination
+            component="div"
+            count={filteredProdutos.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25]}
+            labelRowsPerPage="Linhas por página:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+          />
+        </Card>
       </Box>
 
       {/* Modal de Visualização do Produto */}
@@ -468,7 +570,7 @@ export default function VendasPage() {
           <>
             <DialogTitle
               sx={{
-                bgcolor: "#ffccd5",
+                bgcolor: "#FADADD",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -533,7 +635,7 @@ export default function VendasPage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <QrCodeIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Código:</strong> {produtoSelecionado.id}
+                          <strong>ID:</strong> {produtoSelecionado.id}
                         </Typography>
                       </Box>
                     </Grid>
@@ -553,6 +655,14 @@ export default function VendasPage() {
                         </Typography>
                       </Box>
                     </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <InventoryIcon sx={{ color: "#666", mr: 1 }} />
+                        <Typography variant="body1">
+                          <strong>Quantidade:</strong> {produtoSelecionado.quantidade || 1}
+                        </Typography>
+                      </Box>
+                    </Grid>
                   </Grid>
 
                   <Divider sx={{ my: 2 }} />
@@ -564,7 +674,7 @@ export default function VendasPage() {
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Marca:</strong> {produtoSelecionado.marca}
+                        <strong>Marca:</strong> {produtoSelecionado.marca || "-"}
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
@@ -603,7 +713,7 @@ export default function VendasPage() {
                   borderRadius: 2,
                   px: 3,
                   py: 1,
-                  bgcolor: "#ffccd5",
+                  bgcolor: "#FADADD",
                   color: "#333",
                   fontWeight: 600,
                   "&:hover": {
