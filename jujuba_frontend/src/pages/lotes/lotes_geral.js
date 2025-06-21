@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, forwardRef } from "react"
 import {
   Box,
   Card,
@@ -20,11 +20,12 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   Snackbar,
   Alert,
   CircularProgress,
+  Avatar,
+  Slide,
 } from "@mui/material"
 import Sidebar from "../../components/sidebar"
 import EditIcon from "@mui/icons-material/Edit"
@@ -32,11 +33,18 @@ import DeleteIcon from "@mui/icons-material/Delete"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import SearchIcon from "@mui/icons-material/Search"
 import { useRouter } from "next/navigation"
+import WarningAmberIcon from "@mui/icons-material/WarningAmber"
+import CloseIcon from "@mui/icons-material/Close"
 
 // Importando as funções da API
 import { getAllLotes, deletarLote } from "../api/lotes"
 
-const EstoquePage = () => {
+// Transição personalizada para o modal
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />
+})
+
+const LotePage = () => {
   const [lotes, setLotes] = useState([])
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
@@ -130,7 +138,7 @@ const EstoquePage = () => {
   const handleChangePage = (event, newPage) => setPage(newPage)
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10))
+    setRowsPerPage(Number.parseInt(event.target.value, 10))
     setPage(0)
   }
 
@@ -341,59 +349,57 @@ const EstoquePage = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  lotesFiltrados
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((lote) => (
-                      <TableRow key={lote.id}>
-                        <TableCell
-                          align="center"
-                          sx={{
-                            fontSize: "18px",
-                            padding: { xs: "8px 4px", sm: "16px 8px" },
-                          }}
-                        >
-                          {lote.numero}
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{
-                            fontSize: "18px",
-                            padding: { xs: "8px 4px", sm: "16px 8px" },
-                          }}
-                        >
-                          {new Date(lote.data).toLocaleDateString("pt-BR")}
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{
-                            fontSize: "18px",
-                            padding: { xs: "8px 4px", sm: "16px 8px" },
-                          }}
-                        >
-                          {lote.fornecedora}
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            gap: 1,
-                            padding: "8px",
-                          }}
-                        >
-                          <IconButton onClick={() => handleNavigateToView(lote)} sx={{ color: "#00509E" }}>
-                            <VisibilityIcon />
-                          </IconButton>
-                          <IconButton onClick={() => handleNavigateToEdit(lote.id)} sx={{ color: "#00509E" }}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton onClick={() => handleDeleteClick(lote.id)} sx={{ color: "#d32f2f" }}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                  lotesFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((lote) => (
+                    <TableRow key={lote.id}>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          fontSize: "18px",
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                        }}
+                      >
+                        {lote.numero}
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          fontSize: "18px",
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                        }}
+                      >
+                        {new Date(lote.data).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          fontSize: "18px",
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                        }}
+                      >
+                        {lote.fornecedora}
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 1,
+                          padding: "8px",
+                        }}
+                      >
+                        <IconButton onClick={() => handleNavigateToView(lote)} sx={{ color: "#00509E" }}>
+                          <VisibilityIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleNavigateToEdit(lote.id)} sx={{ color: "#00509E" }}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleDeleteClick(lote.id)} sx={{ color: "#d32f2f" }}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -430,23 +436,198 @@ const EstoquePage = () => {
           </Button>
         </Box>
 
+        {/* Modal de Confirmação de Exclusão */}
         <Dialog
           open={openDialog}
+          TransitionComponent={Transition}
+          keepMounted
           onClose={handleCancelDelete}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: "20px",
+              background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+              boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+              overflow: "visible",
+            },
+          }}
         >
-          <DialogTitle id="alert-dialog-title">{"Confirmar exclusão"}</DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              Tem certeza que deseja excluir este lote? Esta ação não pode ser desfeita.
-            </DialogContentText>
+          <DialogTitle
+            sx={{
+              textAlign: "center",
+              pb: 2,
+              pt: 4,
+              position: "relative",
+            }}
+          >
+            <IconButton
+              onClick={handleCancelDelete}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                color: "#666",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.1)",
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 80,
+                  height: 80,
+                  backgroundColor: "#ff5722",
+                  boxShadow: "0px 8px 20px rgba(255, 87, 34, 0.3)",
+                }}
+              >
+                <WarningAmberIcon sx={{ fontSize: 40, color: "white" }} />
+              </Avatar>
+
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#333",
+                  textAlign: "center",
+                }}
+              >
+                Confirmar Exclusão
+              </Typography>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ textAlign: "center", px: 4, pb: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  backgroundColor: "rgba(255, 255, 255, 0.7)",
+                  padding: "16px 24px",
+                  borderRadius: "15px",
+                  boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+                  border: "2px solid rgba(154, 228, 255, 0.5)",
+                }}
+              >
+                <Avatar
+                  sx={{
+                    backgroundColor: "#9AE4FF",
+                    width: 50,
+                    height: 50,
+                  }}
+                >
+                  <Typography sx={{ fontWeight: "bold", color: "#333" }}>L</Typography>
+                </Avatar>
+                <Box sx={{ textAlign: "left" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: "bold",
+                      color: "#333",
+                      mb: 0.5,
+                    }}
+                  >
+                    Lote L{loteToDelete}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "#666",
+                      fontSize: "14px",
+                    }}
+                  >
+                    ID: {loteToDelete}
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Typography
+                variant="body1"
+                sx={{
+                  color: "#555",
+                  fontSize: "18px",
+                  lineHeight: 1.6,
+                  maxWidth: "400px",
+                }}
+              >
+                Tem certeza que deseja excluir este lote?
+                <br />
+                <strong>Esta ação não pode ser desfeita.</strong>
+              </Typography>
+            </Box>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCancelDelete} color="primary">
+
+          <DialogActions
+            sx={{
+              justifyContent: "center",
+              gap: 2,
+              px: 4,
+              pb: 4,
+            }}
+          >
+            <Button
+              onClick={handleCancelDelete}
+              sx={{
+                backgroundColor: "#9AE4FF",
+                color: "#333",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#7DD3FC",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleConfirmDelete} color="error" autoFocus>
+
+            <Button
+              onClick={handleConfirmDelete}
+              sx={{
+                backgroundColor: "#ff5722",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(255, 87, 34, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#e64a19",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(255, 87, 34, 0.6)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
               Excluir
             </Button>
           </DialogActions>
@@ -462,4 +643,4 @@ const EstoquePage = () => {
   )
 }
 
-export default EstoquePage
+export default LotePage

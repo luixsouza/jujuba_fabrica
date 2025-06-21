@@ -5,7 +5,7 @@ import { Box, Button, Paper, Typography, Grid, IconButton, CircularProgress } fr
 import { ArrowBack, Home, Edit } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
 import { useRouter, useSearchParams } from "next/navigation"
-import { buscarProdutoPorId } from "../api/produtos"
+import { ProdutoService } from "../services/produto-service"
 
 export default function ProdutoVisualizacao() {
   const [produto, setProduto] = useState(null)
@@ -25,12 +25,12 @@ export default function ProdutoVisualizacao() {
 
       try {
         setLoading(true)
-        const response = await buscarProdutoPorId(id)
+        const produtoData = await ProdutoService.getProdutoById(id)
 
-        if (response.sucesso) {
-          setProduto(response.produto)
+        if (produtoData) {
+          setProduto(produtoData)
         } else {
-          setError(response.mensagem || "Erro ao carregar produto")
+          setError("Produto não encontrado")
         }
       } catch (err) {
         console.error("Erro ao buscar produto:", err)
@@ -250,7 +250,7 @@ export default function ProdutoVisualizacao() {
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                ID da Fornecedora:
+                Fornecedora:
               </Typography>
               <Paper
                 sx={{
@@ -260,12 +260,12 @@ export default function ProdutoVisualizacao() {
                   mb: 2,
                 }}
               >
-                <Typography>{produto.fornecedoraId || "N/A"}</Typography>
+                <Typography>{produto.lote?.fornecedora?.nome || "N/A"}</Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                Imagem URL:
+                Quantidade:
               </Typography>
               <Paper
                 sx={{
@@ -275,49 +275,25 @@ export default function ProdutoVisualizacao() {
                   mb: 2,
                 }}
               >
-                <Typography
-                  sx={{
-                    wordBreak: "break-all",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  {produto.imagemUrl || "N/A"}
-                </Typography>
+                <Typography>{produto.quantidade || "N/A"}</Typography>
               </Paper>
             </Grid>
-          </Grid>
-
-          {/* Display product image if available */}
-          {produto.imagemUrl && (
-            <Box sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6}>
               <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                Imagem do Produto:
+                Gênero:
               </Typography>
               <Paper
                 sx={{
                   p: 2,
                   borderRadius: "15px",
                   backgroundColor: "#f8f9fa",
-                  display: "flex",
-                  justifyContent: "center",
+                  mb: 2,
                 }}
               >
-                <img
-                  src={produto.imagemUrl || "/placeholder.svg"}
-                  alt={produto.descricao || "Produto"}
-                  style={{
-                    maxWidth: "300px",
-                    maxHeight: "300px",
-                    objectFit: "contain",
-                    borderRadius: "10px",
-                  }}
-                  onError={(e) => {
-                    e.target.style.display = "none"
-                  }}
-                />
+                <Typography>{produto.genero || "N/A"}</Typography>
               </Paper>
-            </Box>
-          )}
+            </Grid>
+          </Grid>
 
           <Box
             sx={{

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, forwardRef } from "react"
 import {
   Box,
   Card,
@@ -20,20 +20,27 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   Snackbar,
   Alert,
   CircularProgress,
+  Avatar,
+  Slide,
 } from "@mui/material"
+import WarningAmberIcon from "@mui/icons-material/WarningAmber"
+import CloseIcon from "@mui/icons-material/Close"
 import Sidebar from "../../components/sidebar"
 import EditIcon from "@mui/icons-material/Edit"
 import DeleteIcon from "@mui/icons-material/Delete"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import SearchIcon from "@mui/icons-material/Search"
 import { useRouter } from "next/navigation"
+import { getAllLotes, deletarLote, testConnection } from "../api/lotes"
 
-import { getAllLotes, deleteLote } from "../api/lotes"
+// Transição personalizada para o modal
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />
+})
 
 const EstoquePage = () => {
   const [lotes, setLotes] = useState([])
@@ -52,6 +59,23 @@ const EstoquePage = () => {
   const router = useRouter()
 
   useEffect(() => {
+    // Verificar conexão primeiro
+    const checkConnection = async () => {
+      try {
+        const connectionTest = await testConnection()
+        if (!connectionTest.sucesso) {
+          setSnackbar({
+            open: true,
+            message: "⚠️ Problema de conexão com o servidor. Verifique se o backend está rodando na porta 8080.",
+            severity: "warning",
+          })
+        }
+      } catch (error) {
+        console.log("Teste de conexão falhou:", error)
+      }
+    }
+
+    checkConnection()
     fetchLotes()
   }, [])
 
@@ -94,19 +118,37 @@ const EstoquePage = () => {
   }
 
   const handleConfirmDelete = async () => {
+    if (!loteToDelete) return
+
     try {
       setLoading(true)
-      const response = await deleteLote(loteToDelete)
 
-      if (response.sucesso) {
+      console.log("Iniciando exclusão do lote:", loteToDelete)
+
+      const response = await deletarLote(loteToDelete)
+      console.log("Resposta da exclusão:", response)
+
+      if (response && response.sucesso) {
         setLotes((prev) => prev.filter((lote) => lote.id !== loteToDelete))
-        setSnackbar({ open: true, message: response.mensagem, severity: "success" })
+        setSnackbar({
+          open: true,
+          message: response.mensagem || "Lote excluído com sucesso",
+          severity: "success",
+        })
       } else {
-        setSnackbar({ open: true, message: response.mensagem || "Erro ao excluir lote", severity: "error" })
+        setSnackbar({
+          open: true,
+          message: response?.mensagem || "Erro desconhecido ao excluir lote",
+          severity: "error",
+        })
       }
     } catch (error) {
-      console.error("Erro ao excluir lote:", error)
-      setSnackbar({ open: true, message: "Falha ao excluir lote", severity: "error" })
+      console.error("Erro crítico ao excluir lote:", error)
+      setSnackbar({
+        open: true,
+        message: `Erro crítico: ${error.message}. Verifique o console para mais detalhes.`,
+        severity: "error",
+      })
     } finally {
       setLoading(false)
       setOpenDialog(false)
@@ -120,22 +162,25 @@ const EstoquePage = () => {
   }
 
   const handleNavigateToRegister = () => router.push("./cadastrar_lote")
-  const handleNavigateToView = (lote) => router.push(`./visualizar_lote?id=${lote.id}`)
-  const handleNavigateToEdit = (id) => router.push(`./editar_lote?id=${id}`)
+  const handleNavigateToView = (lote) => router.push(`./visualizar_produto?id=${lote.id}`)
+  const handleNavigateToEdit = (id) => router.push(`./editar_produto?id=${id}`)
 
   const handleChangePage = (event, newPage) => setPage(newPage)
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10))
+    setRowsPerPage(Number.parseInt(event.target.value, 10))
     setPage(0)
   }
 
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false })
 
-  const lotesFiltrados = useMemo(() =>
-    lotes.filter((lote) =>
-      lote.numero.toLowerCase().includes(search.toLowerCase()) ||
-      lote.fornecedora.toLowerCase().includes(search.toLowerCase())
-    ), [lotes, search]
+  const lotesFiltrados = useMemo(
+    () =>
+      lotes.filter(
+        (lote) =>
+          lote.numero.toLowerCase().includes(search.toLowerCase()) ||
+          lote.fornecedora.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [lotes, search],
   )
 
   const searchOptions = useMemo(() => [...new Set(lotes.map((lote) => lote.numero.toString()))], [lotes])
@@ -194,16 +239,200 @@ const EstoquePage = () => {
           </Button>
         </Box>
 
-        <Dialog open={openDialog} onClose={handleCancelDelete}>
-          <DialogTitle>Confirmar exclusão</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Tem certeza que deseja excluir este lote? Esta ação não pode ser desfeita.
-            </DialogContentText>
+        {/* Modal de Confirmação de Exclusão */}
+        <Dialog
+          open={openDialog}
+          TransitionComponent={Transition}
+          keepMounted
+          onClose={handleCancelDelete}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: "20px",
+              background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+              boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+              overflow: "visible",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              textAlign: "center",
+              pb: 2,
+              pt: 4,
+              position: "relative",
+            }}
+          >
+            <IconButton
+              onClick={handleCancelDelete}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                color: "#666",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.1)",
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 80,
+                  height: 80,
+                  backgroundColor: "#ff5722",
+                  boxShadow: "0px 8px 20px rgba(255, 87, 34, 0.3)",
+                }}
+              >
+                <WarningAmberIcon sx={{ fontSize: 40, color: "white" }} />
+              </Avatar>
+
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#333",
+                  textAlign: "center",
+                }}
+              >
+                Confirmar Exclusão
+              </Typography>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ textAlign: "center", px: 4, pb: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  backgroundColor: "rgba(255, 255, 255, 0.7)",
+                  padding: "16px 24px",
+                  borderRadius: "15px",
+                  boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+                  border: "2px solid rgba(154, 228, 255, 0.5)",
+                }}
+              >
+                <Avatar
+                  sx={{
+                    backgroundColor: "#9AE4FF",
+                    width: 50,
+                    height: 50,
+                  }}
+                >
+                  <Typography sx={{ fontWeight: "bold", color: "#333" }}>L</Typography>
+                </Avatar>
+                <Box sx={{ textAlign: "left" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: "bold",
+                      color: "#333",
+                      mb: 0.5,
+                    }}
+                  >
+                    Lote L{loteToDelete}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "#666",
+                      fontSize: "14px",
+                    }}
+                  >
+                    ID: {loteToDelete}
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Typography
+                variant="body1"
+                sx={{
+                  color: "#555",
+                  fontSize: "18px",
+                  lineHeight: 1.6,
+                  maxWidth: "400px",
+                }}
+              >
+                Tem certeza que deseja excluir este lote?
+                <br />
+                <strong>Esta ação não pode ser desfeita.</strong>
+              </Typography>
+            </Box>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCancelDelete}>Cancelar</Button>
-            <Button onClick={handleConfirmDelete} color="error">Excluir</Button>
+
+          <DialogActions
+            sx={{
+              justifyContent: "center",
+              gap: 2,
+              px: 4,
+              pb: 4,
+            }}
+          >
+            <Button
+              onClick={handleCancelDelete}
+              sx={{
+                backgroundColor: "#9AE4FF",
+                color: "#333",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#7DD3FC",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              onClick={handleConfirmDelete}
+              sx={{
+                backgroundColor: "#ff5722",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(255, 87, 34, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#e64a19",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(255, 87, 34, 0.6)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
+              Excluir
+            </Button>
           </DialogActions>
         </Dialog>
 
@@ -273,7 +502,17 @@ const SearchField = ({ search, setSearch, options }) => (
   </Box>
 )
 
-const LotesTable = ({ lotesFiltrados, page, rowsPerPage, handleChangePage, handleChangeRowsPerPage, handleDeleteClick, handleNavigateToView, handleNavigateToEdit, loading }) => (
+const LotesTable = ({
+  lotesFiltrados,
+  page,
+  rowsPerPage,
+  handleChangePage,
+  handleChangeRowsPerPage,
+  handleDeleteClick,
+  handleNavigateToView,
+  handleNavigateToEdit,
+  loading,
+}) => (
   <Card
     sx={{
       padding: "20px",
@@ -373,4 +612,4 @@ const LotesTable = ({ lotesFiltrados, page, rowsPerPage, handleChangePage, handl
   </Card>
 )
 
-export default EstoquePage;
+export default EstoquePage

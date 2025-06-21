@@ -16,15 +16,22 @@ import {
   Grid,
   Paper,
   IconButton,
+  Chip,
+  Avatar,
 } from "@mui/material"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import HomeIcon from "@mui/icons-material/Home"
 import EditIcon from "@mui/icons-material/Edit"
+import InventoryIcon from "@mui/icons-material/Inventory"
+import BusinessIcon from "@mui/icons-material/Business"
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney"
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import { useSearchParams, useRouter } from "next/navigation"
 import Sidebar from "../../components/sidebar"
 
 // Importando as funções da API
-import { getLoteById, getAllLotes } from "../api/lotes"
+import { getLoteById } from "../api/lotes"
 
 export default function VisualizarLotePage() {
   const searchParams = useSearchParams()
@@ -106,7 +113,23 @@ export default function VisualizarLotePage() {
             height: "100vh",
           }}
         >
-          <CircularProgress size={60} sx={{ color: "#FADADD" }} />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 3,
+              padding: 4,
+              backgroundColor: "rgba(255, 255, 255, 0.9)",
+              borderRadius: "20px",
+              boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <CircularProgress size={60} sx={{ color: "#FADADD" }} />
+            <Typography variant="h6" sx={{ color: "#333", fontWeight: "500" }}>
+              Carregando detalhes do lote...
+            </Typography>
+          </Box>
         </Box>
       </Box>
     )
@@ -127,22 +150,38 @@ export default function VisualizarLotePage() {
             height: "100vh",
           }}
         >
-          <Typography variant="h6" color="error" sx={{ marginBottom: 2 }}>
-            {error}
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={handleGoBack}
+          <Paper
             sx={{
-              backgroundColor: "#FADADD",
-              color: "black",
-              "&:hover": {
-                backgroundColor: "#F8BBD9",
-              },
+              padding: 4,
+              borderRadius: "20px",
+              textAlign: "center",
+              background: "linear-gradient(135deg, #FFE4E1 0%, #FADADD 100%)",
+              boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.2)",
             }}
           >
-            Voltar
-          </Button>
+            <Typography variant="h6" color="error" sx={{ marginBottom: 3, fontWeight: "bold" }}>
+              {error}
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={handleGoBack}
+              sx={{
+                backgroundColor: "#FADADD",
+                color: "black",
+                borderRadius: "25px",
+                padding: "12px 24px",
+                fontWeight: "bold",
+                "&:hover": {
+                  backgroundColor: "#F8BBD9",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(248, 187, 217, 0.6)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
+              Voltar
+            </Button>
+          </Paper>
         </Box>
       </Box>
     )
@@ -162,7 +201,9 @@ export default function VisualizarLotePage() {
             height: "100vh",
           }}
         >
-          <Typography variant="h6">Lote não encontrado</Typography>
+          <Typography variant="h6" sx={{ color: "#333", fontWeight: "500" }}>
+            Lote não encontrado
+          </Typography>
         </Box>
       </Box>
     )
@@ -176,7 +217,7 @@ export default function VisualizarLotePage() {
           flex: 1,
           marginLeft: "250px",
           padding: "20px",
-          marginTop: "50px",
+          marginTop: "20px",
         }}
       >
         {/* Header */}
@@ -185,81 +226,130 @@ export default function VisualizarLotePage() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "30px",
+            marginBottom: "40px",
+            padding: "20px 0",
           }}
         >
           <IconButton
             onClick={handleGoBack}
             sx={{
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
+              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.15)",
               "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.3)",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.2)",
               },
+              transition: "all 0.3s ease",
             }}
           >
-            <ArrowBackIcon />
+            <ArrowBackIcon sx={{ color: "#333" }} />
           </IconButton>
 
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: "bold",
-              fontSize: "50px",
-              color: "#000000",
-              textAlign: "center",
-            }}
-          >
-            VISUALIZAR LOTE
-          </Typography>
+          <Box sx={{ textAlign: "center" }}>
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: "bold",
+                fontSize: { xs: "2rem", md: "3rem" },
+                color: "#333",
+                textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
+                marginBottom: 1,
+              }}
+            >
+              VISUALIZAR LOTE
+            </Typography>
+            <Chip
+              label={loteInfo.numero}
+              sx={{
+                backgroundColor: "#FADADD",
+                color: "#333",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "8px 16px",
+                boxShadow: "0px 4px 12px rgba(250, 173, 221, 0.4)",
+              }}
+            />
+          </Box>
 
           <IconButton
             onClick={handleGoHome}
             sx={{
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
+             
+              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.15)",
               "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.3)",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.2)",
               },
+              transition: "all 0.3s ease",
             }}
           >
-            <HomeIcon />
+            <HomeIcon sx={{ color: "#333" }} />
           </IconButton>
         </Box>
 
         {/* Informações do Lote */}
         <Card
           sx={{
-            borderRadius: "20px",
-            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-            padding: "30px",
+            borderRadius: "25px",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 245, 0.95) 100%)",
+            boxShadow: "0px 15px 35px rgba(0, 0, 0, 0.1)",
+            padding: "40px",
             marginBottom: "30px",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
           }}
         >
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: "bold",
-              marginBottom: "20px",
-              color: "#000000",
-              textAlign: "center",
-            }}
-          >
-            Informações do Lote {loteInfo.numero}
-          </Typography>
+          <Box sx={{ textAlign: "center", marginBottom: "30px" }}>
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                backgroundColor: "#FADADD",
+                margin: "0 auto 16px",
+                boxShadow: "0px 8px 20px rgba(250, 173, 221, 0.3)",
+              }}
+            >
+              <InventoryIcon sx={{ fontSize: 40, color: "#333" }} />
+            </Avatar>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: "bold",
+                color: "#333",
+                marginBottom: 1,
+              }}
+            >
+              Informações do Lote {loteInfo.numero}
+            </Typography>
+            <Typography variant="body1" sx={{ color: "#666", fontSize: "18px" }}>
+              Detalhes completos do lote selecionado
+            </Typography>
+          </Box>
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Paper
                 sx={{
-                  padding: "20px",
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: "10px",
-                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                  padding: "24px",
+                  background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+                  borderRadius: "20px",
+                  boxShadow: "0px 8px 20px rgba(250, 173, 221, 0.2)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0px 12px 28px rgba(250, 173, 221, 0.3)",
+                  },
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: 1 }}>
-                  Número do Lote:
-                </Typography>
-                <Typography variant="body1" sx={{ fontSize: "18px" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, marginBottom: 2 }}>
+                  <Avatar sx={{ backgroundColor: "rgba(255, 255, 255, 0.8)", width: 40, height: 40 }}>
+                    <InventoryIcon sx={{ color: "#333", fontSize: 20 }} />
+                  </Avatar>
+                  <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
+                    Número do Lote
+                  </Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontSize: "24px", fontWeight: "bold", color: "#333" }}>
                   {loteInfo.numero}
                 </Typography>
               </Paper>
@@ -268,16 +358,27 @@ export default function VisualizarLotePage() {
             <Grid item xs={12} md={6}>
               <Paper
                 sx={{
-                  padding: "20px",
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: "10px",
-                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                  padding: "24px",
+                  background: "linear-gradient(135deg, #9AE4FF 0%, #B8E6FF 100%)",
+                  borderRadius: "20px",
+                  boxShadow: "0px 8px 20px rgba(154, 228, 255, 0.2)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0px 12px 28px rgba(154, 228, 255, 0.3)",
+                  },
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: 1 }}>
-                  Data de Criação:
-                </Typography>
-                <Typography variant="body1" sx={{ fontSize: "18px" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, marginBottom: 2 }}>
+                  <Avatar sx={{ backgroundColor: "rgba(255, 255, 255, 0.8)", width: 40, height: 40 }}>
+                    <CalendarTodayIcon sx={{ color: "#333", fontSize: 20 }} />
+                  </Avatar>
+                  <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
+                    Data de Criação
+                  </Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontSize: "24px", fontWeight: "bold", color: "#333" }}>
                   {loteInfo.data}
                 </Typography>
               </Paper>
@@ -286,16 +387,27 @@ export default function VisualizarLotePage() {
             <Grid item xs={12} md={6}>
               <Paper
                 sx={{
-                  padding: "20px",
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: "10px",
-                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                  padding: "24px",
+                  background: "linear-gradient(135deg, #E8F5E8 0%, #C8E6C9 100%)",
+                  borderRadius: "20px",
+                  boxShadow: "0px 8px 20px rgba(200, 230, 201, 0.2)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0px 12px 28px rgba(200, 230, 201, 0.3)",
+                  },
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: 1 }}>
-                  Fornecedora:
-                </Typography>
-                <Typography variant="body1" sx={{ fontSize: "18px" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, marginBottom: 2 }}>
+                  <Avatar sx={{ backgroundColor: "rgba(255, 255, 255, 0.8)", width: 40, height: 40 }}>
+                    <BusinessIcon sx={{ color: "#333", fontSize: 20 }} />
+                  </Avatar>
+                  <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
+                    Fornecedora
+                  </Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontSize: "24px", fontWeight: "bold", color: "#333" }}>
                   {loteInfo.fornecedora}
                 </Typography>
               </Paper>
@@ -304,16 +416,27 @@ export default function VisualizarLotePage() {
             <Grid item xs={12} md={6}>
               <Paper
                 sx={{
-                  padding: "20px",
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: "10px",
-                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                  padding: "24px",
+                  background: "linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)",
+                  borderRadius: "20px",
+                  boxShadow: "0px 8px 20px rgba(255, 224, 178, 0.2)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0px 12px 28px rgba(255, 224, 178, 0.3)",
+                  },
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: 1 }}>
-                  Total de Produtos:
-                </Typography>
-                <Typography variant="body1" sx={{ fontSize: "18px" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, marginBottom: 2 }}>
+                  <Avatar sx={{ backgroundColor: "rgba(255, 255, 255, 0.8)", width: 40, height: 40 }}>
+                    <InventoryIcon sx={{ color: "#333", fontSize: 20 }} />
+                  </Avatar>
+                  <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
+                    Total de Produtos
+                  </Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontSize: "24px", fontWeight: "bold", color: "#333" }}>
                   {loteInfo.totalProdutos}
                 </Typography>
               </Paper>
@@ -322,16 +445,27 @@ export default function VisualizarLotePage() {
             <Grid item xs={12} md={6}>
               <Paper
                 sx={{
-                  padding: "20px",
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: "10px",
-                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                  padding: "24px",
+                  background: "linear-gradient(135deg, #E8F5E8 0%, #A5D6A7 100%)",
+                  borderRadius: "20px",
+                  boxShadow: "0px 8px 20px rgba(165, 214, 167, 0.2)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0px 12px 28px rgba(165, 214, 167, 0.3)",
+                  },
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: 1 }}>
-                  Valor Total:
-                </Typography>
-                <Typography variant="body1" sx={{ fontSize: "18px", color: "#2E7D32" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, marginBottom: 2 }}>
+                  <Avatar sx={{ backgroundColor: "rgba(255, 255, 255, 0.8)", width: 40, height: 40 }}>
+                    <AttachMoneyIcon sx={{ color: "#2E7D32", fontSize: 20 }} />
+                  </Avatar>
+                  <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
+                    Valor Total
+                  </Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontSize: "24px", fontWeight: "bold", color: "#2E7D32" }}>
                   R$ {loteInfo.valorTotal.toFixed(2).replace(".", ",")}
                 </Typography>
               </Paper>
@@ -340,18 +474,36 @@ export default function VisualizarLotePage() {
             <Grid item xs={12} md={6}>
               <Paper
                 sx={{
-                  padding: "20px",
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: "10px",
-                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                  padding: "24px",
+                  background: "linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)",
+                  borderRadius: "20px",
+                  boxShadow: "0px 8px 20px rgba(187, 222, 251, 0.2)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0px 12px 28px rgba(187, 222, 251, 0.3)",
+                  },
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: 1 }}>
-                  Status:
-                </Typography>
-                <Typography variant="body1" sx={{ fontSize: "18px" }}>
-                  {loteInfo.status}
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, marginBottom: 2 }}>
+                  <Avatar sx={{ backgroundColor: "rgba(255, 255, 255, 0.8)", width: 40, height: 40 }}>
+                    <CheckCircleIcon sx={{ color: "#1976d2", fontSize: 20 }} />
+                  </Avatar>
+                  <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
+                    Status
+                  </Typography>
+                </Box>
+                <Chip
+                  label={loteInfo.status}
+                  sx={{
+                    backgroundColor: "#4CAF50",
+                    color: "white",
+                    fontWeight: "bold",
+                    fontSize: "16px",
+                    padding: "8px 16px",
+                  }}
+                />
               </Paper>
             </Grid>
           </Grid>
@@ -360,83 +512,115 @@ export default function VisualizarLotePage() {
         {/* Tabela de Produtos */}
         <Card
           sx={{
-            borderRadius: "20px",
-            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-            padding: "20px",
+            borderRadius: "25px",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 245, 0.95) 100%)",
+            boxShadow: "0px 15px 35px rgba(0, 0, 0, 0.1)",
+            padding: "30px",
             marginBottom: "30px",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
           }}
         >
-          <Typography
-            variant="h5"
+          <Box sx={{ textAlign: "center", marginBottom: "30px" }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: "bold",
+                color: "#333",
+                marginBottom: 1,
+              }}
+            >
+              Produtos do Lote
+            </Typography>
+            <Typography variant="body1" sx={{ color: "#666", fontSize: "18px" }}>
+              Lista completa de produtos incluídos neste lote
+            </Typography>
+          </Box>
+
+          <TableContainer
             sx={{
-              fontWeight: "bold",
-              marginBottom: "20px",
-              color: "#000000",
-              textAlign: "center",
+              borderRadius: "15px",
+              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.05)",
+              overflow: "hidden",
             }}
           >
-            Produtos do Lote
-          </Typography>
-
-          <TableContainer>
             <Table stickyHeader aria-label="produtos table">
               <TableHead>
                 <TableRow>
-                  <TableCell align="center" sx={{ fontWeight: "bold", fontSize: "18px", backgroundColor: "#FADADD" }}>
-                    ID
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", fontSize: "18px", backgroundColor: "#FADADD" }}>
-                    Descrição
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", fontSize: "18px", backgroundColor: "#FADADD" }}>
-                    Marca
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", fontSize: "18px", backgroundColor: "#FADADD" }}>
-                    Tamanho
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", fontSize: "18px", backgroundColor: "#FADADD" }}>
-                    Gênero
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", fontSize: "18px", backgroundColor: "#FADADD" }}>
-                    Estado
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", fontSize: "18px", backgroundColor: "#FADADD" }}>
-                    Quantidade
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", fontSize: "18px", backgroundColor: "#FADADD" }}>
-                    Preço Unitário
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", fontSize: "18px", backgroundColor: "#FADADD" }}>
-                    Subtotal
-                  </TableCell>
+                  {[
+                    "ID",
+                    "Descrição",
+                    "Marca",
+                    "Tamanho",
+                    "Gênero",
+                    "Estado",
+                    "Quantidade",
+                    "Preço Unitário",
+                    "Subtotal",
+                  ].map((header) => (
+                    <TableCell
+                      key={header}
+                      align="center"
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                        background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+                        color: "#333",
+                        borderBottom: "2px solid #FADADD",
+                        padding: "16px 8px",
+                      }}
+                    >
+                      {header}
+                    </TableCell>
+                  ))}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {produtos.length > 0 ? (
                   produtos.map((produto, index) => (
-                    <TableRow key={produto.id || index} hover>
-                      <TableCell align="center" sx={{ fontSize: "16px" }}>
+                    <TableRow
+                      key={produto.id || index}
+                      sx={{
+                        "&:hover": {
+                          backgroundColor: "rgba(250, 173, 221, 0.1)",
+                          transform: "scale(1.01)",
+                        },
+                        transition: "all 0.2s ease",
+                        "&:nth-of-type(even)": {
+                          backgroundColor: "rgba(245, 245, 245, 0.5)",
+                        },
+                      }}
+                    >
+                      <TableCell align="center" sx={{ fontSize: "14px", fontWeight: "bold", color: "#666" }}>
                         {produto.id}
                       </TableCell>
-                      <TableCell align="center" sx={{ fontSize: "16px" }}>
+                      <TableCell align="center" sx={{ fontSize: "14px", maxWidth: "200px" }}>
                         {produto.descricao || produto.nome || "Sem descrição"}
                       </TableCell>
-                      <TableCell align="center" sx={{ fontSize: "16px" }}>
+                      <TableCell align="center" sx={{ fontSize: "14px" }}>
                         {produto.marca || "Não informado"}
                       </TableCell>
-                      <TableCell align="center" sx={{ fontSize: "16px" }}>
+                      <TableCell align="center" sx={{ fontSize: "14px" }}>
                         {produto.tamanho || "Não informado"}
                       </TableCell>
-                      <TableCell align="center" sx={{ fontSize: "16px" }}>
+                      <TableCell align="center" sx={{ fontSize: "14px" }}>
                         {produto.genero || "Não informado"}
                       </TableCell>
-                      <TableCell align="center" sx={{ fontSize: "16px" }}>
-                        {produto.estadoConservacao || "Não informado"}
+                      <TableCell align="center" sx={{ fontSize: "14px" }}>
+                        <Chip
+                          label={produto.estadoConservacao || "Não informado"}
+                          size="small"
+                          sx={{
+                            backgroundColor: "#E3F2FD",
+                            color: "#1976d2",
+                            fontWeight: "500",
+                          }}
+                        />
                       </TableCell>
-                      <TableCell align="center" sx={{ fontSize: "16px" }}>
+                      <TableCell align="center" sx={{ fontSize: "14px", fontWeight: "bold" }}>
                         {produto.quantidade || 1}
                       </TableCell>
-                      <TableCell align="center" sx={{ fontSize: "16px" }}>
+                      <TableCell align="center" sx={{ fontSize: "14px", color: "#2E7D32", fontWeight: "500" }}>
                         R$ {(produto.preco || 0).toFixed(2).replace(".", ",")}
                       </TableCell>
                       <TableCell align="center" sx={{ fontSize: "16px", fontWeight: "bold", color: "#2E7D32" }}>
@@ -446,8 +630,13 @@ export default function VisualizarLotePage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ fontSize: "18px", padding: "40px" }}>
-                      Nenhum produto encontrado neste lote
+                    <TableCell colSpan={9} align="center" sx={{ fontSize: "18px", padding: "60px", color: "#666" }}>
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                        <InventoryIcon sx={{ fontSize: 48, color: "#ccc" }} />
+                        <Typography variant="h6" sx={{ color: "#666" }}>
+                          Nenhum produto encontrado neste lote
+                        </Typography>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 )}
@@ -457,28 +646,30 @@ export default function VisualizarLotePage() {
         </Card>
 
         {/* Botão de Editar */}
-        <Box sx={{ display: "flex", justifyContent: "center", marginTop: "30px" }}>
+        <Box sx={{ display: "flex", justifyContent: "center", marginTop: "40px", marginBottom: "40px" }}>
           <Button
             sx={{
-              backgroundColor: "#FADADD",
-              color: "black",
-              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-              border: "2px solid #FADADD",
+              background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+              color: "#333",
+              boxShadow: "0px 12px 24px rgba(250, 173, 221, 0.4)",
+              border: "2px solid rgba(255, 255, 255, 0.3)",
               fontWeight: "bold",
-              fontSize: "20px",
-              borderRadius: "60px",
-              padding: "10px 0",
-              width: "300px",
-              height: "50px",
+              fontSize: "18px",
+              borderRadius: "50px",
+              padding: "16px 48px",
+              minWidth: "280px",
+              height: "60px",
               textTransform: "none",
               "&:hover": {
-                backgroundColor: "#F8BBD9",
-                transform: "translateY(-2px)",
+                background: "linear-gradient(135deg, #F8BBD9 0%, #FADADD 100%)",
+                transform: "translateY(-4px)",
+                boxShadow: "0px 16px 32px rgba(250, 173, 221, 0.6)",
               },
+              transition: "all 0.3s ease",
             }}
             onClick={handleEditLote}
             variant="contained"
-            startIcon={<EditIcon />}
+            startIcon={<EditIcon sx={{ fontSize: 24 }} />}
           >
             Editar Lote
           </Button>
