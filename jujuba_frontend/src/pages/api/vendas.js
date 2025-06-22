@@ -120,10 +120,13 @@ export const listarVendasRealizadas = async () => { // Renomeado de listarVendas
     const response = await axios.get(`${BASE_URL}`);
     const vendas = response.data; // Isso é uma List<Venda> do backend
 
+    console.log("Dados brutos recebidos do backend:", vendas);
+
     const produtosVendidosFormatados = [];
     vendas.forEach(venda => {
-      if (venda.itensVendidos && Array.isArray(venda.itensVendidos)) {
-        venda.itensVendidos.forEach(item => {
+      // AQUI ESTÁ A CORREÇÃO: MUDAR 'itensVendidos' para 'itens'
+      if (venda.itens && Array.isArray(venda.itens)) {
+        venda.itens.forEach(item => {
           // Mapeia o item vendido para o formato esperado na tabela da VendasPage
           // Certifique-se de que 'item.produto' contém todos os campos necessários (marca, tamanho, genero, estadoConservacao)
           // Se o backend não retornar esses campos diretamente no 'item.produto', eles aparecerão como '-'
@@ -140,8 +143,12 @@ export const listarVendasRealizadas = async () => { // Renomeado de listarVendas
             dataVenda: venda.dataVenda, // Data da venda
           });
         });
+      } else {
+        console.warn(`Venda ID ${venda.id} não possui 'itens' ou 'itens' não é um array.`);
       }
     });
+
+    console.log("Produtos vendidos formatados para exibição:", produtosVendidosFormatados);
 
     return {
       sucesso: true,
@@ -149,10 +156,10 @@ export const listarVendasRealizadas = async () => { // Renomeado de listarVendas
       mensagem: "Histórico de vendas carregado com sucesso."
     };
   } catch (error) {
+    console.error("Erro na função listarVendasRealizadas:", error);
     return tratarErro(error);
   }
 };
-
 
 /**
  * Busca uma venda específica por ID.
