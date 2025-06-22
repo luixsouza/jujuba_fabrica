@@ -537,139 +537,142 @@ export default function VendasPage() {
         </Card>
       </Box>
 
-      {/* Modal de Visualização do Produto (mantido) */}
+      {/* Modal de Visualização do Produto (Design Padronizado) */}
       <Dialog
         open={openProductModal}
         onClose={handleCloseProductModal}
-        maxWidth="md"
+        maxWidth="sm" // Mantido 'sm' para um tamanho compacto e focado no produto
         fullWidth
         PaperProps={{
           sx: {
             borderRadius: 3,
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+            boxShadow: "0 12px 24px rgba(0, 0, 0, 0.25)", // Sombra mais pronunciada (igual ao de venda)
+            overflow: 'hidden', // Garante que o borderRadius seja aplicado corretamente
+            backgroundColor: '#FFFFFF', // Fundo branco padrão (igual ao de venda)
           },
         }}
       >
         {produtoSelecionado && (
           <>
+            {/* Título do Modal (igual ao de venda) */}
             <DialogTitle
               sx={{
-                bgcolor: "#FADADD",
+                bgcolor: "#FADADD", // Cor de fundo rosa claro (igual ao de venda)
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                p: 2,
+                p: 2.5, // Padding um pouco maior (igual ao de venda)
+                borderBottom: '1px solid #e0e0e0', // Linha sutil para separar o título (igual ao de venda)
               }}
             >
               <Typography variant="h5" sx={{ fontWeight: 700, color: "#333" }}>
-                Detalhes do Produto Vendido
+                Detalhes do Produto
               </Typography>
               <IconButton onClick={handleCloseProductModal} size="large" sx={{ color: "#333" }}>
                 <CloseIcon />
               </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 4 }}>
-              <Grid container spacing={4}>
-                <Grid item xs={12} md={4}>
-                  <Box
-                    sx={{
-                      width: "100%",
-                      height: 250,
-                      bgcolor: "#f5f5f5",
-                      borderRadius: 2,
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                      mb: 2,
-                    }}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      Imagem do Produto
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ mt: 3 }}>
-                    <Chip
-                      icon={<CheckCircleIcon />}
-                      label={produtoSelecionado.estadoConservacao}
-                      color="success"
-                      sx={{ fontWeight: 600, fontSize: "1rem", py: 2.5, px: 1 }}
-                    />
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} md={8}>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: "#333" }}>
+            {/* Conteúdo Principal do Modal */}
+            <DialogContent sx={{ p: 4, pb: 2 }}> {/* Padding ajustado (igual ao de venda) */}
+              <Grid container spacing={3}>
+                {/* Descrição e Preço - Seção de Destaque */}
+                <Grid item xs={12}>
+                  <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: "#212121" }}> {/* Fonte maior e mais escura */}
                     {produtoSelecionado.descricao}
                   </Typography>
-
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <AttachMoneyIcon sx={{ color: "#00509E", mr: 1 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: "#00509E" }}>
+                    <AttachMoneyIcon sx={{ color: "#00509E", mr: 1.5, fontSize: '2.2rem' }} /> {/* Ícone maior */}
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: "#00509E" }}> {/* Fonte maior e mais escura */}
                       R$ {produtoSelecionado.preco ? produtoSelecionado.preco.toFixed(2).replace(".", ",") : "0,00"}
                     </Typography>
                   </Box>
+                </Grid>
 
-                  <Grid container spacing={3} sx={{ mb: 3 }}>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <QrCodeIcon sx={{ color: "#666", mr: 1 }} />
-                        <Typography variant="body1">
-                          <strong>ID:</strong> {produtoSelecionado.id}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <InventoryIcon sx={{ color: "#666", mr: 1 }} />
-                        <Typography variant="body1">
-                          <strong>Tamanho:</strong> {produtoSelecionado.tamanho || "-"}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <CategoryIcon sx={{ color: "#666", mr: 1 }} />
-                        <Typography variant="body1">
-                          <strong>Gênero:</strong> {produtoSelecionado.genero || "-"}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <InventoryIcon sx={{ color: "#666", mr: 1 }} />
-                        <Typography variant="body1">
-                          <strong>Quantidade:</strong> {produtoSelecionado.quantidade || 1}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
+                {/* Chip de Estado de Conservação */}
+                <Grid item xs={12}>
+                  <Chip
+                    icon={<CheckCircleIcon />}
+                    label={produtoSelecionado.estadoConservacao}
+                    color="success"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "1rem", // Tamanho da fonte um pouco maior
+                      py: 1.5, // Padding vertical para um chip mais "cheio"
+                      px: 2, // Padding horizontal
+                      height: 'auto',
+                      borderRadius: '20px', // Borda mais arredondada
+                    }}
+                  />
+                </Grid>
 
-                  <Divider sx={{ my: 2 }} />
-
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                    Detalhes Adicionais
+                {/* Separador e Título para Detalhes (igual ao de venda) */}
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 3, borderColor: '#e0e0e0' }} /> {/* Separador mais visível (igual ao de venda) */}
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: "#424242" }}> {/* Cor mais suave (igual ao de venda) */}
+                    Informações Detalhadas
                   </Typography>
+                </Grid>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Marca:</strong> {produtoSelecionado.marca || "-"}
+                {/* Detalhes do Produto em duas colunas com ícones e espaçamento (igual ao de venda) */}
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}> {/* Espaçamento maior entre itens */}
+                    <QrCodeIcon sx={{ color: "#757575", mr: 1.5 }} /> {/* Cor de ícone mais suave */}
+                    <Typography variant="body1" color="text.secondary">
+                      <strong>ID:</strong> {produtoSelecionado.id}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <CategoryIcon sx={{ color: "#757575", mr: 1.5 }} />
+                    <Typography variant="body1" color="text.secondary">
+                      <strong>Marca:</strong> {produtoSelecionado.marca || "-"}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <InventoryIcon sx={{ color: "#757575", mr: 1.5 }} />
+                    <Typography variant="body1" color="text.secondary">
+                      <strong>Quantidade:</strong> {produtoSelecionado.quantidade || 1}
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <InventoryIcon sx={{ color: "#757575", mr: 1.5 }} />
+                    <Typography variant="body1" color="text.secondary">
+                      <strong>Tamanho:</strong> {produtoSelecionado.tamanho || "-"}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <CategoryIcon sx={{ color: "#757575", mr: 1.5 }} />
+                    <Typography variant="body1" color="text.secondary">
+                      <strong>Gênero:</strong> {produtoSelecionado.genero || "-"}
+                    </Typography>
+                  </Box>
+
+                  {/* Fornecedora (condicionalmente) */}
+                  {produtoSelecionado.tipoVenda === 'VENDA_FORNECEDOR' && produtoSelecionado.fornecedoraNome && (
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <PeopleIcon sx={{ color: "#757575", mr: 1.5 }} />
+                      <Typography variant="body1" color="text.secondary">
+                        <strong>Fornecedora:</strong> {produtoSelecionado.fornecedoraNome}
                       </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Estado:</strong> {produtoSelecionado.estadoConservacao}
-                      </Typography>
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  )}
+
+                  {/* Lote */}
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <CategoryIcon sx={{ color: "#757575", mr: 1.5 }} /> {/* Usando CategoryIcon para Lote */}
+                    <Typography variant="body1" color="text.secondary">
+                      <strong>Lote:</strong> {produtoSelecionado.lote || "-"}
+                    </Typography>
+                  </Box>
                 </Grid>
               </Grid>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, bgcolor: "#f8f9fa" }}>
+            {/* Ações do Modal (igual ao de venda) */}
+            <DialogActions sx={{ p: 3, bgcolor: "#f8f9fa", borderTop: '1px solid #e0e0e0' }}>
               <Button
                 variant="outlined"
                 onClick={handleCloseProductModal}

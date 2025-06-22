@@ -115,32 +115,30 @@ export const finalizarVendaFornecedora = async (fornecedoraId) => {
  * Esta função "achata" a estrutura de vendas para que cada item vendido seja uma entrada na lista.
  * @returns {Promise<{sucesso: boolean, vendas?: Array<object>, mensagem?: string, status?: number, detalhes?: any}>}
  */
-export const listarVendasRealizadas = async () => { // Renomeado de listarVendas para listarVendasRealizadas
+export const listarVendasRealizadas = async () => {
   try {
     const response = await axios.get(`${BASE_URL}`);
-    const vendas = response.data; // Isso é uma List<Venda> do backend
-
-    console.log("Dados brutos recebidos do backend:", vendas);
+    const vendas = response.data;
 
     const produtosVendidosFormatados = [];
     vendas.forEach(venda => {
-      // AQUI ESTÁ A CORREÇÃO: MUDAR 'itensVendidos' para 'itens'
       if (venda.itens && Array.isArray(venda.itens)) {
         venda.itens.forEach(item => {
-          // Mapeia o item vendido para o formato esperado na tabela da VendasPage
-          // Certifique-se de que 'item.produto' contém todos os campos necessários (marca, tamanho, genero, estadoConservacao)
-          // Se o backend não retornar esses campos diretamente no 'item.produto', eles aparecerão como '-'
           produtosVendidosFormatados.push({
-            id: item.produto.id, // ID do produto
+            id: item.produto.id,
             descricao: item.produto.descricao,
-            marca: item.produto.marca || '-', // Adicionado marca
-            tamanho: item.produto.tamanho || '-', // Adicionado tamanho
-            genero: item.produto.genero || '-', // Adicionado genero
+            marca: item.produto.marca || '-',
+            tamanho: item.produto.tamanho || '-',
+            genero: item.produto.genero || '-',
             estadoConservacao: item.produto.estadoConservacao,
-            quantidade: item.quantidade, // Quantidade vendida (do item da venda)
-            preco: item.produto.preco, // Preço do produto no momento da venda
-            vendaId: venda.id, // ID da venda a que este produto pertence
-            dataVenda: venda.dataVenda, // Data da venda
+            quantidade: item.quantidade,
+            preco: item.produto.preco,
+            vendaId: venda.id,
+            dataVenda: venda.dataVenda,
+            tipoVenda: venda.tipoVenda,
+            // Ajustado para capturar apenas o nome da fornecedora, se existir
+            fornecedoraNome: venda.fornecedora ? venda.fornecedora.nome : null,
+            lote: item.produto.lote || '-', // Se 'lote' não estiver em item.produto, será '-'
           });
         });
       } else {
@@ -148,15 +146,12 @@ export const listarVendasRealizadas = async () => { // Renomeado de listarVendas
       }
     });
 
-    console.log("Produtos vendidos formatados para exibição:", produtosVendidosFormatados);
-
     return {
       sucesso: true,
       vendas: produtosVendidosFormatados,
       mensagem: "Histórico de vendas carregado com sucesso."
     };
   } catch (error) {
-    console.error("Erro na função listarVendasRealizadas:", error);
     return tratarErro(error);
   }
 };
