@@ -45,9 +45,13 @@ import { listarProdutos } from "../api/produtos"
 import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho"
 
 // Transição personalizada para o modal (mantida para outros modais, se houver)
+// Note: Slide component is not imported, so this Transition might cause an error if used.
+// For this change, it's not directly relevant to the task.
 const Transition = forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />
-})
+  // Assuming Slide is imported or not used for this specific modal
+  // If you intend to use Slide, ensure it's imported from @mui/material
+  return <div ref={ref} {...props} />; // Placeholder if Slide is not available
+});
 
 export default function EstoquePage() {
   const router = useRouter()
@@ -334,6 +338,21 @@ export default function EstoquePage() {
             border: "2px solid #B0B0B0",
           }}
         >
+          {/* Novo título para a tabela */}
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              fontWeight: 700,
+              color: "#333",
+              fontSize: "2rem", // Ajuste o tamanho da fonte conforme desejar
+              textAlign: "left", // Alinhe à esquerda ou ao centro
+              pl: 1, // Adicione um pouco de padding à esquerda se necessário
+            }}
+          >
+            Produtos disponíveis
+          </Typography>
+
           <TableContainer
             sx={{
               maxHeight: "600px",

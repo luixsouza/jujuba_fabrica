@@ -50,8 +50,8 @@ import {
   removerDoCarrinho,
   listarCarrinho,
   limparCarrinho
-} from "../../api/carrinho";
-import { finalizarVendaSimples } from "../../api/vendas"
+} from "../api/carrinho";
+import { finalizarVendaSimples } from "../api/vendas"
 
 export default function CarrinhoPage() {
   const router = useRouter()
