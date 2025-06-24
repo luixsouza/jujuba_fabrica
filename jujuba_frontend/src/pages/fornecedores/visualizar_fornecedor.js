@@ -86,7 +86,7 @@ export default function FornecedoresVisualizar() {
     } catch (error) {
       console.error("Erro ao buscar dados do fornecedor:", error)
 
-      // Capturar detalhes do erro para debug
+      
       const errorDetails = {
         status: error.response?.status,
         statusText: error.response?.statusText,

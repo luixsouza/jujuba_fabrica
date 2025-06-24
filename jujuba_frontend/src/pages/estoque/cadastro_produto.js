@@ -18,7 +18,7 @@ export default function ProdutoCadastro() {
     preco: "",
     fornecedora: "",
     forma_pagamento: "",
-    lote_id: "",
+    lote_id: "",////
   })
 
   const [loading, setLoading] = useState(false)

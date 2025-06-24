@@ -593,7 +593,6 @@ export default function EstoquePage() {
         </Card>
       </Box>
 
-      {/* Modal de Visualização do Produto */}
       <Dialog
         open={openProductModal}
         onClose={handleCloseProductModal}

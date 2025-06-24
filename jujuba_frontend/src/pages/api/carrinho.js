@@ -6,7 +6,7 @@ const tratarErro = (error) => {
       sucesso: false,
       mensagem: "Erro de conexão com o servidor.",
       detalhes: error.message,
-    }
+    }////
   } else if (error.message.includes("HTTP error")) {
     return {
       sucesso: false,

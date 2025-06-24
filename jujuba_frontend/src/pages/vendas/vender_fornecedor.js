@@ -829,7 +829,7 @@ export default function FornecedoresPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar de Sucesso */}
+
       <Snackbar
         open={openSuccessMessage}
         autoHideDuration={2000}

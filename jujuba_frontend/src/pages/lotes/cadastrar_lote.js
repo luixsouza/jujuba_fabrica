@@ -507,7 +507,7 @@ export default function CadastroLotePage() {
           </Button>
         </Box>
 
-        {/* Dialog de Debug */}
+    
         <Dialog open={debugDialog} onClose={() => setDebugDialog(false)} maxWidth="md" fullWidth>
           <DialogTitle>Informações de Debug da API</DialogTitle>
           <DialogContent>

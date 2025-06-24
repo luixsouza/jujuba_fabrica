@@ -649,7 +649,7 @@ const FornecedoresPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar para feedback */}
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

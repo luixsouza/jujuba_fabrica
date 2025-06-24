@@ -329,7 +329,7 @@ const editLote = async (id, loteData) => {
   }
 }
 
-const deletarLote = async (id) => {
+const deletarLote = async (id) => {///
   try {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: "DELETE",

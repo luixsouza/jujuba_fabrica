@@ -601,7 +601,7 @@ export default function VendasPage() {
                         }}
                       >
                         <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                          {/* Botão de Visualizar */}
+                        
                           <IconButton
                             onClick={() => handleOpenProductModal(venda)}
                             sx={{

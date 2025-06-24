@@ -70,7 +70,7 @@ export const listarProdutos = async () => {
 export const buscarProdutoPorId = async (id) => {
   try {
     const response = await axios.get(`${BASE_URL}/${id}`);
-    const p = response.data;
+    const p = response.data;///
     return {
       sucesso: true,
       mensagem: `Produto com ID ${id} encontrado.`,
