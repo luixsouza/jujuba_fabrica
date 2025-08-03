@@ -33,10 +33,14 @@ import { ArrowBack, Home, Delete, Visibility, Add, BugReport } from "@mui/icons-
 import { createLote, getAllLotes, getFornecedoras, testApiConnection } from "../api/lotes"
 import Sidebar from "../../components/sidebar"
 
+// Importar Autocomplete do MUI
+import Autocomplete from "@mui/material/Autocomplete"
+
 export default function CadastroLotePage() {
   const router = useRouter()
   const [loteId, setLoteId] = useState("")
   const [fornecedoraId, setFornecedoraId] = useState("")
+  const [fornecedoraSelecionada, setFornecedoraSelecionada] = useState(null) // Para controlar o objeto selecionado
   const [items, setItems] = useState([])
   const [lotesSidebar, setLotesSidebar] = useState([])
   const [fornecedoras, setFornecedoras] = useState([])
@@ -222,6 +226,9 @@ export default function CadastroLotePage() {
     return items.reduce((total, item) => total + item.preco * item.quantidade, 0)
   }
 
+  // Últimas 10 fornecedoras (supondo que fornecedoras já estejam ordenadas pela data desc)
+  const ultimasFornecedoras = fornecedoras.slice(0, 10)
+
   return (
     <Box sx={{ display: "flex" }}>
       <Sidebar lotes={lotesSidebar} />
@@ -384,18 +391,32 @@ export default function CadastroLotePage() {
               </FormControl>
             </Grid>
 
+            {/* ALTERAÇÃO AQUI: Autocomplete para Fornecedora */}
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Fornecedora</InputLabel>
-                <Select value={fornecedoraId} onChange={(e) => setFornecedoraId(e.target.value)} label="Fornecedora">
-                  <MenuItem value="">Selecione a fornecedora</MenuItem>
-                  {fornecedoras.map((f) => (
-                    <MenuItem key={f.id} value={f.id}>
-                      {f.nome}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                options={ultimasFornecedoras}
+                getOptionLabel={(option) => option.nome || ""}
+                value={fornecedoraSelecionada}
+                onChange={(event, newValue) => {
+                  setFornecedoraSelecionada(newValue)
+                  setFornecedoraId(newValue ? newValue.id : "")
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Fornecedora"
+                    placeholder="Selecione ou pesquise"
+                    variant="outlined"
+                    fullWidth
+                  />
+                )}
+                filterSelectedOptions
+                autoHighlight
+                clearOnEscape
+                freeSolo={false}
+                disableClearable={false}
+                sx={{ mt: 0 }}
+              />
             </Grid>
           </Grid>
 
@@ -425,15 +446,93 @@ export default function CadastroLotePage() {
         <TableContainer component={Paper} sx={{ mb: 3 }}>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#ffd0e8" }}>
-                <TableCell>Descrição</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Valor</TableCell>
-                <TableCell>Quantidade</TableCell>
-                <TableCell>Marca</TableCell>
-                <TableCell>Tamanho</TableCell>
-                <TableCell>Gênero</TableCell>
-                <TableCell align="center">Ações</TableCell>
+              <TableRow>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5", // LINHA BRANCA ENTRE COLUNAS
+                  }}
+                  >
+                Descrição
+                </TableCell>
+                <TableCell
+                align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                >
+                  Estado
+                </TableCell>
+                <TableCell
+                align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                >
+                  Valor
+                </TableCell>
+                <TableCell
+                align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                >
+                  Quantidade
+                  </TableCell>
+                <TableCell
+                align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                  >
+                    Marca
+                    </TableCell>
+                <TableCell
+                align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                >
+                  Tamanho
+                  </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                >
+                  Gênero
+                </TableCell>
+                <TableCell align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5",
+                  }}
+                >
+                  Ações</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -486,14 +585,13 @@ export default function CadastroLotePage() {
             disabled={loading || items.length === 0 || !fornecedoraId}
             sx={{
               backgroundColor: "#ffd0e8",
-              color: "#333",
-              "&:hover": {
-                backgroundColor: "#ffb0d8",
+                color: "#333",
+                "&:hover": {
+                  backgroundColor: "#ffb0d8",
               },
               px: 6,
               py: 2,
               borderRadius: 25,
-              fontSize: "1.1rem",
             }}
           >
             {loading ? (
@@ -507,7 +605,6 @@ export default function CadastroLotePage() {
           </Button>
         </Box>
 
-    
         <Dialog open={debugDialog} onClose={() => setDebugDialog(false)} maxWidth="md" fullWidth>
           <DialogTitle>Informações de Debug da API</DialogTitle>
           <DialogContent>
