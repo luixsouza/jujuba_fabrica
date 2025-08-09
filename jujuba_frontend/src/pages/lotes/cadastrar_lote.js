@@ -1,5 +1,6 @@
 "use client"
 
+import { Autocomplete } from "@mui/material"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import {
@@ -28,6 +29,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Card,
 } from "@mui/material"
 import { ArrowBack, Home, Delete, Visibility, Add, BugReport } from "@mui/icons-material"
 import { createLote, getAllLotes, getFornecedoras, testApiConnection } from "../api/lotes"
@@ -385,17 +387,24 @@ export default function CadastroLotePage() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Fornecedora</InputLabel>
-                <Select value={fornecedoraId} onChange={(e) => setFornecedoraId(e.target.value)} label="Fornecedora">
-                  <MenuItem value="">Selecione a fornecedora</MenuItem>
-                  {fornecedoras.map((f) => (
-                    <MenuItem key={f.id} value={f.id}>
-                      {f.nome}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                fullWidth
+                options={fornecedoras
+                  .slice()
+                  .sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao))
+                  .slice(0, 10)}
+                getOptionLabel={(option) => option.nome}
+                value={fornecedoras.find((f) => f.id === fornecedoraId) || null}
+                onChange={(event, newValue) => {
+                  setFornecedoraId(newValue ? newValue.id : "")
+                }}
+                renderInput={(params) => (
+                  <TextField {...params} label="Fornecedora" variant="outlined" />
+                )}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                noOptionsText="Nenhuma fornecedora encontrada"
+                clearOnEscape
+              />
             </Grid>
           </Grid>
 
@@ -421,62 +430,177 @@ export default function CadastroLotePage() {
           </Box>
         </Paper>
 
-        {/* Tabela de Itens */}
-        <TableContainer component={Paper} sx={{ mb: 3 }}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#ffd0e8" }}>
-                <TableCell>Descrição</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Valor</TableCell>
-                <TableCell>Quantidade</TableCell>
-                <TableCell>Marca</TableCell>
-                <TableCell>Tamanho</TableCell>
-                <TableCell>Gênero</TableCell>
-                <TableCell align="center">Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {items.length === 0 ? (
+        <Card
+          sx={{
+            padding: "20px",
+            bgcolor: "white",
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            borderRadius: "25px",
+            backgroundColor: "#F5F5F5",
+            width: "100%",
+            margin: "0 auto",
+            border: "2px solid #B0B0B0",
+          }}
+        >
+          {/*titulo novo*/}
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              fontWeight: 700,
+              color: "#333",
+              fontSize: "2rem", // Ajuste o tamanho da fonte conforme desejar
+              textAlign: "left", // Alinhe à esquerda ou ao centro
+              pl: 1, // Adicione um pouco de padding à esquerda se necessário
+            }}
+          >
+            Itens do Lote
+          </Typography>
+
+          <TableContainer
+            sx={{
+              maxHeight: "600px",
+              borderRadius: "10px",
+              overflow: "auto",
+              backgroundColor: "#F5F5F5",
+              width: "100%",
+            }}
+          >
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={8} align="center">
-                    Nenhum item adicionado ao lote
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Descrição
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Estado
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Valor
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Quantidade
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Marca
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Tamanho
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Gênero
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+                    }}
+                  >
+                    Ações
                   </TableCell>
                 </TableRow>
-              ) : (
-                items.map((item) => (
-                  <TableRow key={item.id} hover>
-                    <TableCell>{item.descricao}</TableCell>
-                    <TableCell>{item.estadoConservacao}</TableCell>
-                    <TableCell>R$ {item.preco.toFixed(2).replace(".", ",")}</TableCell>
-                    <TableCell>{item.quantidade}</TableCell>
-                    <TableCell>{item.marca || "-"}</TableCell>
-                    <TableCell>{item.tamanho || "-"}</TableCell>
-                    <TableCell>{item.genero}</TableCell>
-                    <TableCell align="center">
-                      <IconButton onClick={() => handleViewItem(item.id)} color="primary">
-                        <Visibility />
-                      </IconButton>
-                      <IconButton onClick={() => handleDeleteItem(item.id)} color="error">
-                        <Delete />
-                      </IconButton>
+              </TableHead>
+              <TableBody>
+                {items.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center">
+                      Nenhum item adicionado ao lote
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-              {items.length > 0 && (
-                <TableRow>
-                  <TableCell colSpan={2} align="right" sx={{ fontWeight: "bold" }}>
-                    Total:
-                  </TableCell>
-                  <TableCell colSpan={6} sx={{ fontWeight: "bold" }}>
-                    R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ) : (
+                  items.map((item) => (
+                    <TableRow key={item.id} hover>
+                      <TableCell>{item.descricao}</TableCell>
+                      <TableCell>{item.estadoConservacao}</TableCell>
+                      <TableCell>R$ {item.preco.toFixed(2).replace(".", ",")}</TableCell>
+                      <TableCell>{item.quantidade}</TableCell>
+                      <TableCell>{item.marca || "-"}</TableCell>
+                      <TableCell>{item.tamanho || "-"}</TableCell>
+                      <TableCell>{item.genero}</TableCell>
+                      <TableCell align="center">
+                        <IconButton onClick={() => handleViewItem(item.id)} color="primary">
+                          <Visibility />
+                        </IconButton>
+                        <IconButton onClick={() => handleDeleteItem(item.id)} color="error">
+                          <Delete />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+                {items.length > 0 && (
+                  <TableRow>
+                    <TableCell colSpan={2} align="right" sx={{ fontWeight: "bold" }}>
+                      Total:
+                    </TableCell>
+                    <TableCell colSpan={6} sx={{ fontWeight: "bold" }}>
+                      R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Card>
 
         {/* Botão Finalizar */}
         <Box sx={{ textAlign: "center" }}>
