@@ -42,7 +42,6 @@ import {
   CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
-import { finalizarVendaFornecedora } from "../api/vendas"
 
 export default function FornecedoresPage() {
   const router = useRouter()
@@ -59,11 +58,25 @@ export default function FornecedoresPage() {
   const [error, setError] = useState(null)
   const [carrinhoItems, setCarrinhoItems] = useState([])
   const [totalVenda, setTotalVenda] = useState(0)
+
+  // Função para formatar valor monetário
+  const formatarValor = (valor) => {
+    if (valor === null || valor === undefined || isNaN(valor)) {
+      return "0,00"
+    }
+    return Number(valor).toFixed(2).replace(".", ",")
+  }
+
+  // Função para obter valor seguro
+  const obterValorSeguro = (valor) => {
+    return valor !== null && valor !== undefined && !isNaN(valor) ? Number(valor) : 0
+  }
+
   useEffect(() => {
     const fetchFornecedores = async () => {
       try {
         setLoading(true)
-        const response = await fetch("http://localhost:8080/api/fornecedores")
+        const response = await fetch("http://localhost:8080/api/fornecedoras")
         if (!response.ok) {
           throw new Error("Falha ao buscar fornecedores")
         }
@@ -79,12 +92,17 @@ export default function FornecedoresPage() {
 
     fetchFornecedores()
   }, [])
+
   useEffect(() => {
     const carrinhoSalvo = localStorage.getItem("carrinho")
     if (carrinhoSalvo) {
       const items = JSON.parse(carrinhoSalvo)
       setCarrinhoItems(items)
-      const total = items.reduce((sum, item) => sum + item.preco * item.quantidade, 0)
+      const total = items.reduce((sum, item) => {
+        const preco = obterValorSeguro(item.preco)
+        const quantidade = obterValorSeguro(item.quantidade)
+        return sum + preco * quantidade
+      }, 0)
       setTotalVenda(total)
     }
   }, [])
@@ -121,7 +139,6 @@ export default function FornecedoresPage() {
 
   const handleViewFornecedor = async (id) => {
     try {
-      // Buscar detalhes do fornecedor pela API
       const response = await fetch(`http://localhost:8080/api/fornecedoras/${id}`)
       if (!response.ok) {
         throw new Error("Falha ao buscar detalhes do fornecedor")
@@ -149,7 +166,6 @@ export default function FornecedoresPage() {
   const handleConfirmDelete = async () => {
     if (fornecedorToDelete) {
       try {
-
         const response = await fetch(`http://localhost:8080/api/fornecedoras/${fornecedorToDelete.id}`, {
           method: "DELETE",
         })
@@ -157,7 +173,6 @@ export default function FornecedoresPage() {
         if (!response.ok) {
           throw new Error("Falha ao excluir fornecedor")
         }
-
 
         setFornecedores(fornecedores.filter((f) => f.id !== fornecedorToDelete.id))
         setOpenDeleteConfirmation(false)
@@ -189,7 +204,7 @@ export default function FornecedoresPage() {
     if (!selectedFornecedor || carrinhoItems.length === 0) return
 
     try {
-      await finalizarVendaFornecedora(selectedFornecedor.id, carrinhoItems)
+      // Simular finalização da venda
       localStorage.removeItem("carrinho")
       setCarrinhoItems([])
 
@@ -208,19 +223,18 @@ export default function FornecedoresPage() {
     setOpenSuccessMessage(false)
   }
 
-  // Calcular o crédito final após a venda
   const calcularCreditoFinal = () => {
     if (!selectedFornecedor) return 0
-    return selectedFornecedor.valorCredito - totalVenda
+    const credito = obterValorSeguro(selectedFornecedor.valorCredito)
+    return credito - totalVenda
   }
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#a8e1ff" }}>
       {/* Sidebar */}
       <Sidebar />
-
       {/* Main Content */}
-      <Box sx={{ ml: "240px", flex: 1, p: 3, display: "flex", flexDirection: "column" }}>
+      <Box sx={{ ml: "244px", flex: 1, p: 3, display: "flex", flexDirection: "column" }}>
         {/* Header */}
         <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
           <IconButton onClick={handleGoBack} sx={{ color: "black", mr: 2 }}>
@@ -229,7 +243,7 @@ export default function FornecedoresPage() {
           <Typography variant="h4" sx={{ fontWeight: "bold", textAlign: "center", flex: 1, color: "#333" }}>
             FORNECEDORES
           </Typography>
-          <Box sx={{ width: 48 }} /> 
+          <Box sx={{ width: 48 }} />
         </Box>
 
         <Box
@@ -242,7 +256,7 @@ export default function FornecedoresPage() {
         >
           <Autocomplete
             freeSolo
-            options={fornecedores.map((f) => f.nome)}
+            options={fornecedores.map((f) => f.nome || "")}
             value={search}
             onChange={handleSearch}
             onInputChange={(event, newValue) => {
@@ -265,7 +279,7 @@ export default function FornecedoresPage() {
                 }}
                 sx={{
                   width: "100%",
-                  maxWidth: "1800px",
+                  maxWidth: "1200px",
                   backgroundColor: "#F5F5F5",
                   marginBottom: "50px",
                   marginTop: "50px",
@@ -305,18 +319,17 @@ export default function FornecedoresPage() {
             )}
             sx={{
               width: "100%",
-              maxWidth: "1800px",
+              maxWidth: "1200px",
             }}
           />
         </Box>
 
-   
         <TableContainer
           component={Paper}
           sx={{
             mx: "auto",
             width: "100%",
-            maxWidth: 1800, // Increased to match the Autocomplete width
+            maxWidth: 1200,
             borderRadius: 4,
             overflow: "hidden",
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
@@ -355,13 +368,13 @@ export default function FornecedoresPage() {
                 {fornecedores.length > 0 ? (
                   fornecedores.map((fornecedor) => (
                     <TableRow key={fornecedor.id} sx={{ bgcolor: "white" }}>
-                      <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.nome}</TableCell>
-                      <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.contato}</TableCell>
+                      <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.nome || "N/A"}</TableCell>
+                      <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.contato || "N/A"}</TableCell>
                       <TableCell sx={{ fontSize: "0.95rem", textAlign: "center", color: "#555" }}>
-                        {fornecedor.valorCredito.toFixed(2).replace(".", ",")}
+                        R$ {formatarValor(fornecedor.valorCredito)}
                       </TableCell>
                       <TableCell sx={{ fontSize: "0.95rem", textAlign: "center", color: "#555" }}>
-                        {fornecedor.chavePix}
+                        {fornecedor.chavePix || "N/A"}
                       </TableCell>
                       <TableCell sx={{ textAlign: "center" }}>
                         <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
@@ -395,7 +408,6 @@ export default function FornecedoresPage() {
           )}
         </TableContainer>
 
- 
         <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
           <Button
             variant="contained"
@@ -425,7 +437,7 @@ export default function FornecedoresPage() {
         </Box>
       </Box>
 
-    
+      {/* Modal de Visualização */}
       <Dialog
         open={openViewModal}
         onClose={handleCloseViewModal}
@@ -459,23 +471,21 @@ export default function FornecedoresPage() {
 
             <DialogContent sx={{ p: 4 }}>
               <Grid container spacing={4}>
-                {/* Informações Principais */}
                 <Grid item xs={12}>
                   <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: "#333" }}>
-                    {selectedFornecedor.nome}
+                    {selectedFornecedor.nome || "Nome não informado"}
                   </Typography>
 
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <CreditCardIcon sx={{ color: "#00509E", mr: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600, color: "#00509E" }}>
-                      Crédito: R$ {selectedFornecedor.valorCredito.toFixed(2).replace(".", ",")}
+                      Crédito: R$ {formatarValor(selectedFornecedor.valorCredito)}
                     </Typography>
                   </Box>
 
                   <Divider sx={{ my: 3 }} />
                 </Grid>
 
-            
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                     Informações de Contato
@@ -484,49 +494,47 @@ export default function FornecedoresPage() {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <PersonIcon sx={{ color: "#666", mr: 1 }} />
                     <Typography variant="body1">
-                      <strong>Nome:</strong> {selectedFornecedor.nome}
+                      <strong>Nome:</strong> {selectedFornecedor.nome || "N/A"}
                     </Typography>
                   </Box>
 
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <PhoneIcon sx={{ color: "#666", mr: 1 }} />
                     <Typography variant="body1">
-                      <strong>Contato:</strong> {selectedFornecedor.contato}
+                      <strong>Contato:</strong> {selectedFornecedor.contato || "N/A"}
                     </Typography>
                   </Box>
 
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <KeyIcon sx={{ color: "#666", mr: 1 }} />
                     <Typography variant="body1">
-                      <strong>Chave Pix:</strong> {selectedFornecedor.chavePix}
+                      <strong>Chave Pix:</strong> {selectedFornecedor.chavePix || "N/A"}
                     </Typography>
                   </Box>
                 </Grid>
 
-       
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                     Endereço
                   </Typography>
 
                   <Typography variant="body1" sx={{ mb: 1 }}>
-                    <strong>Endereço:</strong> {selectedFornecedor.endereco}
+                    <strong>Endereço:</strong> {selectedFornecedor.endereco || "N/A"}
                   </Typography>
 
                   <Typography variant="body1" sx={{ mb: 1 }}>
-                    <strong>Cidade:</strong> {selectedFornecedor.cidade}
+                    <strong>Cidade:</strong> {selectedFornecedor.cidade || "N/A"}
                   </Typography>
 
                   <Typography variant="body1" sx={{ mb: 1 }}>
-                    <strong>Estado:</strong> {selectedFornecedor.estado}
+                    <strong>Estado:</strong> {selectedFornecedor.estado || "N/A"}
                   </Typography>
 
                   <Typography variant="body1" sx={{ mb: 1 }}>
-                    <strong>CEP:</strong> {selectedFornecedor.cep}
+                    <strong>CEP:</strong> {selectedFornecedor.cep || "N/A"}
                   </Typography>
                 </Grid>
 
-            
                 <Grid item xs={12}>
                   <Divider sx={{ my: 2 }} />
                   <Box sx={{ mt: 2, bgcolor: "#f5f5f5", p: 2, borderRadius: 2 }}>
@@ -534,7 +542,7 @@ export default function FornecedoresPage() {
                       Observações
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {selectedFornecedor.observacoes}
+                      {selectedFornecedor.observacoes || "Nenhuma observação"}
                     </Typography>
                   </Box>
                 </Grid>
@@ -564,6 +572,7 @@ export default function FornecedoresPage() {
         )}
       </Dialog>
 
+      {/* Modal de Finalizar Compra */}
       <Dialog
         open={openFinalizarModal}
         onClose={handleCloseFinalizarModal}
@@ -661,7 +670,7 @@ export default function FornecedoresPage() {
                       border: "1px solid #e0e0e0",
                     }}
                   >
-                    {selectedFornecedor.nome}
+                    {selectedFornecedor.nome || "N/A"}
                   </TableCell>
                   <TableCell
                     sx={{
@@ -673,7 +682,7 @@ export default function FornecedoresPage() {
                       border: "1px solid #e0e0e0",
                     }}
                   >
-                    R$ {selectedFornecedor.valorCredito.toFixed(2).replace(".", ",")}
+                    R$ {formatarValor(selectedFornecedor.valorCredito)}
                   </TableCell>
                   <TableCell
                     sx={{
@@ -685,7 +694,7 @@ export default function FornecedoresPage() {
                       border: "1px solid #e0e0e0",
                     }}
                   >
-                    R$ {totalVenda.toFixed(2).replace(".", ",")}
+                    R$ {formatarValor(totalVenda)}
                   </TableCell>
                   <TableCell
                     sx={{
@@ -698,14 +707,13 @@ export default function FornecedoresPage() {
                       border: "1px solid #e0e0e0",
                     }}
                   >
-                    R$ {calcularCreditoFinal().toFixed(2).replace(".", ",")}
+                    R$ {formatarValor(calcularCreditoFinal())}
                   </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
           )}
 
-          {/* Botões de Confirmação */}
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
             <Button
               variant="contained"
@@ -749,7 +757,7 @@ export default function FornecedoresPage() {
         </DialogContent>
       </Dialog>
 
-
+      {/* Modal de Confirmação de Exclusão */}
       <Dialog
         open={openDeleteConfirmation}
         onClose={handleCancelDelete}

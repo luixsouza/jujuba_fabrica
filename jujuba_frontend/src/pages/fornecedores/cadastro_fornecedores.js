@@ -797,7 +797,7 @@ export default function FornecedoresCadastro() {
                 boxShadow: "0px 6px 16px rgba(255, 255, 255, 0.4)",
               },
               transition: "all 0.3s ease",
-            }}
+            }}////
           >
             Cadastrar Outro Fornecedor
           </Button>

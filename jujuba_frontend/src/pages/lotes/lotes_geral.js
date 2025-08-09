@@ -436,7 +436,7 @@ const LotePage = () => {
           </Button>
         </Box>
 
-        {/* Modal de Confirmação de Exclusão */}
+
         <Dialog
           open={openDialog}
           TransitionComponent={Transition}

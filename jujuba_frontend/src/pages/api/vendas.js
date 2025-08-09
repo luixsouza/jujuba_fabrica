@@ -1,198 +1,203 @@
-import axios from 'axios';
+const BASE_URL = "http://localhost:8080/api/vendas"
 
-const BASE_URL = 'http://localhost:8080/api/vendas';
-
-// Função auxiliar para tratar erros da API
-const tratarErro = (error ) => {
-  if (error.response) {
-    // O servidor respondeu com um status diferente de 2xx
-    console.error("Erro na resposta da API:", error.response.data);
+const tratarErro = (error) => {
+  if (error.name === "TypeError" && error.message.includes("fetch")) {
     return {
       sucesso: false,
-      mensagem: error.response.data.message || 'Erro ao processar requisição.',
-      status: error.response.status,
-      detalhes: error.response.data,
-    };
-  } else if (error.request) {
-    // A requisição foi feita, mas nenhuma resposta foi recebida
-    console.error("Nenhuma resposta do servidor:", error.request);
-    return {
-      sucesso: false,
-      mensagem: 'Servidor não respondeu. Verifique a conexão.',
-      detalhes: error.request,
-    };
-  } else {
-    // Algo aconteceu na configuração da requisição que disparou um erro
-    console.error("Erro ao configurar requisição:", error.message);
-    return {
-      sucesso: false,
-      mensagem: 'Erro desconhecido ao fazer requisição.',
+      mensagem: "Erro de conexão com o servidor.",
       detalhes: error.message,
-    };
-  }
-};
-
-/**
- * Finaliza uma venda simples com os itens atualmente no carrinho.
- * @returns {Promise<{sucesso: boolean, venda?: object, mensagem?: string, status?: number, detalhes?: any}>}
- */
-export const finalizarVendaSimples = async () => {
-  try {
-    const response = await axios.post(`${BASE_URL}/finalizar/simples`);
-    const venda = response.data;
-
+    }
+  } else if (error.message.includes("HTTP error")) {
     return {
-      sucesso: true,
-      venda: {
-        id: venda.id,
-        dataVenda: venda.dataVenda,
-        tipoVenda: venda.tipoVenda,
-        total: venda.total,
-        valorBrecho: venda.valorBrecho,
-        valorFornecedora: venda.valorFornecedora,
-        itens: venda.itens.map(item => ({
-          produto: {
-            id: item.produto.id,
-            descricao: item.produto.descricao,
-            preco: item.produto.preco,
-          },
-          quantidade: item.quantidade,
-          precoUnitario: item.precoUnitario,
-          subtotal: item.subtotal,
-        }))
-      }
-    };
-  } catch (error) {
-    return tratarErro(error);
-  }
-};
-
-
-/**
- * Finaliza uma venda com os itens atualmente no carrinho para uma fornecedora específica.
- * @param {number} fornecedoraId - O ID da fornecedora.
- * @returns {Promise<{sucesso: boolean, venda?: object, mensagem?: string, status?: number, detalhes?: any}>}
- */
-export const finalizarVendaFornecedora = async (fornecedoraId) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/finalizar/fornecedora/${fornecedoraId}`);
-    const venda = response.data;
-
+      sucesso: false,
+      mensagem: "Erro ao processar requisição.",
+      status: error.message.match(/\d+/)?.[0],
+      detalhes: error.message,
+    }
+  } else {
     return {
-      sucesso: true,
-      venda: {
-        id: venda.id,
-        dataVenda: venda.dataVenda,
-        tipoVenda: venda.tipoVenda,
-        total: venda.total,
-        valorBrecho: venda.valorBrecho,
-        valorFornecedora: venda.valorFornecedora,
-        fornecedora: venda.fornecedora ? {
-          id: venda.fornecedora.id,
-          nome: venda.fornecedora.nome,
-          cnpj: venda.fornecedora.cnpj
-        } : null,
-        itens: venda.itens.map(item => ({
-          produto: {
-            id: item.produto.id,
-            descricao: item.produto.descricao,
-            preco: item.produto.preco,
-          },
-          quantidade: item.quantidade,
-          precoUnitario: item.precoUnitario,
-          subtotal: item.subtotal,
-        }))
-      }
-    };
-  } catch (error) {
-    return tratarErro(error);
+      sucesso: false,
+      mensagem: "Erro desconhecido.",
+      detalhes: error.message,
+    }
   }
-};
+}
 
-
-/**
- * Lista todas as vendas realizadas, formatando-as como uma lista de produtos vendidos.
- * Esta função "achata" a estrutura de vendas para que cada item vendido seja uma entrada na lista.
- * @returns {Promise<{sucesso: boolean, vendas?: Array<object>, mensagem?: string, status?: number, detalhes?: any}>}
- */
 export const listarVendasRealizadas = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}`);
-    const vendas = response.data;
+    const response = await fetch(`${BASE_URL}/realizadas`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
 
-    const produtosVendidosFormatados = [];
-    vendas.forEach(venda => {
-      if (venda.itens && Array.isArray(venda.itens)) {
-        venda.itens.forEach(item => {
-          produtosVendidosFormatados.push({
-            id: item.produto.id,
-            descricao: item.produto.descricao,
-            marca: item.produto.marca || '-',
-            tamanho: item.produto.tamanho || '-',
-            genero: item.produto.genero || '-',
-            estadoConservacao: item.produto.estadoConservacao,
-            quantidade: item.quantidade,
-            preco: item.produto.preco,
-            vendaId: venda.id,
-            dataVenda: venda.dataVenda,
-            tipoVenda: venda.tipoVenda,
-            // Ajustado para capturar apenas o nome da fornecedora, se existir
-            fornecedoraNome: venda.fornecedora ? venda.fornecedora.nome : null,
-            lote: item.produto.lote || '-', // Se 'lote' não estiver em item.produto, será '-'
-          });
-        });
-      } else {
-        console.warn(`Venda ID ${venda.id} não possui 'itens' ou 'itens' não é um array.`);
-      }
-    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
 
     return {
       sucesso: true,
-      vendas: produtosVendidosFormatados,
-      mensagem: "Histórico de vendas carregado com sucesso."
-    };
+      vendas: data,
+      mensagem: "Vendas carregadas com sucesso!",
+    }
   } catch (error) {
-    return tratarErro(error);
+    console.error("Erro ao listar vendas realizadas:", error)
+    return {
+      sucesso: false,
+      vendas: [],
+      mensagem: "Erro ao carregar vendas",
+    }
   }
-};
+}
 
-/**
- * Busca uma venda específica por ID.
- * @param {number} id - O ID da venda.
- * @returns {Promise<{sucesso: boolean, venda?: object, mensagem?: string, status?: number, detalhes?: any}>}
- */
 export const buscarVendaPorId = async (id) => {
   try {
-    const response = await axios.get(`${BASE_URL}/${id}`);
-    const venda = response.data;
+    const response = await fetch(`${BASE_URL}/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
 
     return {
       sucesso: true,
-      venda: {
-        id: venda.id,
-        dataVenda: venda.dataVenda,
-        tipoVenda: venda.tipoVenda,
-        total: venda.total,
-        valorBrecho: venda.valorBrecho,
-        valorFornecedora: venda.valorFornecedora,
-        fornecedora: venda.fornecedora ? {
-          id: venda.fornecedora.id,
-          nome: venda.fornecedora.nome,
-          cnpj: venda.fornecedora.cnpj
-        } : null,
-        itens: venda.itens.map(item => ({
-          produto: {
-            id: item.produto.id,
-            descricao: item.produto.descricao,
-            preco: item.produto.preco,
-          },
-          quantidade: item.quantidade,
-          precoUnitario: item.precoUnitario,
-          subtotal: item.subtotal,
-        }))
-      }
-    };
+      venda: data,
+      mensagem: "Venda encontrada com sucesso!",
+    }
   } catch (error) {
-    return tratarErro(error);
+    console.error("Erro ao buscar venda por ID:", error)
+    return {
+      sucesso: false,
+      venda: null,
+      mensagem: "Erro ao buscar venda",
+    }
   }
-};
+}
+
+export const finalizarVendaFornecedora = async (fornecedoraId, itens) => {
+  try {
+    const response = await fetch(`${BASE_URL}/finalizar-fornecedora`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fornecedoraId,
+        itens,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    return {
+      sucesso: true,
+      venda: data,
+      mensagem: "Venda finalizada com sucesso!",
+    }
+  } catch (error) {
+    console.error("Erro ao finalizar venda:", error)
+    return {
+      sucesso: false,
+      mensagem: "Erro ao finalizar venda",
+    }
+  }
+}
+
+export const criarVenda = async (dadosVenda) => {
+  try {
+    const response = await fetch(BASE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dadosVenda),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    return {
+      sucesso: true,
+      venda: data,
+      mensagem: "Venda criada com sucesso!",
+    }
+  } catch (error) {
+    console.error("Erro ao criar venda:", error)
+    return {
+      sucesso: false,
+      mensagem: "Erro ao criar venda",
+    }
+  }
+}
+
+export const atualizarVenda = async (id, dadosVenda) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dadosVenda),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    return {
+      sucesso: true,
+      venda: data,
+      mensagem: "Venda atualizada com sucesso!",
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar venda:", error)
+    return {
+      sucesso: false,
+      mensagem: "Erro ao atualizar venda",
+    }
+  }
+}
+
+export const excluirVenda = async (id) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return {
+      sucesso: true,
+      mensagem: "Venda excluída com sucesso!",
+    }
+  } catch (error) {
+    console.error("Erro ao excluir venda:", error)
+    return {
+      sucesso: false,
+      mensagem: "Erro ao excluir venda",
+    }
+  }
+}/////

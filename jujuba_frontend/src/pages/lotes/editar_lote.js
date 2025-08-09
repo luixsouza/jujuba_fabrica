@@ -528,7 +528,7 @@ export default function EditarLotePage() {
           </Box>
         )}
 
-        {/* Fornecedora Selection */}
+
         <Box sx={{ mx: "auto", mt: 2, width: "95%", maxWidth: "1200px" }}>
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel>Fornecedora</InputLabel>

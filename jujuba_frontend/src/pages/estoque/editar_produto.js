@@ -364,7 +364,6 @@ export default function ProdutoEditar() {
               mb: 3,
             }}
           >
-            {/* Descrição */}
             <TextField
               fullWidth
               label="Descrição"
