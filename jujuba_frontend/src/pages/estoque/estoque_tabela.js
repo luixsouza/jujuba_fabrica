@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, forwardRef } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   Box,
   Card,
@@ -24,7 +24,7 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
-  Badge, // Importar Badge para a contagem do carrinho
+  Badge,
   Grid,
   Divider,
   Chip,
@@ -33,129 +33,223 @@ import CloseIcon from "@mui/icons-material/Close"
 import Sidebar from "../../components/sidebar"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import SearchIcon from "@mui/icons-material/Search"
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart" // Importar ícone do carrinho
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney"
 import InventoryIcon from "@mui/icons-material/Inventory"
 import QrCodeIcon from "@mui/icons-material/QrCode"
 import CategoryIcon from "@mui/icons-material/Category"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import { useRouter } from "next/navigation"
-// Importações de API para produtos e carrinho
+
+
 import { listarProdutos } from "../api/produtos"
 import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho"
 
-// Transição personalizada para o modal (mantida para outros modais, se houver)
-// Note: Slide component is not imported, so this Transition might cause an error if used.
-// For this change, it's not directly relevant to the task.
-const Transition = forwardRef(function Transition(props, ref) {
-  // Assuming Slide is imported or not used for this specific modal
-  // If you intend to use Slide, ensure it's imported from @mui/material
-  return <div ref={ref} {...props} />; // Placeholder if Slide is not available
-});
+
+const normalizarProduto = (produto) => {
+  if (!produto || typeof produto !== "object") {
+    return null
+  }
+
+  return {
+    id: produto.id || null,
+    descricao: produto.descricao || "Produto sem descrição",
+    marca: produto.marca || "Marca não informada",
+    tamanho: produto.tamanho || "Tamanho não informado",
+    genero: produto.genero || "Não especificado",
+    estadoConservacao: produto.estadoConservacao || "Não informado",
+    quantidade: Number(produto.quantidade) || 1,
+    preco: Number(produto.preco) || 0,
+    categoria: produto.categoria || "Sem categoria",
+    cor: produto.cor || "Não informada",
+    material: produto.material || "Não informado",
+    dataAdicao: produto.dataAdicao || new Date().toISOString(),
+    ativo: produto.ativo !== false, 
+  }
+}
+
+
+const criarOpcoesBusca = (produtos) => {
+  if (!Array.isArray(produtos) || produtos.length === 0) {
+    return []
+  }
+
+  const opcoes = new Set()
+
+  produtos.forEach((produto) => {
+    const produtoNormalizado = normalizarProduto(produto)
+    if (produtoNormalizado) {
+      // Adicionar diferentes campos para busca
+      if (produtoNormalizado.id) opcoes.add(produtoNormalizado.id.toString())
+      if (produtoNormalizado.descricao) opcoes.add(produtoNormalizado.descricao)
+      if (produtoNormalizado.marca && produtoNormalizado.marca !== "Marca não informada") {
+        opcoes.add(produtoNormalizado.marca)
+      }
+      if (produtoNormalizado.genero && produtoNormalizado.genero !== "Não especificado") {
+        opcoes.add(produtoNormalizado.genero)
+      }
+      if (produtoNormalizado.categoria && produtoNormalizado.categoria !== "Sem categoria") {
+        opcoes.add(produtoNormalizado.categoria)
+      }
+    }
+  })
+
+  return Array.from(opcoes).sort()
+}
+
+// Função para filtrar produtos otimizada
+const filtrarProdutos = (produtos, query) => {
+  if (!Array.isArray(produtos) || !query || typeof query !== "string") {
+    return produtos
+  }
+
+  const queryLower = query.toLowerCase().trim()
+
+  return produtos.filter((produto) => {
+    const produtoNormalizado = normalizarProduto(produto)
+    if (!produtoNormalizado) return false
+
+    const campos = [
+      produtoNormalizado.id?.toString(),
+      produtoNormalizado.descricao,
+      produtoNormalizado.marca,
+      produtoNormalizado.genero,
+      produtoNormalizado.categoria,
+      produtoNormalizado.tamanho,
+      produtoNormalizado.cor,
+    ]
+
+    return campos.some((campo) => campo && campo.toLowerCase().includes(queryLower))
+  })
+}
+
+// Função para formatar preço
+const formatarPreco = (preco) => {
+  const precoNumerico = Number(preco) || 0
+  return precoNumerico.toFixed(2).replace(".", ",")
+}
 
 export default function EstoquePage() {
   const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState("") // Usado para a barra de pesquisa
-  const [produtos, setProdutos] = useState([]) // Produtos em estoque
-  const [produtoSelecionado, setProdutoSelecionado] = useState(null) // Para o modal de visualização
+
+  // Estados principais
+  const [searchQuery, setSearchQuery] = useState("")
+  const [produtos, setProdutos] = useState([])
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [searchOptions, setSearchOptions] = useState([])
-  const [cartItemCount, setCartItemCount] = useState(0) // Contagem de itens no carrinho
+  const [cartItemCount, setCartItemCount] = useState(0)
+
+  // Estados de paginação
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [openProductModal, setOpenProductModal] = useState(false) // Para o modal de visualização de produto
-  const [loading, setLoading] = useState(true) // Estado de carregamento
 
-  // Estados de Snackbar para feedback
+  // Estados de UI
+  const [openProductModal, setOpenProductModal] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   })
 
-  // Efeito para buscar produtos e a contagem inicial do carrinho
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setLoading(true);
-        // Buscar todos os produtos disponíveis
-        const productsResponse = await listarProdutos()
-        if (productsResponse.sucesso && productsResponse.produtos) {
-          setProdutos(productsResponse.produtos)
-          const options = productsResponse.produtos.flatMap(p => [
-            p.id?.toString(), p.descricao, p.marca, p.genero
-          ]).filter(Boolean);
-          setSearchOptions([...new Set(options)]);
-        } else {
-          console.error("Erro ao buscar produtos:", productsResponse.mensagem)
-        }
-
-        // Buscar a contagem inicial do carrinho
-        const cartResponse = await listarCarrinho()
-        if (cartResponse.sucesso && cartResponse.carrinho) {
-          setCartItemCount(cartResponse.carrinho.totalItens)
-        } else {
-          console.error("Erro ao buscar contagem do carrinho:", cartResponse.mensagem)
-        }
-      } catch (error) {
-        console.error("Erro ao carregar dados iniciais:", error)
-        setSnackbar({
-          open: true,
-          message: "Erro ao carregar dados. Verifique a conexão com o servidor.",
-          severity: "error",
-        })
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchInitialData()
-  }, [])
-
-  const handleOpenProductModal = (produto) => {
-    setProdutoSelecionado(produto)
-    setOpenProductModal(true)
-  }
-
-  const handleCloseProductModal = () => {
-    setOpenProductModal(false)
-  }
-
-  // Função para adicionar ao carrinho (ícone na tabela e no modal)
-  const handleAddToCart = async (produto) => {
+  // Função para buscar dados iniciais
+  const buscarDadosIniciais = async () => {
     try {
-      const result = await adicionarAoCarrinho(produto, 1)
-      if (result.sucesso) {
-        console.log("Produto adicionado ao carrinho com sucesso!", result.carrinho)
-        setCartItemCount(result.carrinho.totalItens) // Atualiza a contagem
-        setSnackbar({
-          open: true,
-          message: `"${produto.descricao}" adicionado ao carrinho!`,
-          severity: "success",
-        })
-        setOpenProductModal(false); // Fecha o modal após adicionar
+      setLoading(true)
+
+      // Buscar produtos
+      const produtosResponse = await listarProdutos()
+
+      if (produtosResponse?.sucesso && Array.isArray(produtosResponse.produtos)) {
+        const produtosNormalizados = produtosResponse.produtos
+          .map(normalizarProduto)
+          .filter((produto) => produto !== null && produto.ativo)
+
+        setProdutos(produtosNormalizados)
+        setSearchOptions(criarOpcoesBusca(produtosNormalizados))
       } else {
-        console.error("Erro ao adicionar produto ao carrinho:", result.mensagem)
-        setSnackbar({
-          open: true,
-          message: `Erro ao adicionar produto ao carrinho: ${result.mensagem}`,
-          severity: "error",
-        })
+        console.error("Erro ao buscar produtos:", produtosResponse?.mensagem)
+        mostrarSnackbar("Erro ao carregar produtos", "error")
+      }
+
+      // Buscar carrinho
+      const carrinhoResponse = await listarCarrinho()
+
+      if (carrinhoResponse?.sucesso && carrinhoResponse.carrinho) {
+        const totalItens = Number(carrinhoResponse.carrinho.totalItens) || 0
+        setCartItemCount(totalItens)
+      } else {
+        console.error("Erro ao buscar carrinho:", carrinhoResponse?.mensagem)
       }
     } catch (error) {
-      console.error("Erro inesperado ao adicionar produto ao carrinho:", error)
-      setSnackbar({
-        open: true,
-        message: "Ocorreu um erro inesperado ao adicionar o produto ao carrinho.",
-        severity: "error",
-      })
+      console.error("Erro ao carregar dados iniciais:", error)
+      mostrarSnackbar("Erro ao carregar dados. Verifique a conexão.", "error")
+    } finally {
+      setLoading(false)
     }
   }
 
-  // Função para navegar diretamente para a página do carrinho
-  const handleNavigateToCart = () => {
-    router.push("/vendas/carrinho") // Assumindo que a página do carrinho está em /vendas/carrinho
+  // Função para mostrar snackbar
+  const mostrarSnackbar = (message, severity = "success") => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    })
   }
 
+  // Efeito para carregar dados iniciais
+  useEffect(() => {
+    buscarDadosIniciais()
+  }, [])
+
+  // Função para abrir modal do produto
+  const handleOpenProductModal = (produto) => {
+    const produtoNormalizado = normalizarProduto(produto)
+    if (produtoNormalizado) {
+      setProdutoSelecionado(produtoNormalizado)
+      setOpenProductModal(true)
+    }
+  }
+
+  // Função para fechar modal
+  const handleCloseProductModal = () => {
+    setOpenProductModal(false)
+    setProdutoSelecionado(null)
+  }
+
+  // Função para adicionar ao carrinho
+  const handleAddToCart = async (produto) => {
+    try {
+      const produtoNormalizado = normalizarProduto(produto)
+      if (!produtoNormalizado) {
+        mostrarSnackbar("Produto inválido", "error")
+        return
+      }
+
+      const resultado = await adicionarAoCarrinho(produtoNormalizado, 1)
+
+      if (resultado?.sucesso) {
+        const novoTotal = Number(resultado.carrinho?.totalItens) || cartItemCount + 1
+        setCartItemCount(novoTotal)
+        mostrarSnackbar(`"${produtoNormalizado.descricao}" adicionado ao carrinho!`, "success")
+        setOpenProductModal(false)
+      } else {
+        const mensagemErro = resultado?.mensagem || "Erro desconhecido"
+        mostrarSnackbar(`Erro ao adicionar produto: ${mensagemErro}`, "error")
+      }
+    } catch (error) {
+      console.error("Erro ao adicionar produto ao carrinho:", error)
+      mostrarSnackbar("Erro inesperado ao adicionar produto", "error")
+    }
+  }
+
+  // Função para navegar ao carrinho
+  const handleNavigateToCart = () => {
+    router.push("/vendas/carrinho")
+  }
+
+  // Handlers de paginação
   const handleChangePage = (event, newPage) => {
     setPage(newPage)
   }
@@ -165,49 +259,51 @@ export default function EstoquePage() {
     setPage(0)
   }
 
-  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false })
+  // Handler para fechar snackbar
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }))
+  }
 
-  const filteredProdutos = useMemo(() => {
-    return produtos.filter((produto) => {
-      const query = searchQuery.toLowerCase();
-      return (
-        produto.id?.toString().toLowerCase().includes(query) ||
-        produto.descricao?.toLowerCase().includes(query) ||
-        produto.marca?.toLowerCase().includes(query) ||
-        produto.genero?.toLowerCase().includes(query)
-      );
-    });
-  }, [produtos, searchQuery]);
+  // Produtos filtrados com memoização
+  const produtosFiltrados = useMemo(() => {
+    return filtrarProdutos(produtos, searchQuery)
+  }, [produtos, searchQuery])
 
+  // Produtos paginados
+  const produtosPaginados = useMemo(() => {
+    const inicio = page * rowsPerPage
+    const fim = inicio + rowsPerPage
+    return produtosFiltrados.slice(inicio, fim)
+  }, [produtosFiltrados, page, rowsPerPage])
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
       <Sidebar />
 
-      {/* Botão do Carrinho no canto superior direito */}
+      {/* Botão do Carrinho */}
       <Box
         sx={{
-          position: 'fixed',
-          top: 72, // Ajustado para mover mais para baixo
-          right: 140, // Ajustado para mover mais para a esquerda
+          position: "fixed",
+          top: 72,
+          right: 140,
           zIndex: 1000,
         }}
       >
         <IconButton
           onClick={handleNavigateToCart}
           sx={{
-            bgcolor: '#FADADD', // Cor rosa padrão
-            color: '#333', // Cor do ícone
-            '&:hover': {
-              bgcolor: '#ffb6c1', // Cor rosa mais clara ao passar o mouse
+            bgcolor: "#FADADD",
+            color: "#333",
+            "&:hover": {
+              bgcolor: "#ffb6c1",
             },
-            borderRadius: '50%', // Botão redondo
-            width: 56, // Largura fixa
-            height: 56, // Altura fixa
-            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Sombra para destaque
+            borderRadius: "50%",
+            width: 56,
+            height: 56,
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
           }}
         >
-          <Badge badgeContent={cartItemCount} color="error"> {/* Badge para a contagem */}
+          <Badge badgeContent={cartItemCount} color="error">
             <ShoppingCartIcon sx={{ fontSize: 30 }} />
           </Badge>
         </IconButton>
@@ -225,7 +321,7 @@ export default function EstoquePage() {
           transition: "margin-left 0.3s ease",
         }}
       >
-        {/* Header - Padrão de Fornecedores */}
+        {/* Header */}
         <Box
           sx={{
             display: "flex",
@@ -237,19 +333,17 @@ export default function EstoquePage() {
           <Typography
             variant="h4"
             sx={{
-              justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
               fontWeight: "bold",
               fontSize: "50px",
               color: "#000000",
+              textAlign: "center",
             }}
           >
             Estoque
           </Typography>
         </Box>
 
-        {/* Search Bar - Padrão de Fornecedores */}
+        {/* Barra de Pesquisa */}
         <Box
           sx={{
             display: "flex",
@@ -325,7 +419,7 @@ export default function EstoquePage() {
           />
         </Box>
 
-        {/* Tabela de Produtos em Estoque - Padrão de Fornecedores */}
+        {/* Tabela de Produtos */}
         <Card
           sx={{
             padding: "20px",
@@ -338,19 +432,18 @@ export default function EstoquePage() {
             border: "2px solid #B0B0B0",
           }}
         >
-          {/* Novo título para a tabela */}
           <Typography
             variant="h6"
             sx={{
               mb: 2,
               fontWeight: 700,
               color: "#333",
-              fontSize: "2rem", // Ajuste o tamanho da fonte conforme desejar
-              textAlign: "left", // Alinhe à esquerda ou ao centro
-              pl: 1, // Adicione um pouco de padding à esquerda se necessário
+              fontSize: "2rem",
+              textAlign: "left",
+              pl: 1,
             }}
           >
-            Produtos disponíveis
+            Produtos disponíveis ({produtosFiltrados.length})
           </Typography>
 
           <TableContainer
@@ -365,104 +458,22 @@ export default function EstoquePage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                    }}
-                  >
-                    ID
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                    }}
-                  >
-                    Descrição
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                    }}
-                  >
-                    Marca
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                    }}
-                  >
-                    Tamanho
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                    }}
-                  >
-                    Gênero
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                    }}
-                  >
-                    Estado
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                    }}
-                  >
-                    Quantidade
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                    }}
-                  >
-                    Valor
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                    }}
-                  >
-                    Ações
-                  </TableCell>
+                  {["ID", "Descrição", "Marca", "Tamanho", "Gênero", "Estado", "Quantidade", "Valor", "Ações"].map(
+                    (header, index) => (
+                      <TableCell
+                        key={header}
+                        align="center"
+                        sx={{
+                          fontSize: "18px",
+                          textAlign: "center",
+                          backgroundColor: "#FADADD",
+                          borderRight: index < 8 ? "2px solid #F5F5F5" : "none",
+                        }}
+                      >
+                        {header}
+                      </TableCell>
+                    ),
+                  )}
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -474,80 +485,18 @@ export default function EstoquePage() {
                       </Box>
                     </TableCell>
                   </TableRow>
-                ) : filteredProdutos.length > 0 ? (
-                  filteredProdutos.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((produto, index) => (
-                    <TableRow key={index}>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {produto.id}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {produto.descricao}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {produto.marca || "-"}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {produto.tamanho || "-"}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {produto.genero || "-"}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {produto.estadoConservacao}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {produto.quantidade || 1}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        R$ {produto.preco ? produto.preco.toFixed(2).replace(".", ",") : "0,00"}
+                ) : produtosPaginados.length > 0 ? (
+                  produtosPaginados.map((produto, index) => (
+                    <TableRow key={produto.id || index}>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.id || "-"}</TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.descricao}</TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.marca}</TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.tamanho}</TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.genero}</TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.estadoConservacao}</TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.quantidade}</TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
+                        R$ {formatarPreco(produto.preco)}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -559,10 +508,18 @@ export default function EstoquePage() {
                           minWidth: "150px",
                         }}
                       >
-                        <IconButton onClick={() => handleOpenProductModal(produto)} sx={{ color: "#00509E" }}>
+                        <IconButton
+                          onClick={() => handleOpenProductModal(produto)}
+                          sx={{ color: "#00509E" }}
+                          title="Visualizar produto"
+                        >
                           <VisibilityIcon />
                         </IconButton>
-                        <IconButton onClick={() => handleAddToCart(produto)} sx={{ color: "#00509E" }}>
+                        <IconButton
+                          onClick={() => handleAddToCart(produto)}
+                          sx={{ color: "#00509E" }}
+                          title="Adicionar ao carrinho"
+                        >
                           <ShoppingCartIcon />
                         </IconButton>
                       </TableCell>
@@ -571,7 +528,9 @@ export default function EstoquePage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={9} sx={{ textAlign: "center", py: 4 }}>
-                      Nenhum produto encontrado no estoque
+                      {searchQuery
+                        ? `Nenhum produto encontrado para "${searchQuery}"`
+                        : "Nenhum produto encontrado no estoque"}
                     </TableCell>
                   </TableRow>
                 )}
@@ -581,18 +540,19 @@ export default function EstoquePage() {
 
           <TablePagination
             component="div"
-            count={filteredProdutos.length}
+            count={produtosFiltrados.length}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25]}
+            rowsPerPageOptions={[5, 10, 25, 50]}
             labelRowsPerPage="Linhas por página:"
             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
           />
         </Card>
       </Box>
 
+      {/* Modal de Detalhes do Produto */}
       <Dialog
         open={openProductModal}
         onClose={handleCloseProductModal}
@@ -645,7 +605,6 @@ export default function EstoquePage() {
                       Imagem do Produto
                     </Typography>
                   </Box>
-
                   <Box sx={{ mt: 3 }}>
                     <Chip
                       icon={<CheckCircleIcon />}
@@ -665,7 +624,7 @@ export default function EstoquePage() {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <AttachMoneyIcon sx={{ color: "#00509E", mr: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600, color: "#00509E" }}>
-                      R$ {produtoSelecionado.preco ? produtoSelecionado.preco.toFixed(2).replace(".", ",") : "0,00"}
+                      R$ {formatarPreco(produtoSelecionado.preco)}
                     </Typography>
                   </Box>
 
@@ -674,7 +633,7 @@ export default function EstoquePage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <QrCodeIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>ID:</strong> {produtoSelecionado.id}
+                          <strong>ID:</strong> {produtoSelecionado.id || "N/A"}
                         </Typography>
                       </Box>
                     </Grid>
@@ -682,7 +641,7 @@ export default function EstoquePage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <InventoryIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Tamanho:</strong> {produtoSelecionado.tamanho || "-"}
+                          <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
                         </Typography>
                       </Box>
                     </Grid>
@@ -690,7 +649,7 @@ export default function EstoquePage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <CategoryIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Gênero:</strong> {produtoSelecionado.genero || "-"}
+                          <strong>Gênero:</strong> {produtoSelecionado.genero}
                         </Typography>
                       </Box>
                     </Grid>
@@ -698,7 +657,7 @@ export default function EstoquePage() {
                       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                         <InventoryIcon sx={{ color: "#666", mr: 1 }} />
                         <Typography variant="body1">
-                          <strong>Quantidade:</strong> {produtoSelecionado.quantidade || 1}
+                          <strong>Quantidade:</strong> {produtoSelecionado.quantidade}
                         </Typography>
                       </Box>
                     </Grid>
@@ -713,7 +672,7 @@ export default function EstoquePage() {
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Marca:</strong> {produtoSelecionado.marca || "-"}
+                        <strong>Marca:</strong> {produtoSelecionado.marca}
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
@@ -721,6 +680,20 @@ export default function EstoquePage() {
                         <strong>Estado:</strong> {produtoSelecionado.estadoConservacao}
                       </Typography>
                     </Grid>
+                    {produtoSelecionado.categoria && produtoSelecionado.categoria !== "Sem categoria" && (
+                      <Grid item xs={6}>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Categoria:</strong> {produtoSelecionado.categoria}
+                        </Typography>
+                      </Grid>
+                    )}
+                    {produtoSelecionado.cor && produtoSelecionado.cor !== "Não informada" && (
+                      <Grid item xs={6}>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Cor:</strong> {produtoSelecionado.cor}
+                        </Typography>
+                      </Grid>
+                    )}
                   </Grid>
                 </Grid>
               </Grid>
