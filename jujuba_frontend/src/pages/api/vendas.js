@@ -1,6 +1,6 @@
 const BASE_URL = "http://localhost:8080/api/vendas"
 
-const tratarErro = (error) => {
+const tratarErro = (error ) => {
   if (error.name === "TypeError" && error.message.includes("fetch")) {
     return {
       sucesso: false,
@@ -25,7 +25,10 @@ const tratarErro = (error) => {
 
 export const listarVendasRealizadas = async () => {
   try {
-    const response = await fetch(`${BASE_URL}/realizadas`, {
+    // ATENÇÃO: Seu VendaController não parece ter a rota "/realizadas".
+    // O endpoint para listar todas as vendas é GET /api/vendas.
+    // Se "/realizadas" for um alias ou filtro, mantenha. Senão, remova.
+    const response = await fetch(`${BASE_URL}`, { // Ajustado para o endpoint principal
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -83,17 +86,15 @@ export const buscarVendaPorId = async (id) => {
   }
 }
 
-export const finalizarVendaFornecedora = async (fornecedoraId, itens) => {
+export const finalizarVendaFornecedora = async (fornecedoraId) => {
   try {
-    const response = await fetch(`${BASE_URL}/finalizar-fornecedora`, {
+    // Ajustado para o endpoint correto do seu VendaController
+    const response = await fetch(`${BASE_URL}/finalizar/fornecedora/${fornecedoraId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        fornecedoraId,
-        itens,
-      }),
+      // O corpo foi removido pois o backend não espera um para esta ação
     })
 
     if (!response.ok) {
@@ -200,4 +201,46 @@ export const excluirVenda = async (id) => {
       mensagem: "Erro ao excluir venda",
     }
   }
-}/////
+}
+
+// ==================================================================
+// **INÍCIO DA CORREÇÃO: Função que estava faltando**
+// ==================================================================
+
+/**
+ * Finaliza a venda atual do carrinho (venda simples).
+ * Esta função chama o endpoint POST /api/vendas/finalizar/simples.
+ */
+export const finalizarVendaSimples = async () => {
+  try {
+    // A URL correta, de acordo com o seu VendaController.java
+    const response = await fetch(`${BASE_URL}/finalizar/simples`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      // Não precisa de corpo, pois o backend já sabe qual é o carrinho da sessão.
+    });
+
+    if (!response.ok) {
+      const erroData = await response.json().catch(() => null);
+      const mensagemErro = erroData?.mensagem || `Erro no servidor (status: ${response.status})`;
+      throw new Error(mensagemErro);
+    }
+
+    // O backend retorna a venda criada, então podemos processá-la.
+    const data = await response.json();
+
+    return {
+      sucesso: true,
+      venda: data,
+      mensagem: "Venda finalizada com sucesso!",
+    };
+  } catch (error) {
+    console.error("Erro ao finalizar venda simples:", error);
+    return {
+      sucesso: false,
+      mensagem: error.message || "Não foi possível finalizar a venda.",
+    };
+  }
+};

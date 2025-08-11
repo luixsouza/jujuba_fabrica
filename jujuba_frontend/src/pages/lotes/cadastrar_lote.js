@@ -36,7 +36,7 @@ import { createLote, getAllLotes, getFornecedoras, testApiConnection } from "../
 import Sidebar from "../../components/sidebar"
 
 // Importar Autocomplete do MUI
-import Autocomplete from "@mui/material/Autocomplete"
+//import Autocomplete from "@mui/material/Autocomplete"
 
 export default function CadastroLotePage() {
   const router = useRouter()
