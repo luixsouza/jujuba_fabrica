@@ -133,7 +133,7 @@ const LotePage = () => {
 
   const handleNavigateToEdit = (id) => {
     router.push(`./editar_lote?id=${id}`)
-  }
+  }///parametro id atelrado 
 
   const handleChangePage = (event, newPage) => setPage(newPage)
 

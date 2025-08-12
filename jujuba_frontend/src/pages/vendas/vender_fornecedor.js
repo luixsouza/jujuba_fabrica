@@ -42,6 +42,8 @@ import {
   CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
+import { listarCarrinho } from "../api/carrinho"
+import { finalizarVendaFornecedora } from "../api/vendas"
 
 export default function FornecedoresPage() {
   const router = useRouter()
@@ -51,6 +53,7 @@ export default function FornecedoresPage() {
   const [openFinalizarModal, setOpenFinalizarModal] = useState(false)
   const [openViewModal, setOpenViewModal] = useState(false)
   const [selectedFornecedor, setSelectedFornecedor] = useState(null)
+  const [selectedFornecedorForSale, setSelectedFornecedorForSale] = useState(null)
   const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false)
   const [fornecedorToDelete, setFornecedorToDelete] = useState(null)
   const [openSuccessMessage, setOpenSuccessMessage] = useState(false)
@@ -58,6 +61,7 @@ export default function FornecedoresPage() {
   const [error, setError] = useState(null)
   const [carrinhoItems, setCarrinhoItems] = useState([])
   const [totalVenda, setTotalVenda] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
 
   // Função para formatar valor monetário
   const formatarValor = (valor) => {
@@ -94,17 +98,27 @@ export default function FornecedoresPage() {
   }, [])
 
   useEffect(() => {
-    const carrinhoSalvo = localStorage.getItem("carrinho")
-    if (carrinhoSalvo) {
-      const items = JSON.parse(carrinhoSalvo)
-      setCarrinhoItems(items)
-      const total = items.reduce((sum, item) => {
-        const preco = obterValorSeguro(item.preco)
-        const quantidade = obterValorSeguro(item.quantidade)
-        return sum + preco * quantidade
-      }, 0)
-      setTotalVenda(total)
+    const fetchCartItems = async () => {
+      try {
+        const response = await listarCarrinho()
+        if (response.sucesso && response.carrinho) {
+          const items = response.carrinho.itens || []
+          setCarrinhoItems(items)
+          setTotalVenda(Number(response.carrinho.valorTotal) || 0)
+          console.log("Carrinho carregado via API:", items)
+        } else {
+          console.error("Erro ao carregar carrinho:", response.mensagem)
+          setCarrinhoItems([])
+          setTotalVenda(0)
+        }
+      } catch (error) {
+        console.error("Erro ao carregar carrinho:", error)
+        setCarrinhoItems([])
+        setTotalVenda(0)
+      }
     }
+
+    fetchCartItems()
   }, [])
 
   const handleGoBack = () => {
@@ -190,8 +204,9 @@ export default function FornecedoresPage() {
   }
 
   const handleFinalizarCompra = () => {
-    if (!selectedFornecedor) {
-      setSelectedFornecedor(fornecedores[0])
+    if (!selectedFornecedorForSale) {
+      alert("Por favor, selecione um fornecedor antes de finalizar a compra.")
+      return
     }
     setOpenFinalizarModal(true)
   }
@@ -200,11 +215,19 @@ export default function FornecedoresPage() {
     setOpenFinalizarModal(false)
   }
 
-  const handleConfirmFinalizarCompra = async () => {
-    if (!selectedFornecedor || carrinhoItems.length === 0) return
+  const handleConfirmarCompra = async () => {
+    if (!selectedFornecedorForSale || carrinhoItems.length === 0) return
 
     try {
-      // Simular finalização da venda
+      setIsLoading(true)
+
+      const resultado = await finalizarVendaFornecedora(selectedFornecedorForSale.id.toString())
+
+      if (!resultado.sucesso) {
+        throw new Error(resultado.mensagem)
+      }
+
+      // Limpar carrinho apenas após sucesso no backend
       localStorage.removeItem("carrinho")
       setCarrinhoItems([])
 
@@ -216,6 +239,8 @@ export default function FornecedoresPage() {
     } catch (error) {
       console.error("Erro ao finalizar venda:", error)
       setError("Falha ao finalizar a venda. Por favor, tente novamente.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -224,9 +249,13 @@ export default function FornecedoresPage() {
   }
 
   const calcularCreditoFinal = () => {
-    if (!selectedFornecedor) return 0
-    const credito = obterValorSeguro(selectedFornecedor.valorCredito)
+    if (!selectedFornecedorForSale) return 0
+    const credito = obterValorSeguro(selectedFornecedorForSale.valorCredito)
     return credito - totalVenda
+  }
+
+  const handleSelectFornecedorForSale = (fornecedor) => {
+    setSelectedFornecedorForSale(fornecedor)
   }
 
   return (
@@ -245,6 +274,41 @@ export default function FornecedoresPage() {
           </Typography>
           <Box sx={{ width: 48 }} />
         </Box>
+
+        {selectedFornecedorForSale && (
+          <Box
+            sx={{
+              bgcolor: "#e8f5e8",
+              border: "2px solid #4caf50",
+              borderRadius: 2,
+              p: 2,
+              mb: 3,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box sx={{ color: "#4caf50", fontSize: "1.2rem" }}>✓</Box>
+              <Box>
+                <Typography sx={{ fontWeight: "bold", color: "#2e7d32" }}>
+                  Fornecedor Selecionado: {selectedFornecedorForSale.nome}
+                </Typography>
+                <Typography sx={{ fontSize: "0.9rem", color: "#555" }}>
+                  Crédito disponível: R$ {formatarValor(selectedFornecedorForSale.valorCredito)}
+                </Typography>
+              </Box>
+            </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setSelectedFornecedorForSale(null)}
+              sx={{ color: "#666", borderColor: "#666" }}
+            >
+              Desselecionar
+            </Button>
+          </Box>
+        )}
 
         <Box
           sx={{
@@ -324,19 +388,7 @@ export default function FornecedoresPage() {
           />
         </Box>
 
-        <TableContainer
-          component={Paper}
-          sx={{
-            mx: "auto",
-            width: "100%",
-            maxWidth: 1200,
-            borderRadius: 4,
-            overflow: "hidden",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            mb: 4,
-            flex: 1,
-          }}
-        >
+        <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
           {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 300 }}>
               <CircularProgress />
@@ -367,8 +419,32 @@ export default function FornecedoresPage() {
               <TableBody>
                 {fornecedores.length > 0 ? (
                   fornecedores.map((fornecedor) => (
-                    <TableRow key={fornecedor.id} sx={{ bgcolor: "white" }}>
-                      <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.nome || "N/A"}</TableCell>
+                    <TableRow
+                      key={fornecedor.id}
+                      onClick={() => handleSelectFornecedorForSale(fornecedor)}
+                      sx={{
+                        bgcolor: selectedFornecedorForSale?.id === fornecedor.id ? "#e8f5e8" : "white",
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: selectedFornecedorForSale?.id === fornecedor.id ? "#d4edda" : "#f5f5f5",
+                        },
+                        border: selectedFornecedorForSale?.id === fornecedor.id ? "2px solid #4caf50" : "none",
+                      }}
+                    >
+                      <TableCell
+                        sx={{
+                          fontSize: "0.95rem",
+                          color: selectedFornecedorForSale?.id === fornecedor.id ? "#2e7d32" : "#555",
+                          fontWeight: selectedFornecedorForSale?.id === fornecedor.id ? "bold" : "normal",
+                        }}
+                      >
+                        {fornecedor.nome || "N/A"}
+                        {selectedFornecedorForSale?.id === fornecedor.id && (
+                          <Box component="span" sx={{ ml: 1, color: "#4caf50" }}>
+                            ✓
+                          </Box>
+                        )}
+                      </TableCell>
                       <TableCell sx={{ fontSize: "0.95rem", color: "#555" }}>{fornecedor.contato || "N/A"}</TableCell>
                       <TableCell sx={{ fontSize: "0.95rem", textAlign: "center", color: "#555" }}>
                         R$ {formatarValor(fornecedor.valorCredito)}
@@ -380,14 +456,20 @@ export default function FornecedoresPage() {
                         <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
                           <IconButton
                             size="small"
-                            onClick={() => handleViewFornecedor(fornecedor.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleViewFornecedor(fornecedor.id)
+                            }}
                             sx={{ color: "text.secondary" }}
                           >
                             <VisibilityIcon fontSize="small" />
                           </IconButton>
                           <IconButton
                             size="small"
-                            onClick={() => handleDeleteFornecedor(fornecedor.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteFornecedor(fornecedor.id)
+                            }}
                             sx={{ color: "text.secondary" }}
                           >
                             <DeleteIcon fontSize="small" />
@@ -412,28 +494,28 @@ export default function FornecedoresPage() {
           <Button
             variant="contained"
             onClick={handleFinalizarCompra}
-            disabled={carrinhoItems.length === 0 || fornecedores.length === 0}
+            disabled={!selectedFornecedorForSale}
             sx={{
-              bgcolor: "#ffccd5",
-              color: "black",
+              bgcolor: selectedFornecedorForSale ? "#ffccd5" : "#e0e0e0",
+              color: selectedFornecedorForSale ? "black" : "#999",
               px: 6,
               py: 1.5,
-              borderRadius: 28,
+              fontSize: "1.1rem",
               fontWeight: "bold",
-              fontSize: "1rem",
-              textTransform: "none",
+              borderRadius: 3,
               "&:hover": {
-                bgcolor: "#ffb6c1",
+                bgcolor: selectedFornecedorForSale ? "#ffb3c1" : "#e0e0e0",
               },
-              "&.Mui-disabled": {
-                bgcolor: "#f5f5f5",
-                color: "#aaa",
-              },
-              width: "300px",
             }}
           >
-            Finalizar compra
+            {selectedFornecedorForSale ? "Finalizar compra" : "Selecione um fornecedor"}
           </Button>
+        </Box>
+
+        <Box sx={{ textAlign: "center", mb: 2, fontSize: "0.8rem", color: "#666" }}>
+          <Typography>
+            Fornecedor selecionado: {selectedFornecedorForSale ? "✓" : "✗"} | Itens no carrinho: {carrinhoItems.length}
+          </Typography>
         </Box>
       </Box>
 
@@ -599,162 +681,92 @@ export default function FornecedoresPage() {
         >
           Finalizar compra
         </DialogTitle>
-        <DialogContent sx={{ p: 2 }}>
-          {selectedFornecedor && (
-            <Table sx={{ mb: 3, mt: 2 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{
-                      bgcolor: "#ffc1cc",
-                      color: "#333",
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
-                      p: 1.5,
-                      textAlign: "center",
-                      border: "1px solid #e0e0e0",
-                    }}
-                  >
-                    Nome Fornecedora
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      bgcolor: "#ffc1cc",
-                      color: "#333",
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
-                      p: 1.5,
-                      textAlign: "center",
-                      border: "1px solid #e0e0e0",
-                    }}
-                  >
-                    Crédito disponível
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      bgcolor: "#ffc1cc",
-                      color: "#333",
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
-                      p: 1.5,
-                      textAlign: "center",
-                      border: "1px solid #e0e0e0",
-                    }}
-                  >
-                    Total da venda
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      bgcolor: "#ffc1cc",
-                      color: "#333",
-                      fontWeight: 500,
-                      fontSize: "0.9rem",
-                      p: 1.5,
-                      textAlign: "center",
-                      border: "1px solid #e0e0e0",
-                    }}
-                  >
-                    Crédito final
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                <TableRow>
-                  <TableCell
-                    sx={{
-                      bgcolor: "#f5f5f5",
-                      color: "#333",
-                      fontSize: "0.9rem",
-                      p: 1.5,
-                      textAlign: "center",
-                      border: "1px solid #e0e0e0",
-                    }}
-                  >
-                    {selectedFornecedor.nome || "N/A"}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      bgcolor: "#f5f5f5",
-                      color: "#333",
-                      fontSize: "0.9rem",
-                      p: 1.5,
-                      textAlign: "center",
-                      border: "1px solid #e0e0e0",
-                    }}
-                  >
-                    R$ {formatarValor(selectedFornecedor.valorCredito)}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      bgcolor: "#f5f5f5",
-                      color: "#333",
-                      fontSize: "0.9rem",
-                      p: 1.5,
-                      textAlign: "center",
-                      border: "1px solid #e0e0e0",
-                    }}
-                  >
-                    R$ {formatarValor(totalVenda)}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      bgcolor: "#f5f5f5",
-                      color: calcularCreditoFinal() >= 0 ? "#008000" : "#d32f2f",
-                      fontWeight: "bold",
-                      fontSize: "0.9rem",
-                      p: 1.5,
-                      textAlign: "center",
-                      border: "1px solid #e0e0e0",
-                    }}
-                  >
-                    R$ {formatarValor(calcularCreditoFinal())}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+
+        <DialogContent sx={{ p: 3 }}>
+          {selectedFornecedorForSale && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: "#f8f9fa", borderRadius: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1, color: "#2e7d32" }}>
+                Fornecedor Selecionado
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Nome:</strong> {selectedFornecedorForSale.nome}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Contato:</strong> {selectedFornecedorForSale.contato || "N/A"}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Crédito disponível:</strong> R$ {formatarValor(selectedFornecedorForSale.valorCredito)}
+              </Typography>
+              <Typography variant="body1">
+                <strong>Chave Pix:</strong> {selectedFornecedorForSale.chavePix || "N/A"}
+              </Typography>
+            </Box>
           )}
 
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-            <Button
-              variant="contained"
-              onClick={handleConfirmFinalizarCompra}
-              sx={{
-                bgcolor: "#ffc1cc",
-                color: "black",
-                "&:hover": { bgcolor: "#ffb6c1" },
-                borderRadius: 28,
-                px: 4,
-                py: 1,
-                textTransform: "none",
-                fontWeight: 600,
-                boxShadow: "none",
-                fontSize: "1rem",
-                width: "45%",
-              }}
-            >
-              Sim
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleCloseFinalizarModal}
-              sx={{
-                bgcolor: "#ffc1cc",
-                color: "black",
-                "&:hover": { bgcolor: "#ffb6c1" },
-                borderRadius: 28,
-                px: 4,
-                py: 1,
-                textTransform: "none",
-                fontWeight: 600,
-                boxShadow: "none",
-                fontSize: "1rem",
-                width: "45%",
-              }}
-            >
-              Não
-            </Button>
+          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
+            Resumo da Compra
+          </Typography>
+
+          <Box sx={{ mb: 3 }}>
+            {carrinhoItems.map((item, index) => (
+              <Box key={index} sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                <Typography variant="body2">{item.descricao}</Typography>
+                <Typography variant="body2">R$ {formatarValor(item.preco)}</Typography>
+              </Box>
+            ))}
           </Box>
+
+          <Box sx={{ borderTop: "1px solid #ddd", pt: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                Total:
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                R$ {formatarValor(totalVenda)}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Confirme os dados antes de finalizar a compra.
+          </Typography>
         </DialogContent>
+
+        <DialogActions sx={{ p: 3, bgcolor: "#f8f9fa" }}>
+          <Button
+            variant="outlined"
+            onClick={handleCloseFinalizarModal}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              borderColor: "#ccc",
+              color: "#666",
+              "&:hover": {
+                borderColor: "#999",
+                bgcolor: "#f5f5f5",
+              },
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmarCompra}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              bgcolor: "#4caf50",
+              color: "white",
+              "&:hover": {
+                bgcolor: "#45a049",
+              },
+            }}
+          >
+            Confirmar Compra
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Modal de Confirmação de Exclusão */}
@@ -828,7 +840,6 @@ export default function FornecedoresPage() {
           </Button>
         </DialogActions>
       </Dialog>
-
 
       <Snackbar
         open={openSuccessMessage}
