@@ -23,6 +23,7 @@ import Sidebar from "../../components/sidebar"
 import { useRouter } from "next/router" // Alterado de next/navigation para next/router
 import axios from "axios"
 
+const BACKEND_BASE_URL = "http://localhost:8080"
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
 
 export default function FornecedoresVisualizar() {
@@ -111,17 +112,22 @@ export default function FornecedoresVisualizar() {
     setSnackbar({ ...snackbar, open: false })
   }
 
-  const handleDownloadContrato = () => {
-    if (fornecedora.contratoUrl) {
-      window.open(fornecedora.contratoUrl, "_blank")
-    } else {
-      setSnackbar({
-        open: true,
-        message: "Contrato não disponível para download",
-        severity: "warning",
-      })
-    }
+const handleDownloadContrato = () => {
+  if (fornecedora.contratoUrl) {
+    const url = fornecedora.contratoUrl.startsWith("http")
+      ? fornecedora.contratoUrl
+      : `${BACKEND_BASE_URL}/${fornecedora.contratoUrl.replace(/^\/+/, "")}`
+
+    window.open(url, "_blank")
+  } else {
+    setSnackbar({
+      open: true,
+      message: "Contrato não disponível para download",
+      severity: "warning",
+    })
   }
+}
+
 
   if (loading) {
     return (

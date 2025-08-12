@@ -25,24 +25,23 @@ import axios from "axios"
 
 const BASE_URL = "http://localhost:8080/api/fornecedoras"
 
-// Função para editar fornecedora usando parâmetros de formulário
-const editarFornecedora = async (id, fornecedoraData) => {
+// Função para editar fornecedora usando FormData (para enviar arquivo e dados)
+const editarFornecedora = async (id, fornecedoraData, selectedFile) => {
   try {
     console.log("=== INICIANDO EDIÇÃO ===")
     console.log("ID:", id)
-    console.log("URL:", `${BASE_URL}/${id}`)
-    console.log("Dados enviados:", fornecedoraData)
 
-    // O backend espera um parâmetro 'fornecedora' como String (JSON stringificado)
-    const params = new URLSearchParams()
-    params.append("fornecedora", JSON.stringify(fornecedoraData))
+    const formData = new FormData()
+    formData.append("fornecedora", JSON.stringify(fornecedoraData))
 
-    console.log("Parâmetros enviados:")
-    console.log("fornecedora:", JSON.stringify(fornecedoraData))
+    if (selectedFile) {
+      formData.append("contrato", selectedFile)
+      console.log("Arquivo contrato anexado:", selectedFile.name)
+    }
 
-    const response = await axios.put(`${BASE_URL}/${id}`, params, {
+    const response = await axios.put(`${BASE_URL}/${id}`, formData, {
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "multipart/form-data",
       },
     })
 
@@ -52,33 +51,8 @@ const editarFornecedora = async (id, fornecedoraData) => {
 
     return response.data
   } catch (error) {
-    console.error("=== ERRO COMPLETO NA EDIÇÃO ===")
-    console.error("Error object:", error)
-    console.error("Error message:", error.message)
-    console.error("Error response:", error.response)
-
-    // Capturar TODOS os detalhes do erro
-    const errorDetails = {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      headers: error.response?.headers,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        data: error.config?.data,
-        headers: error.config?.headers,
-      },
-    }
-
-    console.error("Detalhes completos do erro:", JSON.stringify(errorDetails, null, 2))
-
-    // Retornar o erro com TODOS os detalhes
-    throw {
-      ...error,
-      fullDetails: errorDetails,
-      detailedMessage: JSON.stringify(errorDetails, null, 2),
-    }
+    console.error("=== ERRO COMPLETO NA EDIÇÃO ===", error)
+    throw error
   }
 }
 
@@ -118,11 +92,7 @@ export default function FornecedoresEdicao() {
   const fetchFornecedora = async (fornecedoraId) => {
     try {
       setFetchLoading(true)
-      console.log("Buscando fornecedor com ID:", fornecedoraId)
-
       const response = await axios.get(`${BASE_URL}/${fornecedoraId}`)
-      console.log("Resposta da API:", response.data)
-
       const data = response.data
 
       setFornecedora({
@@ -137,14 +107,7 @@ export default function FornecedoresEdicao() {
       if (data.contratoUrl) {
         setContratoAtual(data.contratoUrl)
       }
-
-      setSnackbar({
-        open: true,
-        message: "Dados carregados com sucesso!",
-        severity: "success",
-      })
     } catch (error) {
-      console.error("Erro ao buscar dados do fornecedor:", error)
       setSnackbar({
         open: true,
         message: `Erro ao carregar dados do fornecedor: ${error.response?.data?.message || error.message}`,
@@ -157,14 +120,12 @@ export default function FornecedoresEdicao() {
 
   const handleChange = (event) => {
     const { name, value } = event.target
-    console.log(`Campo ${name} alterado para:`, value)
     setFornecedora((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleFileChange = (event) => {
     const file = event.target.files[0]
     if (file) {
-      console.log("Arquivo selecionado:", file.name)
       setSelectedFile(file)
       setFornecedora((prev) => ({
         ...prev,
@@ -179,15 +140,8 @@ export default function FornecedoresEdicao() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-
-    console.log("=== INICIANDO SUBMIT ===")
-    console.log("ID do fornecedor:", id)
-    console.log("Dados do formulário:", fornecedora)
-
-    // Limpar erros anteriores
     setErrorDetails(null)
 
-    // Validação
     if (
       !fornecedora.nome.trim() ||
       !fornecedora.contato.trim() ||
@@ -202,7 +156,6 @@ export default function FornecedoresEdicao() {
       return
     }
 
-    // Verificar se o ID existe
     if (!id) {
       setSnackbar({
         open: true,
@@ -214,7 +167,6 @@ export default function FornecedoresEdicao() {
 
     setLoading(true)
     try {
-      // Preparar dados no formato que o backend espera
       const fornecedoraData = {
         nome: fornecedora.nome.trim(),
         contato: fornecedora.contato.trim(),
@@ -223,13 +175,7 @@ export default function FornecedoresEdicao() {
         dataNascimento: fornecedora.dataNascimento || "01/01/2000",
       }
 
-      console.log("=== DADOS FORMATADOS PARA BACKEND ===")
-      console.log(fornecedoraData)
-
-      const responseData = await editarFornecedora(id, fornecedoraData)
-
-      console.log("=== SUCESSO ===")
-      console.log("Fornecedor atualizado:", responseData)
+      const responseData = await editarFornecedora(id, fornecedoraData, selectedFile)
 
       setSnackbar({
         open: true,
@@ -241,12 +187,7 @@ export default function FornecedoresEdicao() {
         router.back()
       }, 2000)
     } catch (error) {
-      console.error("=== ERRO NO SUBMIT ===")
-      console.error("Erro completo:", error)
-
-      // Capturar e mostrar TODOS os detalhes do erro
       setErrorDetails(error.fullDetails || error.response?.data || error)
-
       setSnackbar({
         open: true,
         message: `ERRO: ${error.response?.data || error.message}`,
