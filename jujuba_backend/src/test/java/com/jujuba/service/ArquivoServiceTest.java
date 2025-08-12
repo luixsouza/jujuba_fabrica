@@ -42,45 +42,10 @@ class ArquivoServiceTest {
     }
 
     @Test
-    void salvarImagem_SuccessTest() throws IOException {
-        MultipartFile fileMock = Mockito.mock(MultipartFile.class);
-        byte[] conteudo = "conteudo de teste".getBytes();
-        String fileName = "arquivoTeste.txt";
-
-        when(fileMock.getOriginalFilename()).thenReturn(fileName);
-        when(fileMock.getBytes()).thenReturn(conteudo);
-
-        String resultado = subject.salvarImagem(fileMock);
-
-        assertEquals(fileName, resultado.substring(resultado.lastIndexOf("_") + 1));
-    }
-
-    @Test
     public void salvarContrato_deveLancarExcecaoQuandoArquivoInvalido() {
         MultipartFile fileMock = Mockito.mock(MultipartFile.class);
 
         IOException result = assertThrows(IOException.class, () -> subject.salvarContrato(fileMock));
         assertTrue(result.getMessage().contains("Arquivo inválido."));
     }
-    
-    @Test
-    void salvarImagem_deveLancarExcecaoQuandoArquivoVazio() {
-    MultipartFile fileMock = Mockito.mock(MultipartFile.class);
-    when(fileMock.isEmpty()).thenReturn(true);
-
-    IOException exception = assertThrows(IOException.class, () -> subject.salvarImagem(fileMock));
-    assertTrue(exception.getMessage().contains("Arquivo inválido."));
-}
-
-
-    @Test
-    void salvarImagem_deveLancarExcecaoQuandoNomeNulo() {
-    MultipartFile fileMock = Mockito.mock(MultipartFile.class);
-    when(fileMock.isEmpty()).thenReturn(false);
-    when(fileMock.getOriginalFilename()).thenReturn(null);
-
-    IOException exception = assertThrows(IOException.class, () -> subject.salvarImagem(fileMock));
-    assertTrue(exception.getMessage().contains("Arquivo inválido."));
-    }
-
 }
