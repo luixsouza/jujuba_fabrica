@@ -290,7 +290,7 @@ export default function VisualizarLotePage() {
         <Card
           sx={{
             borderRadius: "25px",
-            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 245, 0.95) 100%)",
+            background: "white",
             boxShadow: "0px 15px 35px rgba(0, 0, 0, 0.1)",
             padding: "40px",
             marginBottom: "30px",
@@ -359,7 +359,7 @@ export default function VisualizarLotePage() {
               <Paper
                 sx={{
                   padding: "24px",
-                  background: "linear-gradient(135deg, #9AE4FF 0%, #B8E6FF 100%)",
+                  background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
                   borderRadius: "20px",
                   boxShadow: "0px 8px 20px rgba(154, 228, 255, 0.2)",
                   border: "1px solid rgba(255, 255, 255, 0.3)",
@@ -388,7 +388,7 @@ export default function VisualizarLotePage() {
               <Paper
                 sx={{
                   padding: "24px",
-                  background: "linear-gradient(135deg, #E8F5E8 0%, #C8E6C9 100%)",
+                  background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
                   borderRadius: "20px",
                   boxShadow: "0px 8px 20px rgba(200, 230, 201, 0.2)",
                   border: "1px solid rgba(255, 255, 255, 0.3)",
@@ -404,7 +404,7 @@ export default function VisualizarLotePage() {
                     <BusinessIcon sx={{ color: "#333", fontSize: 20 }} />
                   </Avatar>
                   <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
-                    Fornecedora
+                    Fornecedor
                   </Typography>
                 </Box>
                 <Typography variant="h5" sx={{ fontSize: "24px", fontWeight: "bold", color: "#333" }}>
@@ -417,7 +417,7 @@ export default function VisualizarLotePage() {
               <Paper
                 sx={{
                   padding: "24px",
-                  background: "linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)",
+                  background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
                   borderRadius: "20px",
                   boxShadow: "0px 8px 20px rgba(255, 224, 178, 0.2)",
                   border: "1px solid rgba(255, 255, 255, 0.3)",
@@ -446,7 +446,7 @@ export default function VisualizarLotePage() {
               <Paper
                 sx={{
                   padding: "24px",
-                  background: "linear-gradient(135deg, #E8F5E8 0%, #A5D6A7 100%)",
+                  background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
                   borderRadius: "20px",
                   boxShadow: "0px 8px 20px rgba(165, 214, 167, 0.2)",
                   border: "1px solid rgba(255, 255, 255, 0.3)",
@@ -475,7 +475,7 @@ export default function VisualizarLotePage() {
               <Paper
                 sx={{
                   padding: "24px",
-                  background: "linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)",
+                  background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
                   borderRadius: "20px",
                   boxShadow: "0px 8px 20px rgba(187, 222, 251, 0.2)",
                   border: "1px solid rgba(255, 255, 255, 0.3)",
@@ -512,13 +512,14 @@ export default function VisualizarLotePage() {
         {/* Tabela de Produtos */}
         <Card
           sx={{
+            padding: "20px",
+            bgcolor: "white",
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
             borderRadius: "25px",
-            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 245, 0.95) 100%)",
-            boxShadow: "0px 15px 35px rgba(0, 0, 0, 0.1)",
-            padding: "30px",
-            marginBottom: "30px",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
+            backgroundColor: "#F5F5F5",
+            width: "100%",
+            margin: "0 auto",
+            border: "2px solid #F5F5F5",
           }}
         >
           <Box sx={{ textAlign: "center", marginBottom: "30px" }}>
@@ -539,9 +540,11 @@ export default function VisualizarLotePage() {
 
           <TableContainer
             sx={{
-              borderRadius: "15px",
-              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.05)",
-              overflow: "hidden",
+              maxHeight: "600px",
+              borderRadius: "10px",
+              overflow: "auto",
+              backgroundColor: "#F5F5F5",
+              width: "100%"
             }}
           >
             <Table stickyHeader aria-label="produtos table">
@@ -561,13 +564,11 @@ export default function VisualizarLotePage() {
                     <TableCell
                       key={header}
                       align="center"
-                      sx={{
-                        fontWeight: "bold",
-                        fontSize: "16px",
-                        background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
-                        color: "#333",
-                        borderBottom: "2px solid #FADADD",
-                        padding: "16px 8px",
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
                       }}
                     >
                       {header}

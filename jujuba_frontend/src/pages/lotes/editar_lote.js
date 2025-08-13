@@ -529,61 +529,132 @@ export default function EditarLotePage() {
         )}
 
 
-        <Box sx={{ mx: "auto", mt: 2, width: "95%", maxWidth: "1200px" }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Fornecedora</InputLabel>
-            <Select
-              value={selectedFornecedora}
-              onChange={(e) => setSelectedFornecedora(e.target.value)}
-              label="Fornecedora"
-              sx={{ bgcolor: "white" }}
-            >
-              {fornecedoras.map((fornecedora) => (
-                <MenuItem key={fornecedora.id} value={fornecedora.id.toString()}>
-                  {fornecedora.nome}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
+        <Box sx={{ mx: "auto", mt: 2, width: "100%", maxWidth: "1200px" }}>
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <Select
+            value={selectedFornecedora}
+            onChange={(e) => setSelectedFornecedora(e.target.value)}
+            sx={{
+              bgcolor: "white",
+              border: "1px solid #ccc", // borda padrão
+              "&:hover": {
+                border: "1px solid black" // borda preta ao passar mouse
+              }
+            }}
+          >
+            {fornecedoras.map((fornecedora) => (
+              <MenuItem key={fornecedora.id} value={fornecedora.id.toString()}>
+                {fornecedora.nome}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
 
         {/* Products Table */}
         <TableContainer
           component={Paper}
           sx={{
-            mx: "auto",
-            mt: 2,
-            borderRadius: 3,
-            overflow: "hidden",
-            width: "95%",
-            maxWidth: "1200px",
+            padding: "20px",
+            bgcolor: "white",
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            borderRadius: "25px",
+            backgroundColor: "#F5F5F5",
+            width: "100%",
+            margin: "0 auto",
+            border: "2px solid #F5F5F5",
           }}
         >
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                <TableCell 
+                align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+            }}
+            >
                   Descrição
                 </TableCell>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                <TableCell 
+                align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+            }}
+            >
                   Estado
                 </TableCell>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                <TableCell 
+                align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+            }}
+            >
                   Preço
                 </TableCell>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                <TableCell 
+                align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+            }}
+            >
                   Quantidade
                 </TableCell>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                <TableCell 
+                align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+            }}
+            >
                   Marca
                 </TableCell>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                <TableCell 
+                align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+            }}
+            >
                   Tamanho
                 </TableCell>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                <TableCell 
+                align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+            }}
+            >
                   Gênero
                 </TableCell>
-                <TableCell sx={{ bgcolor: "#ffd0e8", textAlign: "center", fontSize: "1rem", fontWeight: "bold" }}>
+                <TableCell 
+                align="center"
+                    sx={{
+                      fontSize: "18px",
+                      textAlign: "center",
+                      backgroundColor: "#FADADD",
+                      borderRight: "2px solid #F5F5F5",
+            }}
+            >
                   Ações
                 </TableCell>
               </TableRow>
@@ -715,13 +786,13 @@ export default function EditarLotePage() {
                           </>
                         ) : (
                           <>
-                            <IconButton size="small" onClick={() => handleViewItem(item.id)} sx={{ color: "blue" }}>
+                            <IconButton size="small" onClick={() => handleViewItem(item.id)} sx={{ color: "#00509E" }}>
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" onClick={() => handleEditItem(item)} sx={{ color: "orange" }}>
+                            <IconButton size="small" onClick={() => handleEditItem(item)} sx={{ color: "#00509E" }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" onClick={() => handleDeleteItem(item)} sx={{ color: "red" }}>
+                            <IconButton size="small" onClick={() => handleDeleteItem(item)} sx={{ color: "#d32f2f" }}>
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </>
@@ -750,14 +821,14 @@ export default function EditarLotePage() {
             startIcon={<AddIcon />}
             onClick={handleOpenNewItemDialog}
             sx={{
-              bgcolor: "#ffd0e8",
+              bgcolor: "#FADADD",
               color: "black",
               fontWeight: "bold",
               borderRadius: 3,
               px: 3,
               py: 1.5,
               "&:hover": {
-                bgcolor: "#ffb3d9",
+                bgcolor: "#FADADD",
               },
             }}
           >
