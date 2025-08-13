@@ -275,7 +275,7 @@ const LotePage = () => {
             backgroundColor: "#F5F5F5",
             width: "100%",
             margin: "0 auto",
-            border: "2px solid #B0B0B0",
+            border: "2px solid #F5F5F5",
           }}
         >
           <TableContainer
