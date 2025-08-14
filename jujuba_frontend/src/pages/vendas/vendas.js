@@ -28,68 +28,60 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
-  Badge, // Importar Badge para a contagem do carrinho
+  Badge,
 } from "@mui/material"
 import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
-  ArrowBack as ArrowBackIcon,
-  Home as HomeIcon,
   Close as CloseIcon,
-  CheckCircle as CheckCircleIcon,
   AttachMoney as AttachMoneyIcon,
-  Inventory as InventoryIcon,
-  QrCode as QrCodeIcon,
-  Category as CategoryIcon,
-  Receipt as ReceiptIcon, // Ícone para vendas
-  CalendarToday as CalendarTodayIcon, // Ícone para data
-  People as PeopleIcon, // Ícone para fornecedora
-  ShoppingCart as ShoppingCartIcon, // Importar ícone do carrinho
+  Receipt as ReceiptIcon,
+  CalendarToday as CalendarTodayIcon,
+  People as PeopleIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Store as StoreIcon,
 } from "@mui/icons-material"
 import { listarVendasRealizadas, buscarVendaPorId } from "../api/vendas"
-// Importações de API para carrinho
-import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho"
+import { listarCarrinho } from "../api/carrinho"
 import Sidebar from "../../components/sidebar"
 
 export default function VendasPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
-  const [openProductModal, setOpenProductModal] = useState(false)
+  const [openSaleModal, setOpenSaleModal] = useState(false)
   const [vendasRealizadas, setVendasRealizadas] = useState([])
-  const [produtoSelecionado, setProdutoSelecionado] = useState(null)
+  const [vendaSelecionada, setVendaSelecionada] = useState(null)
   const [searchOptions, setSearchOptions] = useState([])
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [loading, setLoading] = useState(true);
-  const [cartItemCount, setCartItemCount] = useState(0) // Contagem de itens no carrinho
+  const [loading, setLoading] = useState(true)
+  const [cartItemCount, setCartItemCount] = useState(0)
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
-  });
-
-  const [openSaleDetailsModal, setOpenSaleDetailsModal] = useState(false);
-  const [saleSelected, setSaleSelected] = useState(null);
+  })
 
   useEffect(() => {
     const fetchInitialData = async () => {
-      setLoading(true);
+      setLoading(true)
       try {
         // Buscar histórico de vendas
-        const response = await listarVendasRealizadas();
+        const response = await listarVendasRealizadas()
         if (response.sucesso && response.vendas) {
-          setVendasRealizadas(response.vendas);
-          const options = response.vendas.flatMap(p => [
-            p.id?.toString(), p.descricao, p.marca, p.genero
-          ]).filter(Boolean);
-          setSearchOptions([...new Set(options)]);
+          setVendasRealizadas(response.vendas)
+          // Criar opções de busca baseadas nos dados de vendas
+          const options = response.vendas
+            .flatMap((venda) => [venda.id?.toString(), venda.tipoVenda, venda.fornecedora?.nome])
+            .filter(Boolean)
+          setSearchOptions([...new Set(options)])
         } else {
-          console.error("Erro ao buscar histórico de vendas:", response.mensagem);
+          console.error("Erro ao buscar histórico de vendas:", response.mensagem)
           setSnackbar({
             open: true,
             message: `Erro ao carregar histórico: ${response.mensagem}`,
             severity: "error",
-          });
+          })
         }
 
         // Buscar a contagem inicial do carrinho
@@ -100,108 +92,55 @@ export default function VendasPage() {
           console.error("Erro ao buscar contagem do carrinho:", cartResponse.mensagem)
         }
       } catch (error) {
-        console.error("Erro ao carregar dados iniciais:", error);
+        console.error("Erro ao carregar dados iniciais:", error)
         setSnackbar({
           open: true,
           message: "Erro ao carregar dados. Verifique a conexão com o servidor.",
           severity: "error",
-        });
+        })
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-
-    fetchInitialData();
-  }, []);
-
-  const handleOpenProductModal = (produto) => {
-    setProdutoSelecionado(produto)
-    setOpenProductModal(true)
-  }
-
-  const handleCloseProductModal = () => {
-    setOpenProductModal(false)
-  }
-
-  // Função para adicionar ao carrinho (adaptada para vendas) - MANTIDA CASO SEJA USADA EM OUTRO LUGAR, MAS NÃO SERÁ CHAMADA PELA TABELA
-  const handleAddToCart = async (venda) => {
-    try {
-      // Converter objeto de venda para formato de produto para o carrinho
-      const produtoParaCarrinho = {
-        id: venda.id,
-        descricao: venda.descricao,
-        marca: venda.marca,
-        tamanho: venda.tamanho,
-        genero: venda.genero,
-        estadoConservacao: venda.estadoConservacao,
-        preco: venda.preco,
-        lote: venda.lote
-      };
-
-      const result = await adicionarAoCarrinho(produtoParaCarrinho, 1)
-      if (result.sucesso) {
-        console.log("Produto adicionado ao carrinho com sucesso!", result.carrinho)
-        setCartItemCount(result.carrinho.totalItens) // Atualiza a contagem
-        setSnackbar({
-          open: true,
-          message: `"${venda.descricao}" adicionado ao carrinho!`,
-          severity: "success",
-        })
-        setOpenProductModal(false); // Fecha o modal após adicionar
-      } else {
-        console.error("Erro ao adicionar produto ao carrinho:", result.mensagem)
-        setSnackbar({
-          open: true,
-          message: `Erro ao adicionar produto ao carrinho: ${result.mensagem}`,
-          severity: "error",
-        })
-      }
-    } catch (error) {
-      console.error("Erro inesperado ao adicionar produto ao carrinho:", error)
-      setSnackbar({
-        open: true,
-        message: "Ocorreu um erro inesperado ao adicionar o produto ao carrinho.",
-        severity: "error",
-      })
     }
-  }
 
-  // Função para navegar diretamente para a página do carrinho
-  const handleNavigateToCart = () => {
-    router.push("/vendas/carrinho") // Assumindo que a página do carrinho está em /vendas/carrinho
-  }
+    fetchInitialData()
+  }, [])
 
-  const handleOpenSaleDetailsModal = async (saleId) => {
-    setLoading(true);
+  const handleOpenSaleModal = async (vendaId) => {
+    setLoading(true)
     try {
-      const response = await buscarVendaPorId(saleId);
+      const response = await buscarVendaPorId(vendaId)
       if (response.sucesso && response.venda) {
-        setSaleSelected(response.venda);
-        setOpenSaleDetailsModal(true);
+        setVendaSelecionada(response.venda)
+        setOpenSaleModal(true)
       } else {
-        console.error("Erro ao buscar detalhes da venda:", response.mensagem);
+        console.error("Erro ao buscar detalhes da venda:", response.mensagem)
         setSnackbar({
           open: true,
           message: `Erro ao carregar detalhes da venda: ${response.mensagem}`,
           severity: "error",
-        });
+        })
       }
     } catch (error) {
-      console.error("Erro ao buscar detalhes da venda:", error);
+      console.error("Erro ao buscar detalhes da venda:", error)
       setSnackbar({
         open: true,
         message: "Erro ao carregar detalhes da venda. Verifique a conexão com o servidor.",
         severity: "error",
-      });
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const handleCloseSaleDetailsModal = () => {
-    setOpenSaleDetailsModal(false);
-    setSaleSelected(null);
-  };
+  const handleCloseSaleModal = () => {
+    setOpenSaleModal(false)
+    setVendaSelecionada(null)
+  }
+
+  const handleNavigateToCart = () => {
+    router.push("/vendas/carrinho")
+  }
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage)
@@ -213,18 +152,62 @@ export default function VendasPage() {
   }
 
   const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+    setSnackbar({ ...snackbar, open: false })
+  }
+
+  const formatarData = (dataString) => {
+    if (!dataString) return "N/A"
+    try {
+      const data = new Date(dataString)
+      return data.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } catch (error) {
+      return "Data inválida"
+    }
+  }
+
+  const formatarValor = (valor) => {
+    if (valor === null || valor === undefined || isNaN(valor)) {
+      return "0,00"
+    }
+    return Number(valor).toFixed(2).replace(".", ",")
+  }
+
+  const getTipoVendaLabel = (tipo) => {
+    switch (tipo) {
+      case "VENDA_SIMPLES":
+        return "Venda Simples"
+      case "VENDA_FORNECEDOR":
+        return "Venda Fornecedor"
+      default:
+        return tipo || "N/A"
+    }
+  }
+
+  const getTipoVendaColor = (tipo) => {
+    switch (tipo) {
+      case "VENDA_SIMPLES":
+        return "primary"
+      case "VENDA_FORNECEDOR":
+        return "secondary"
+      default:
+        return "default"
+    }
+  }
 
   const filteredVendas = vendasRealizadas.filter((venda) => {
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase()
     return (
       venda.id?.toString().toLowerCase().includes(query) ||
-      venda.descricao?.toLowerCase().includes(query) ||
-      venda.marca?.toLowerCase().includes(query) ||
-      venda.genero?.toLowerCase().includes(query)
-    );
-  });
+      venda.tipoVenda?.toLowerCase().includes(query) ||
+      venda.fornecedora?.nome?.toLowerCase().includes(query)
+    )
+  })
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
@@ -233,27 +216,27 @@ export default function VendasPage() {
       {/* Botão do Carrinho no canto superior direito */}
       <Box
         sx={{
-          position: 'fixed',
-          top: 72, // Ajustado para mover mais para baixo
-          right: 140, // Ajustado para mover mais para a esquerda
+          position: "fixed",
+          top: 72,
+          right: 140,
           zIndex: 1000,
         }}
       >
         <IconButton
           onClick={handleNavigateToCart}
           sx={{
-            bgcolor: '#FADADD', // Cor rosa padrão
-            color: '#333', // Cor do ícone
-            '&:hover': {
-              bgcolor: '#ffb6c1', // Cor rosa mais clara ao passar o mouse
+            bgcolor: "#FADADD",
+            color: "#333",
+            "&:hover": {
+              bgcolor: "#ffb6c1",
             },
-            borderRadius: '50%', // Botão redondo
-            width: 56, // Largura fixa
-            height: 56, // Altura fixa
-            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Sombra para destaque
+            borderRadius: "50%",
+            width: 56,
+            height: 56,
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
           }}
         >
-          <Badge badgeContent={cartItemCount} color="error"> {/* Badge para a contagem */}
+          <Badge badgeContent={cartItemCount} color="error">
             <ShoppingCartIcon sx={{ fontSize: 30 }} />
           </Badge>
         </IconButton>
@@ -290,7 +273,7 @@ export default function VendasPage() {
               color: "#000000",
             }}
           >
-             Vendas
+            Histórico de Vendas
           </Typography>
         </Box>
 
@@ -316,7 +299,7 @@ export default function VendasPage() {
             renderInput={(params) => (
               <TextField
                 {...params}
-                placeholder="Pesquisar vendas por ID, descrição, marca ou gênero"
+                placeholder="Pesquisar vendas por ID, tipo ou fornecedora"
                 variant="outlined"
                 size="medium"
                 InputProps={{
@@ -381,19 +364,18 @@ export default function VendasPage() {
             border: "2px solid #B0B0B0",
           }}
         >
-          {/* Novo título para a tabela */}
           <Typography
             variant="h6"
             sx={{
               mb: 2,
               fontWeight: 700,
               color: "#333",
-              fontSize: "2rem", // Ajuste o tamanho da fonte conforme desejar
-              textAlign: "left", // Alinhe à esquerda ou ao centro
-              pl: 1, // Adicione um pouco de padding à esquerda se necessário
+              fontSize: "2rem",
+              textAlign: "left",
+              pl: 1,
             }}
           >
-            Últimas vendas
+            Vendas Realizadas
           </Typography>
 
           <TableContainer
@@ -417,7 +399,7 @@ export default function VendasPage() {
                       borderRight: "2px solid #F5F5F5",
                     }}
                   >
-                    ID 
+                    ID
                   </TableCell>
                   <TableCell
                     align="center"
@@ -428,7 +410,7 @@ export default function VendasPage() {
                       borderRight: "2px solid #F5F5F5",
                     }}
                   >
-                    Descrição
+                    Data/Hora
                   </TableCell>
                   <TableCell
                     align="center"
@@ -439,7 +421,7 @@ export default function VendasPage() {
                       borderRight: "2px solid #F5F5F5",
                     }}
                   >
-                    Marca
+                    Tipo
                   </TableCell>
                   <TableCell
                     align="center"
@@ -450,7 +432,7 @@ export default function VendasPage() {
                       borderRight: "2px solid #F5F5F5",
                     }}
                   >
-                    Tamanho
+                    Fornecedora
                   </TableCell>
                   <TableCell
                     align="center"
@@ -461,7 +443,7 @@ export default function VendasPage() {
                       borderRight: "2px solid #F5F5F5",
                     }}
                   >
-                    Gênero
+                    Total
                   </TableCell>
                   <TableCell
                     align="center"
@@ -472,7 +454,7 @@ export default function VendasPage() {
                       borderRight: "2px solid #F5F5F5",
                     }}
                   >
-                    Estado
+                    Valor Brechó
                   </TableCell>
                   <TableCell
                     align="center"
@@ -483,20 +465,8 @@ export default function VendasPage() {
                       borderRight: "2px solid #F5F5F5",
                     }}
                   >
-                    Quantidade
+                    Valor Fornecedora
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                    }}
-                  >
-                    Valor
-                  </TableCell>
-                  {/* COLUNA ÚNICA PARA AÇÕES */}
                   <TableCell
                     align="center"
                     sx={{
@@ -512,7 +482,7 @@ export default function VendasPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center"> {/* Colspan ajustado para 9 */}
+                    <TableCell colSpan={8} align="center">
                       <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
                         <CircularProgress size={40} sx={{ color: "#FADADD" }} />
                       </Box>
@@ -537,7 +507,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {venda.descricao}
+                        {formatarData(venda.dataVenda)}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -546,7 +516,11 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {venda.marca || "-"}
+                        <Chip
+                          label={getTipoVendaLabel(venda.tipoVenda)}
+                          color={getTipoVendaColor(venda.tipoVenda)}
+                          size="small"
+                        />
                       </TableCell>
                       <TableCell
                         sx={{
@@ -555,7 +529,17 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {venda.tamanho || "-"}
+                        {venda.fornecedora?.nome || "-"}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                          padding: { xs: "8px 4px", sm: "16px 8px" },
+                          textAlign: "center",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        R$ {formatarValor(venda.total)}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -564,7 +548,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {venda.genero || "-"}
+                        R$ {formatarValor(venda.valorBrecho)}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -573,7 +557,7 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {venda.estadoConservacao}
+                        R$ {formatarValor(venda.valorFornecedora)}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -582,55 +566,21 @@ export default function VendasPage() {
                           textAlign: "center",
                         }}
                       >
-                        {venda.quantidade || 1}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        R$ {venda.preco?.toFixed(2) || "0.00"}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                        
-                          <IconButton
-                            onClick={() => handleOpenProductModal(venda)}
-                            sx={{
-                              color: "#00509E",
-                              "&:hover": { backgroundColor: "#E3F2FD" },
-                            }}
-                          >
-                            <VisibilityIcon />
-                          </IconButton>
-                          
-                          {/* REMOVIDO: Botão de Adicionar ao Carrinho */}
-                          {/*
-                          <IconButton
-                            onClick={() => handleAddToCart(venda)}
-                            sx={{
-                              color: "#FADADD",
-                              "&:hover": { backgroundColor: "#FCE4EC" },
-                            }}
-                          >
-                            <ShoppingCartIcon />
-                          </IconButton>
-                          */}
-                        </Box>
+                        <IconButton
+                          onClick={() => handleOpenSaleModal(venda.id)}
+                          sx={{
+                            color: "#00509E",
+                            "&:hover": { backgroundColor: "#E3F2FD" },
+                          }}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} align="center">
+                    <TableCell colSpan={8} align="center">
                       <Typography variant="body1" color="textSecondary">
                         Nenhuma venda encontrada
                       </Typography>
@@ -650,9 +600,7 @@ export default function VendasPage() {
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25]}
             labelRowsPerPage="Linhas por página:"
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-            }
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
             sx={{
               "& .MuiTablePagination-toolbar": {
                 backgroundColor: "#F5F5F5",
@@ -665,11 +613,11 @@ export default function VendasPage() {
           />
         </Card>
 
-        {/* Modal de Visualização de Produto */}
+        {/* Modal de Detalhes da Venda */}
         <Dialog
-          open={openProductModal}
-          onClose={handleCloseProductModal}
-          maxWidth="md"
+          open={openSaleModal}
+          onClose={handleCloseSaleModal}
+          maxWidth="lg"
           fullWidth
           sx={{
             "& .MuiDialog-paper": {
@@ -690,7 +638,7 @@ export default function VendasPage() {
           >
             Detalhes da Venda
             <IconButton
-              onClick={handleCloseProductModal}
+              onClick={handleCloseSaleModal}
               sx={{
                 position: "absolute",
                 right: 8,
@@ -702,81 +650,153 @@ export default function VendasPage() {
             </IconButton>
           </DialogTitle>
           <DialogContent sx={{ padding: "30px", backgroundColor: "#F5F5F5" }}>
-            {produtoSelecionado && (
+            {vendaSelecionada && (
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <QrCodeIcon sx={{ mr: 1, color: "#00509E" }} />
-                    <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                      ID: {produtoSelecionado.id}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <AttachMoneyIcon sx={{ mr: 1, color: "#4CAF50" }} />
-                    <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                      Valor: R$ {produtoSelecionado.preco?.toFixed(2) || "0.00"}
-                    </Typography>
-                  </Box>
-                </Grid>
+                {/* Informações Gerais da Venda */}
                 <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "#333" }}>
+                    Informações Gerais
+                  </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+
+                <Grid item xs={12} sm={6} md={3}>
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <InventoryIcon sx={{ mr: 1, color: "#FF9800" }} />
+                    <ReceiptIcon sx={{ mr: 1, color: "#00509E" }} />
                     <Typography variant="body1">
-                      <strong>Descrição:</strong> {produtoSelecionado.descricao}
+                      <strong>ID:</strong> {vendaSelecionada.id}
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+
+                <Grid item xs={12} sm={6} md={3}>
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <CategoryIcon sx={{ mr: 1, color: "#9C27B0" }} />
+                    <CalendarTodayIcon sx={{ mr: 1, color: "#FF9800" }} />
                     <Typography variant="body1">
-                      <strong>Marca:</strong> {produtoSelecionado.marca || "N/A"}
+                      <strong>Data:</strong> {formatarData(vendaSelecionada.dataVenda)}
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Tamanho:</strong> {produtoSelecionado.tamanho || "N/A"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Gênero:</strong> {produtoSelecionado.genero || "N/A"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
+
+                <Grid item xs={12} sm={6} md={3}>
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <CheckCircleIcon sx={{ mr: 1, color: "#4CAF50" }} />
+                    <StoreIcon sx={{ mr: 1, color: "#9C27B0" }} />
                     <Chip
-                      label={produtoSelecionado.estadoConservacao}
-                      color="success"
-                      variant="outlined"
+                      label={getTipoVendaLabel(vendaSelecionada.tipoVenda)}
+                      color={getTipoVendaColor(vendaSelecionada.tipoVenda)}
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Quantidade:</strong> {produtoSelecionado.quantidade || 1}
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <AttachMoneyIcon sx={{ mr: 1, color: "#4CAF50" }} />
+                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "#4CAF50" }}>
+                      Total: R$ {formatarValor(vendaSelecionada.total)}
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                {/* Informações Financeiras */}
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "#333" }}>
+                    Divisão Financeira
                   </Typography>
                 </Grid>
-                {produtoSelecionado.lote && (
-                  <Grid item xs={12}>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      <strong>Lote:</strong> {produtoSelecionado.lote}
-                    </Typography>
-                  </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    <strong>Valor Brechó:</strong> R$ {formatarValor(vendaSelecionada.valorBrecho)}
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    <strong>Valor Fornecedora:</strong> R$ {formatarValor(vendaSelecionada.valorFornecedora)}
+                  </Typography>
+                </Grid>
+
+                {/* Informações da Fornecedora */}
+                {vendaSelecionada.fornecedora && (
+                  <>
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 2 }} />
+                      <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "#333" }}>
+                        Fornecedora
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <PeopleIcon sx={{ mr: 1, color: "#2196F3" }} />
+                        <Typography variant="body1">
+                          <strong>Nome:</strong> {vendaSelecionada.fornecedora.nome}
+                        </Typography>
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        <strong>Contato:</strong> {vendaSelecionada.fornecedora.contato || "N/A"}
+                      </Typography>
+                    </Grid>
+                  </>
+                )}
+
+                {/* Itens da Venda */}
+                {vendaSelecionada.itens && vendaSelecionada.itens.length > 0 && (
+                  <>
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 2 }} />
+                      <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "#333" }}>
+                        Itens da Venda ({vendaSelecionada.itens.length})
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TableContainer sx={{ maxHeight: 300, border: "1px solid #ddd", borderRadius: 1 }}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                              <TableCell>
+                                <strong>Produto</strong>
+                              </TableCell>
+                              <TableCell>
+                                <strong>Marca</strong>
+                              </TableCell>
+                              <TableCell align="center">
+                                <strong>Quantidade</strong>
+                              </TableCell>
+                              <TableCell align="right">
+                                <strong>Preço Unit.</strong>
+                              </TableCell>
+                              <TableCell align="right">
+                                <strong>Subtotal</strong>
+                              </TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {vendaSelecionada.itens.map((item, index) => (
+                              <TableRow key={index}>
+                                <TableCell>{item.produto?.descricao || "N/A"}</TableCell>
+                                <TableCell>{item.produto?.marca || "N/A"}</TableCell>
+                                <TableCell align="center">{item.quantidade}</TableCell>
+                                <TableCell align="right">R$ {formatarValor(item.precoUnitario)}</TableCell>
+                                <TableCell align="right">R$ {formatarValor(item.subtotal)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Grid>
+                  </>
                 )}
               </Grid>
             )}
           </DialogContent>
           <DialogActions sx={{ backgroundColor: "#F5F5F5", padding: "20px" }}>
             <Button
-              onClick={handleCloseProductModal}
+              onClick={handleCloseSaleModal}
               sx={{
                 backgroundColor: "#CCCCCC",
                 color: "#333",
@@ -787,22 +807,6 @@ export default function VendasPage() {
             >
               Fechar
             </Button>
-            {/* REMOVIDO: Botão de Adicionar ao Carrinho no Modal */}
-            {/*
-            <Button
-              onClick={() => handleAddToCart(produtoSelecionado)}
-              sx={{
-                backgroundColor: "#FADADD",
-                color: "#333",
-                "&:hover": { backgroundColor: "#ffb6c1" },
-                borderRadius: "10px",
-                padding: "10px 20px",
-              }}
-              startIcon={<ShoppingCartIcon />}
-            >
-              Adicionar ao Carrinho
-            </Button>
-            */}
           </DialogActions>
         </Dialog>
 
@@ -811,13 +815,9 @@ export default function VendasPage() {
           open={snackbar.open}
           autoHideDuration={4000}
           onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
-          <Alert
-            onClose={handleCloseSnackbar}
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
-          >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
             {snackbar.message}
           </Alert>
         </Snackbar>
