@@ -1,16 +1,14 @@
 package com.jujuba.model;
 
+import java.math.BigDecimal;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
-
+@Getter @Setter @NoArgsConstructor
 @Entity
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "item_venda")
 public class ItemVenda {
 
@@ -18,29 +16,21 @@ public class ItemVenda {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
+    @JoinColumn(name = "produto_id", nullable = false)
+    private Produto produto;
+
+    @ManyToOne
     @JoinColumn(name = "venda_id", nullable = false)
     @JsonBackReference
     private Venda venda;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "produto_id", nullable = false)
-    private Produto produto;
-
-    @Column(nullable = false)
+    @Column(name = "quantidade", nullable = false)
     private Integer quantidade;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "preco_unitario", nullable = false)
     private BigDecimal precoUnitario;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "subtotal", nullable = false)
     private BigDecimal subtotal;
-
-    @PrePersist
-    @PreUpdate
-    public void calcularSubtotal() {
-        if (quantidade != null && precoUnitario != null) {
-            this.subtotal = precoUnitario.multiply(BigDecimal.valueOf(quantidade));
-        }
-    }
 }

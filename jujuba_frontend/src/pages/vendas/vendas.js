@@ -1,145 +1,141 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useMemo } from "react"
 import {
   Box,
-  Typography,
-  TextField,
   Card,
-  IconButton,
-  InputAdornment,
+  Typography,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
+  IconButton,
+  TextField,
+  Button,
+  TablePagination,
+  InputAdornment,
   Autocomplete,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  Grid,
-  Divider,
-  Chip,
-  TableContainer,
-  TablePagination,
+  Avatar,
+  Slide,
   Snackbar,
   Alert,
-  CircularProgress,
-  Badge,
+  Chip,
+  Tabs,
+  Tab,
+  Grid,
+  Divider,
+  Paper,
 } from "@mui/material"
-import {
-  Search as SearchIcon,
-  Visibility as VisibilityIcon,
-  Close as CloseIcon,
-  AttachMoney as AttachMoneyIcon,
-  Receipt as ReceiptIcon,
-  CalendarToday as CalendarTodayIcon,
-  People as PeopleIcon,
-  ShoppingCart as ShoppingCartIcon,
-  Store as StoreIcon,
-} from "@mui/icons-material"
-import { listarVendasRealizadas, buscarVendaPorId } from "../api/vendas"
-import { listarCarrinho } from "../api/carrinho"
+import VisibilityIcon from "@mui/icons-material/Visibility"
+import CloseIcon from "@mui/icons-material/Close"
+import PersonIcon from "@mui/icons-material/Person"
+import ReceiptIcon from "@mui/icons-material/Receipt"
+import axios from "axios"
+import { useRouter } from "next/navigation"
+import SearchIcon from "@mui/icons-material/Search"
 import Sidebar from "../../components/sidebar"
+import { forwardRef } from "react"
 
-export default function VendasPage() {
-  const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [openSaleModal, setOpenSaleModal] = useState(false)
-  const [vendasRealizadas, setVendasRealizadas] = useState([])
-  const [vendaSelecionada, setVendaSelecionada] = useState(null)
-  const [searchOptions, setSearchOptions] = useState([])
+const BASE_URL = "http://localhost:8080/api/vendas"
+
+// Transição personalizada para o modal
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />
+})
+
+const VendasPage = () => {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [vendas, setVendas] = useState([])
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [loading, setLoading] = useState(true)
-  const [cartItemCount, setCartItemCount] = useState(0)
+  const [search, setSearch] = useState("")
+  const [detailsModal, setDetailsModal] = useState({
+    open: false,
+    venda: null,
+  })
+  const [tabValue, setTabValue] = useState(0)
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   })
+  const router = useRouter()
+
+  // Função para ordenar vendas por data (mais recente primeiro)
+  const ordenarVendasPorData = (vendas) => {
+    return vendas.sort((a, b) => {
+      const dataA = new Date(a.dataVenda)
+      const dataB = new Date(b.dataVenda)
+      return dataB - dataA // Ordem decrescente (mais recente primeiro)
+    })
+  }
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true)
+    const fetchVendas = async () => {
       try {
-        // Buscar histórico de vendas
-        const response = await listarVendasRealizadas()
-        if (response.sucesso && response.vendas) {
-          setVendasRealizadas(response.vendas)
-          // Criar opções de busca baseadas nos dados de vendas
-          const options = response.vendas
-            .flatMap((venda) => [venda.id?.toString(), venda.tipoVenda, venda.fornecedora?.nome])
-            .filter(Boolean)
-          setSearchOptions([...new Set(options)])
-        } else {
-          console.error("Erro ao buscar histórico de vendas:", response.mensagem)
-          setSnackbar({
-            open: true,
-            message: `Erro ao carregar histórico: ${response.mensagem}`,
-            severity: "error",
-          })
-        }
-
-        // Buscar a contagem inicial do carrinho
-        const cartResponse = await listarCarrinho()
-        if (cartResponse.sucesso && cartResponse.carrinho) {
-          setCartItemCount(cartResponse.carrinho.totalItens)
-        } else {
-          console.error("Erro ao buscar contagem do carrinho:", cartResponse.mensagem)
-        }
+        const response = await axios.get(BASE_URL)
+        const vendasOrdenadas = ordenarVendasPorData(response.data)
+        setVendas(vendasOrdenadas)
       } catch (error) {
-        console.error("Erro ao carregar dados iniciais:", error)
+        console.error("Erro ao buscar vendas:", error.message)
         setSnackbar({
           open: true,
-          message: "Erro ao carregar dados. Verifique a conexão com o servidor.",
+          message: "Erro ao carregar vendas",
           severity: "error",
         })
-      } finally {
-        setLoading(false)
       }
     }
-
-    fetchInitialData()
+    fetchVendas()
   }, [])
 
-  const handleOpenSaleModal = async (vendaId) => {
-    setLoading(true)
-    try {
-      const response = await buscarVendaPorId(vendaId)
-      if (response.sucesso && response.venda) {
-        setVendaSelecionada(response.venda)
-        setOpenSaleModal(true)
-      } else {
-        console.error("Erro ao buscar detalhes da venda:", response.mensagem)
-        setSnackbar({
-          open: true,
-          message: `Erro ao carregar detalhes da venda: ${response.mensagem}`,
-          severity: "error",
-        })
-      }
-    } catch (error) {
-      console.error("Erro ao buscar detalhes da venda:", error)
-      setSnackbar({
-        open: true,
-        message: "Erro ao carregar detalhes da venda. Verifique a conexão com o servidor.",
-        severity: "error",
-      })
-    } finally {
-      setLoading(false)
-    }
+  // Função para formatar data
+  const formatarData = (dataString) => {
+    const data = new Date(dataString)
+    return data.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
   }
 
-  const handleCloseSaleModal = () => {
-    setOpenSaleModal(false)
-    setVendaSelecionada(null)
+  // Função para formatar valor monetário
+  const formatarValor = (valor) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(valor || 0)
   }
 
-  const handleNavigateToCart = () => {
-    router.push("/vendas/carrinho")
+  // Função para determinar se uma venda é recente (últimas 3)
+  const isVendaRecente = (index) => {
+    return index < 3
+  }
+
+  const handleDetailsClick = (venda) => {
+    setDetailsModal({
+      open: true,
+      venda: venda,
+    })
+  }
+
+  const handleCloseDetailsModal = () => {
+    setDetailsModal({
+      open: false,
+      venda: null,
+    })
+    setTabValue(0) // Reset tab
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false })
   }
 
   const handleChangePage = (event, newPage) => {
@@ -151,97 +147,49 @@ export default function VendasPage() {
     setPage(0)
   }
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false })
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue)
   }
 
-  const formatarData = (dataString) => {
-    if (!dataString) return "N/A"
-    try {
-      const data = new Date(dataString)
-      return data.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    } catch (error) {
-      return "Data inválida"
-    }
-  }
+  const filteredVendas = useMemo(() => {
+    return vendas.filter((venda) => {
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        venda.id.toString().includes(searchLower) ||
+        venda.tipoVenda.toLowerCase().includes(searchLower) ||
+        (venda.fornecedora && venda.fornecedora.nome.toLowerCase().includes(searchLower))
+      )
+    })
+  }, [vendas, searchTerm])
 
-  const formatarValor = (valor) => {
-    if (valor === null || valor === undefined || isNaN(valor)) {
-      return "0,00"
-    }
-    return Number(valor).toFixed(2).replace(".", ",")
-  }
+  // Função para obter todos os fornecedores únicos dos produtos vendidos
+  const getFornecedoresDosItens = (itens) => {
+    const fornecedoresMap = new Map()
 
-  const getTipoVendaLabel = (tipo) => {
-    switch (tipo) {
-      case "VENDA_SIMPLES":
-        return "Venda Simples"
-      case "VENDA_FORNECEDOR":
-        return "Venda Fornecedor"
-      default:
-        return tipo || "N/A"
-    }
-  }
+    itens.forEach((item) => {
+      if (item.produto && item.produto.lote && item.produto.lote.fornecedora) {
+        const fornecedora = item.produto.lote.fornecedora
+        if (!fornecedoresMap.has(fornecedora.id)) {
+          fornecedoresMap.set(fornecedora.id, {
+            ...fornecedora,
+            produtos: [],
+          })
+        }
+        fornecedoresMap.get(fornecedora.id).produtos.push({
+          produto: item.produto,
+          quantidade: item.quantidade,
+          precoUnitario: item.precoUnitario,
+          subtotal: item.subtotal,
+        })
+      }
+    })
 
-  const getTipoVendaColor = (tipo) => {
-    switch (tipo) {
-      case "VENDA_SIMPLES":
-        return "primary"
-      case "VENDA_FORNECEDOR":
-        return "secondary"
-      default:
-        return "default"
-    }
+    return Array.from(fornecedoresMap.values())
   }
-
-  const filteredVendas = vendasRealizadas.filter((venda) => {
-    const query = searchQuery.toLowerCase()
-    return (
-      venda.id?.toString().toLowerCase().includes(query) ||
-      venda.tipoVenda?.toLowerCase().includes(query) ||
-      venda.fornecedora?.nome?.toLowerCase().includes(query)
-    )
-  })
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
       <Sidebar />
-
-      {/* Botão do Carrinho no canto superior direito */}
-      <Box
-        sx={{
-          position: "fixed",
-          top: 72,
-          right: 140,
-          zIndex: 1000,
-        }}
-      >
-        <IconButton
-          onClick={handleNavigateToCart}
-          sx={{
-            bgcolor: "#FADADD",
-            color: "#333",
-            "&:hover": {
-              bgcolor: "#ffb6c1",
-            },
-            borderRadius: "50%",
-            width: 56,
-            height: 56,
-            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <Badge badgeContent={cartItemCount} color="error">
-            <ShoppingCartIcon sx={{ fontSize: 30 }} />
-          </Badge>
-        </IconButton>
-      </Box>
-
       <Box
         sx={{
           flex: 1,
@@ -259,7 +207,7 @@ export default function VendasPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            marginBottom: "80px",
+            marginBottom: "20px",
           }}
         >
           <Typography
@@ -280,21 +228,42 @@ export default function VendasPage() {
         <Box
           sx={{
             display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "30px",
+          }}
+        >
+          <Typography
+            variant="subtitle1"
+            sx={{
+              textAlign: "center",
+              fontSize: "18px",
+              color: "#666",
+              fontStyle: "italic",
+            }}
+          >
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
             justifyContent: "center",
             alignItems: "center",
             marginBottom: "30px",
-            width: "100%",
           }}
         >
           <Autocomplete
             freeSolo
-            options={searchOptions}
-            value={searchQuery}
+            options={vendas.map((venda) => `#${venda.id} - ${venda.tipoVenda}`)}
+            value={search}
             onChange={(event, newValue) => {
-              setSearchQuery(newValue || "")
+              setSearch(newValue || "")
+              setSearchTerm(newValue || "")
             }}
             onInputChange={(event, newValue) => {
-              setSearchQuery(newValue || "")
+              setSearch(newValue || "")
+              setSearchTerm(newValue || "")
             }}
             renderInput={(params) => (
               <TextField
@@ -364,20 +333,6 @@ export default function VendasPage() {
             border: "2px solid #B0B0B0",
           }}
         >
-          <Typography
-            variant="h6"
-            sx={{
-              mb: 2,
-              fontWeight: 700,
-              color: "#333",
-              fontSize: "2rem",
-              textAlign: "left",
-              pl: 1,
-            }}
-          >
-            Vendas Realizadas
-          </Typography>
-
           <TableContainer
             sx={{
               maxHeight: "600px",
@@ -397,6 +352,7 @@ export default function VendasPage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: "bold",
                     }}
                   >
                     ID
@@ -408,9 +364,10 @@ export default function VendasPage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: "bold",
                     }}
                   >
-                    Data/Hora
+                    Data/Hora ↓
                   </TableCell>
                   <TableCell
                     align="center"
@@ -419,6 +376,7 @@ export default function VendasPage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: "bold",
                     }}
                   >
                     Tipo
@@ -430,6 +388,7 @@ export default function VendasPage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: "bold",
                     }}
                   >
                     Fornecedora
@@ -441,6 +400,7 @@ export default function VendasPage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: "bold",
                     }}
                   >
                     Total
@@ -452,6 +412,7 @@ export default function VendasPage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: "bold",
                     }}
                   >
                     Valor Brechó
@@ -462,7 +423,7 @@ export default function VendasPage() {
                       fontSize: "18px",
                       textAlign: "center",
                       backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
+                      fontWeight: "bold",
                     }}
                   >
                     Valor Fornecedora
@@ -473,6 +434,7 @@ export default function VendasPage() {
                       fontSize: "18px",
                       textAlign: "center",
                       backgroundColor: "#FADADD",
+                      fontWeight: "bold",
                     }}
                   >
                     Ações
@@ -480,117 +442,120 @@ export default function VendasPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-                        <CircularProgress size={40} sx={{ color: "#FADADD" }} />
+                {filteredVendas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((venda, index) => (
+                  <TableRow
+                    key={venda.id}
+                    sx={{
+                      backgroundColor: isVendaRecente(page * rowsPerPage + index) ? "#E3F2FD" : "inherit",
+                      "&:hover": {
+                        backgroundColor: isVendaRecente(page * rowsPerPage + index) ? "#BBDEFB" : "#f5f5f5",
+                      },
+                    }}
+                  >
+                    <TableCell
+                      sx={{
+                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                        padding: { xs: "8px 4px", sm: "16px 8px" },
+                        textAlign: "center",
+                        fontWeight: isVendaRecente(page * rowsPerPage + index) ? "bold" : "normal",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                        #{venda.id}
+                        {isVendaRecente(page * rowsPerPage + index) && (
+                          <Chip
+                            label="Nova"
+                            size="small"
+                            sx={{
+                              backgroundColor: "#4CAF50",
+                              color: "white",
+                              fontSize: "10px",
+                              height: "20px",
+                            }}
+                          />
+                        )}
                       </Box>
                     </TableCell>
-                  </TableRow>
-                ) : filteredVendas.length > 0 ? (
-                  filteredVendas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((venda, index) => (
-                    <TableRow key={index}>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {venda.id}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {formatarData(venda.dataVenda)}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        <Chip
-                          label={getTipoVendaLabel(venda.tipoVenda)}
-                          color={getTipoVendaColor(venda.tipoVenda)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {venda.fornecedora?.nome || "-"}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        R$ {formatarValor(venda.total)}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        R$ {formatarValor(venda.valorBrecho)}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        R$ {formatarValor(venda.valorFornecedora)}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        <IconButton
-                          onClick={() => handleOpenSaleModal(venda.id)}
-                          sx={{
-                            color: "#00509E",
-                            "&:hover": { backgroundColor: "#E3F2FD" },
-                          }}
-                        >
-                          <VisibilityIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      <Typography variant="body1" color="textSecondary">
-                        Nenhuma venda encontrada
-                      </Typography>
+                    <TableCell
+                      sx={{
+                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                        padding: { xs: "8px 4px", sm: "16px 8px" },
+                        textAlign: "center",
+                        fontWeight: isVendaRecente(page * rowsPerPage + index) ? "bold" : "normal",
+                      }}
+                    >
+                      {formatarData(venda.dataVenda)}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                        padding: { xs: "8px 4px", sm: "16px 8px" },
+                        textAlign: "center",
+                      }}
+                    >
+                      <Chip
+                        label={venda.tipoVenda === "VENDA_SIMPLES" ? "Venda Simples" : "Venda Fornecedor"}
+                        color={venda.tipoVenda === "VENDA_SIMPLES" ? "primary" : "secondary"}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                        padding: { xs: "8px 4px", sm: "16px 8px" },
+                        textAlign: "center",
+                      }}
+                    >
+                      {venda.fornecedora ? venda.fornecedora.nome : "N/A"}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                        padding: { xs: "8px 4px", sm: "16px 8px" },
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        color: "#4CAF50",
+                      }}
+                    >
+                      {formatarValor(venda.total)}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                        padding: { xs: "8px 4px", sm: "16px 8px" },
+                        textAlign: "center",
+                      }}
+                    >
+                      {formatarValor(venda.valorBrecho)}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontSize: { xs: "14px", sm: "16px", md: "18px" },
+                        padding: { xs: "8px 4px", sm: "16px 8px" },
+                        textAlign: "center",
+                      }}
+                    >
+                      {formatarValor(venda.valorFornecedora)}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        gap: 1,
+                        padding: "8px",
+                        minWidth: "100px",
+                      }}
+                    >
+                      <IconButton onClick={() => handleDetailsClick(venda)} sx={{ color: "#00509E" }}>
+                        <VisibilityIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
           </TableContainer>
-
           <TablePagination
             component="div"
             count={filteredVendas.length}
@@ -600,228 +565,340 @@ export default function VendasPage() {
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25]}
             labelRowsPerPage="Linhas por página:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
-            sx={{
-              "& .MuiTablePagination-toolbar": {
-                backgroundColor: "#F5F5F5",
-              },
-              "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
-                fontSize: "16px",
-                color: "#333",
-              },
-            }}
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
           />
         </Card>
+      </Box>
 
-        {/* Modal de Detalhes da Venda */}
-        <Dialog
-          open={openSaleModal}
-          onClose={handleCloseSaleModal}
-          maxWidth="lg"
-          fullWidth
+      {/* Modal de Detalhes da Venda */}
+      <Dialog
+        open={detailsModal.open}
+        TransitionComponent={Transition}
+        keepMounted
+        onClose={handleCloseDetailsModal}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+            boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+            overflow: "visible",
+            maxHeight: "90vh",
+          },
+        }}
+      >
+        <DialogTitle
           sx={{
-            "& .MuiDialog-paper": {
-              borderRadius: "15px",
-              backgroundColor: "#F5F5F5",
-            },
+            textAlign: "center",
+            pb: 2,
+            pt: 4,
+            position: "relative",
           }}
         >
-          <DialogTitle
+          <IconButton
+            onClick={handleCloseDetailsModal}
             sx={{
-              backgroundColor: "#FADADD",
-              color: "#333",
-              fontWeight: "bold",
-              fontSize: "24px",
-              textAlign: "center",
-              position: "relative",
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: "#666",
+              "&:hover": {
+                backgroundColor: "rgba(0, 0, 0, 0.1)",
+              },
             }}
           >
-            Detalhes da Venda
-            <IconButton
-              onClick={handleCloseSaleModal}
+            <CloseIcon />
+          </IconButton>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Avatar
               sx={{
-                position: "absolute",
-                right: 8,
-                top: 8,
-                color: "#333",
+                width: 80,
+                height: 80,
+                backgroundColor: "#00509E",
+                boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
               }}
             >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ padding: "30px", backgroundColor: "#F5F5F5" }}>
-            {vendaSelecionada && (
+              <ReceiptIcon sx={{ fontSize: 40, color: "white" }} />
+            </Avatar>
+
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: "bold",
+                color: "#333",
+                textAlign: "center",
+              }}
+            >
+              Detalhes da Venda #{detailsModal.venda?.id}
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 4, pb: 2 }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            centered
+            sx={{
+              mb: 3,
+              "& .MuiTab-root": {
+                fontWeight: "bold",
+                fontSize: "16px",
+              },
+            }}
+          >
+            <Tab label="Informações Gerais" />
+            <Tab label="Itens Vendidos" />
+            <Tab label="Fornecedores dos Produtos" />
+          </Tabs>
+
+          {/* Tab 0: Informações Gerais */}
+          {tabValue === 0 && detailsModal.venda && (
+            <Box>
               <Grid container spacing={3}>
-                {/* Informações Gerais da Venda */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "#333" }}>
-                    Informações Gerais
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <ReceiptIcon sx={{ mr: 1, color: "#00509E" }} />
-                    <Typography variant="body1">
-                      <strong>ID:</strong> {vendaSelecionada.id}
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, backgroundColor: "rgba(255, 255, 255, 0.7)" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Dados da Venda
                     </Typography>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <CalendarTodayIcon sx={{ mr: 1, color: "#FF9800" }} />
-                    <Typography variant="body1">
-                      <strong>Data:</strong> {formatarData(vendaSelecionada.dataVenda)}
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>ID:</strong> #{detailsModal.venda.id}
                     </Typography>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <StoreIcon sx={{ mr: 1, color: "#9C27B0" }} />
-                    <Chip
-                      label={getTipoVendaLabel(vendaSelecionada.tipoVenda)}
-                      color={getTipoVendaColor(vendaSelecionada.tipoVenda)}
-                    />
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <AttachMoneyIcon sx={{ mr: 1, color: "#4CAF50" }} />
-                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "#4CAF50" }}>
-                      Total: R$ {formatarValor(vendaSelecionada.total)}
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Data/Hora:</strong> {formatarData(detailsModal.venda.dataVenda)}
                     </Typography>
-                  </Box>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Tipo:</strong>{" "}
+                      <Chip
+                        label={detailsModal.venda.tipoVenda === "VENDA_SIMPLES" ? "Venda Simples" : "Venda Fornecedor"}
+                        color={detailsModal.venda.tipoVenda === "VENDA_SIMPLES" ? "primary" : "secondary"}
+                        size="small"
+                      />
+                    </Typography>
+                  </Paper>
                 </Grid>
 
-                {/* Informações Financeiras */}
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "#333" }}>
-                    Divisão Financeira
-                  </Typography>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, backgroundColor: "rgba(255, 255, 255, 0.7)" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Valores
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1, fontSize: "18px", fontWeight: "bold", color: "#4CAF50" }}>
+                      <strong>Total:</strong> {formatarValor(detailsModal.venda.total)}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Valor Brechó:</strong> {formatarValor(detailsModal.venda.valorBrecho)}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Valor Fornecedora:</strong> {formatarValor(detailsModal.venda.valorFornecedora)}
+                    </Typography>
+                  </Paper>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Valor Brechó:</strong> R$ {formatarValor(vendaSelecionada.valorBrecho)}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Valor Fornecedora:</strong> R$ {formatarValor(vendaSelecionada.valorFornecedora)}
-                  </Typography>
-                </Grid>
-
-                {/* Informações da Fornecedora */}
-                {vendaSelecionada.fornecedora && (
-                  <>
-                    <Grid item xs={12}>
-                      <Divider sx={{ my: 2 }} />
-                      <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "#333" }}>
-                        Fornecedora
+                {detailsModal.venda.fornecedora && (
+                  <Grid item xs={12}>
+                    <Paper sx={{ p: 2, backgroundColor: "rgba(154, 228, 255, 0.3)" }}>
+                      <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                        Fornecedora Principal
                       </Typography>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <PeopleIcon sx={{ mr: 1, color: "#2196F3" }} />
-                        <Typography variant="body1">
-                          <strong>Nome:</strong> {vendaSelecionada.fornecedora.nome}
-                        </Typography>
-                      </Box>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        <strong>Contato:</strong> {vendaSelecionada.fornecedora.contato || "N/A"}
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Nome:</strong> {detailsModal.venda.fornecedora.nome}
                       </Typography>
-                    </Grid>
-                  </>
-                )}
-
-                {/* Itens da Venda */}
-                {vendaSelecionada.itens && vendaSelecionada.itens.length > 0 && (
-                  <>
-                    <Grid item xs={12}>
-                      <Divider sx={{ my: 2 }} />
-                      <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "#333" }}>
-                        Itens da Venda ({vendaSelecionada.itens.length})
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Contato:</strong> {detailsModal.venda.fornecedora.contato}
                       </Typography>
-                    </Grid>
-
-                    <Grid item xs={12}>
-                      <TableContainer sx={{ maxHeight: 300, border: "1px solid #ddd", borderRadius: 1 }}>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                              <TableCell>
-                                <strong>Produto</strong>
-                              </TableCell>
-                              <TableCell>
-                                <strong>Marca</strong>
-                              </TableCell>
-                              <TableCell align="center">
-                                <strong>Quantidade</strong>
-                              </TableCell>
-                              <TableCell align="right">
-                                <strong>Preço Unit.</strong>
-                              </TableCell>
-                              <TableCell align="right">
-                                <strong>Subtotal</strong>
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {vendaSelecionada.itens.map((item, index) => (
-                              <TableRow key={index}>
-                                <TableCell>{item.produto?.descricao || "N/A"}</TableCell>
-                                <TableCell>{item.produto?.marca || "N/A"}</TableCell>
-                                <TableCell align="center">{item.quantidade}</TableCell>
-                                <TableCell align="right">R$ {formatarValor(item.precoUnitario)}</TableCell>
-                                <TableCell align="right">R$ {formatarValor(item.subtotal)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </Grid>
-                  </>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Chave Pix:</strong> {detailsModal.venda.fornecedora.chavePix}
+                      </Typography>
+                    </Paper>
+                  </Grid>
                 )}
               </Grid>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ backgroundColor: "#F5F5F5", padding: "20px" }}>
-            <Button
-              onClick={handleCloseSaleModal}
-              sx={{
-                backgroundColor: "#CCCCCC",
-                color: "#333",
-                "&:hover": { backgroundColor: "#BBBBBB" },
-                borderRadius: "10px",
-                padding: "10px 20px",
-              }}
-            >
-              Fechar
-            </Button>
-          </DialogActions>
-        </Dialog>
+            </Box>
+          )}
 
-        {/* Snackbar para feedback */}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={4000}
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          {/* Tab 1: Itens Vendidos */}
+          {tabValue === 1 && detailsModal.venda && (
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                Produtos Vendidos ({detailsModal.venda.itens?.length || 0} itens)
+              </Typography>
+              {detailsModal.venda.itens?.map((item, index) => (
+                <Paper key={index} sx={{ p: 2, mb: 2, backgroundColor: "rgba(255, 255, 255, 0.7)" }}>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} md={6}>
+                      <Typography variant="body1" sx={{ fontWeight: "bold", mb: 1 }}>
+                        {item.produto?.descricao || "Produto sem descrição"}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
+                        <strong>Marca:</strong> {item.produto?.marca || "N/A"} |<strong> Tamanho:</strong>{" "}
+                        {item.produto?.tamanho || "N/A"}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "#666" }}>
+                        <strong>Estado:</strong> {item.produto?.estadoConservacao || "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                      <Typography variant="body1">
+                        <strong>Quantidade:</strong> {item.quantidade}
+                      </Typography>
+                      <Typography variant="body1">
+                        <strong>Preço Unit.:</strong> {formatarValor(item.precoUnitario)}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                      <Typography variant="h6" sx={{ fontWeight: "bold", color: "#4CAF50", textAlign: "right" }}>
+                        {formatarValor(item.subtotal)}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              ))}
+            </Box>
+          )}
+
+          {/* Tab 2: Fornecedores dos Produtos */}
+          {tabValue === 2 && detailsModal.venda && (
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                Fornecedores dos Produtos (Donos)
+              </Typography>
+              {(() => {
+                const fornecedores = getFornecedoresDosItens(detailsModal.venda.itens || [])
+
+                if (fornecedores.length === 0) {
+                  return (
+                    <Paper sx={{ p: 3, backgroundColor: "rgba(255, 255, 255, 0.7)", textAlign: "center" }}>
+                      <Typography variant="body1" sx={{ color: "#666" }}>
+                        Nenhum produto possui fornecedor associado nesta venda.
+                      </Typography>
+                    </Paper>
+                  )
+                }
+
+                return fornecedores.map((fornecedora, index) => (
+                  <Paper key={fornecedora.id} sx={{ p: 3, mb: 2, backgroundColor: "rgba(154, 228, 255, 0.3)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <Avatar sx={{ backgroundColor: "#00509E", mr: 2 }}>
+                        <PersonIcon />
+                      </Avatar>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
+                          {fornecedora.nome}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "#666" }}>
+                          Contato: {fornecedora.contato} | Pix: {fornecedora.chavePix}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Divider sx={{ mb: 2 }} />
+
+                    <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                      Produtos desta fornecedora:
+                    </Typography>
+
+                    {fornecedora.produtos.map((produtoInfo, prodIndex) => (
+                      <Box
+                        key={prodIndex}
+                        sx={{ ml: 2, mb: 1, p: 1, backgroundColor: "rgba(255, 255, 255, 0.5)", borderRadius: 1 }}
+                      >
+                        <Grid container spacing={2} alignItems="center">
+                          <Grid item xs={12} md={6}>
+                            <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                              {produtoInfo.produto.descricao}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "#666" }}>
+                              {produtoInfo.produto.marca} - {produtoInfo.produto.tamanho}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6} md={3}>
+                            <Typography variant="body2">Qtd: {produtoInfo.quantidade}</Typography>
+                          </Grid>
+                          <Grid item xs={6} md={3}>
+                            <Typography variant="body2" sx={{ fontWeight: "bold", color: "#4CAF50" }}>
+                              {formatarValor(produtoInfo.subtotal)}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    ))}
+
+                    <Box sx={{ mt: 2, p: 1, backgroundColor: "rgba(76, 175, 80, 0.1)", borderRadius: 1 }}>
+                      <Typography variant="body1" sx={{ fontWeight: "bold", textAlign: "right" }}>
+                        Total desta fornecedora:{" "}
+                        {formatarValor(fornecedora.produtos.reduce((sum, p) => sum + (p.subtotal || 0), 0))}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                ))
+              })()}
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            justifyContent: "center",
+            gap: 2,
+            px: 4,
+            pb: 4,
+          }}
         >
-          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Box>
+          <Button
+            onClick={handleCloseDetailsModal}
+            sx={{
+              backgroundColor: "#9AE4FF",
+              color: "#333",
+              fontWeight: "bold",
+              fontSize: "16px",
+              borderRadius: "25px",
+              padding: "12px 32px",
+              minWidth: "120px",
+              textTransform: "none",
+              boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+              "&:hover": {
+                backgroundColor: "#7DD3FC",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+              },
+              transition: "all 0.3s ease",
+            }}
+          >
+            Fechar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{
+            width: "100%",
+            borderRadius: "10px",
+            fontWeight: "bold",
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
+
+export default VendasPage
