@@ -328,67 +328,85 @@ export default function FornecedoresPage() {
               setSearchTerm(newValue || "")
             }}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Pesquisar fornecedor"
-                variant="outlined"
-                size="medium"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  width: "100%",
-                  maxWidth: "1200px",
+             <TextField
+              {...params}
+              placeholder="Pesquisar fornecedores"
+              variant="outlined"
+              size="medium"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
+                  </InputAdornment>
+                ),
+                sx: {
+                  height: "60px",
+                  display: "flex",
+                  alignItems: "center", // garante centralização vertical
+                  pl: 1,
+                },
+              }}
+              sx={{
+                width: "100%",
+                maxWidth: "1800px",
+                backgroundColor: "#F5F5F5",
+                marginBottom: "50px",
+                marginTop: "50px",
+                borderRadius: "10px",
+                "& .MuiOutlinedInput-root": {
                   backgroundColor: "#F5F5F5",
-                  marginBottom: "50px",
-                  marginTop: "50px",
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#F5F5F5",
-                    color: "#000000",
-                    height: "80px",
-                    "& fieldset": {
-                      borderColor: "#CCCCCC",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#00509E",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#00509E",
-                    },
-                    boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+                  color: "#000000",
+                  borderRadius: "10px",
+                  "& fieldset": {
+                    borderColor: "#CCCCCC",
                   },
-                  "& .MuiInputBase-input": {
-                    color: "#000000",
-                    padding: "0 20px",
-                    fontSize: "18px",
+                  "&:hover fieldset": {
+                    borderColor: "#00509E",
                   },
-                  "& .MuiInputLabel-root": {
-                    fontSize: "20px",
-                    color: "#000000",
-                    transform: "translate(20px, 28px)",
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#00509E",
                   },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#00509E",
-                  },
-                  "& .MuiInputLabel-shrink": {
-                    transform: "translate(20px, -6px) scale(0.75)",
-                  },
-                }}
-              />
+                  boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
+                },
+                "& .MuiInputBase-input": {
+                  padding: "14px 20px", // altura e alinhamento horizontal
+                  fontSize: "18px",
+                },
+              }}
+            />
+
+
             )}
             sx={{
               width: "100%",
-              maxWidth: "1200px",
+              maxWidth: "1800px",
             }}
           />
+
         </Box>
 
-        <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
+        <TableContainer
+         sx={{
+            padding: "20px",
+            bgcolor: "white",
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            borderRadius: "25px",
+            backgroundColor: "#F5F5F5",
+            width: "100%",
+            margin: "0 auto",
+            border: "'2px solid #B0B0B0'" }}
+            >
+            <TableContainer
+                        sx={{
+                          maxHeight: "600px",
+                          borderRadius: "10px",
+                          overflow: "auto",
+                          backgroundColor: "#F5F5F5",
+                          width: "100%",
+                        }}
+                      >
+         </TableContainer> 
           {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 300 }}>
               <CircularProgress />
@@ -402,16 +420,61 @@ export default function FornecedoresPage() {
           ) : (
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: "#ffccd5", height: "70px" }}>
-                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", color: "#666" }}>Fornecedores</TableCell>
-                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", color: "#666" }}>Contato</TableCell>
-                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", textAlign: "center", color: "#666" }}>
+                <TableRow 
+                align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5", // LINHA BRANCA ENTRE COLUNAS
+                  }}>
+                  <TableCell align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5", // LINHA BRANCA ENTRE COLUNAS
+                  }}
+                  >
+                    Fornecedores
+                    </TableCell>
+                  <TableCell align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5", // LINHA BRANCA ENTRE COLUNAS
+                  }}
+                  >
+                    Contato
+                    </TableCell>
+                  <TableCell align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5", // LINHA BRANCA ENTRE COLUNAS
+                  }}
+                  >
                     Valor de Crédito da loja
                   </TableCell>
-                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", textAlign: "center", color: "#666" }}>
+                  <TableCell align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5", // LINHA BRANCA ENTRE COLUNAS
+                  }}
+                  >
                     Chave Pix
                   </TableCell>
-                  <TableCell sx={{ fontWeight: "bold", fontSize: "1.1rem", textAlign: "center", color: "#666" }}>
+                  <TableCell align="center"
+                  sx={{
+                    fontSize: "18px",
+                    textAlign: "center",
+                    backgroundColor: "#FADADD",
+                    borderRight: "2px solid #F5F5F5", // LINHA BRANCA ENTRE COLUNAS
+                  }}>
                     Ações
                   </TableCell>
                 </TableRow>
@@ -423,10 +486,10 @@ export default function FornecedoresPage() {
                       key={fornecedor.id}
                       onClick={() => handleSelectFornecedorForSale(fornecedor)}
                       sx={{
-                        bgcolor: selectedFornecedorForSale?.id === fornecedor.id ? "#e8f5e8" : "white",
+                        bgcolor: selectedFornecedorForSale?.id === fornecedor.id ? "#e8f5e8" : "#F5F5F5",
                         cursor: "pointer",
                         "&:hover": {
-                          bgcolor: selectedFornecedorForSale?.id === fornecedor.id ? "#d4edda" : "#f5f5f5",
+                          bgcolor: selectedFornecedorForSale?.id === fornecedor.id ? "#D4EDDA" : "#E0E0E0",
                         },
                         border: selectedFornecedorForSale?.id === fornecedor.id ? "2px solid #4caf50" : "none",
                       }}
@@ -489,6 +552,8 @@ export default function FornecedoresPage() {
             </Table>
           )}
         </TableContainer>
+        
+        <Divider sx={{ my: 4 }} />
 
         <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
           <Button
