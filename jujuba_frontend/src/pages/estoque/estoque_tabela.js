@@ -256,35 +256,6 @@ export default function EstoquePage() {
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
       <Sidebar />
-
-      <Box
-        sx={{
-          position: "fixed",
-          top: 72,
-          right: 140,
-          zIndex: 1000,
-        }}
-      >
-        <IconButton
-          onClick={handleNavigateToCart}
-          sx={{
-            bgcolor: "#FADADD",
-            color: "#333",
-            "&:hover": {
-              bgcolor: "#ffb6c1",
-            },
-            borderRadius: "50%",
-            width: 56,
-            height: 56,
-            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <Badge badgeContent={cartItemCount} color="error">
-            <ShoppingCartIcon sx={{ fontSize: 30 }} />
-          </Badge>
-        </IconButton>
-      </Box>
-
       <Box
         component="main"
         sx={{
@@ -297,26 +268,60 @@ export default function EstoquePage() {
           transition: "margin-left 0.3s ease",
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: "80px",
-          }}
-        >
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: "bold",
-              fontSize: "50px",
-              color: "#000000",
-              textAlign: "center",
-            }}
-          >
-            Estoque
-          </Typography>
-        </Box>
+        {/* Cabeçalho: título central + botão do carrinho à direita (mesma largura da busca) */}
+<Box
+  sx={{
+    position: "relative",
+    width: "100%",
+    maxWidth: "1800px", // mesmo limite da barra de pesquisa
+    mx: "auto",
+    mb: "50px",         // mantém respiro antes da busca
+  }}
+>
+  {/* Título exatamente como estava */}
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <Typography
+      variant="h4"
+      sx={{
+        fontWeight: "bold",
+        fontSize: "50px",
+        color: "#000000",
+        textAlign: "center",
+      }}
+    >
+      Estoque
+    </Typography>
+  </Box>
+
+  {/* Botão do carrinho alinhado à direita, na mesma linha visual do título */}
+  <IconButton
+    onClick={handleNavigateToCart}
+    sx={{
+      position: "absolute",
+      right: 0,
+      top: "50%",
+      transform: "translateY(-50%)",
+      bgcolor: "#FADADD",
+      color: "#333",
+      "&:hover": { bgcolor: "#ffb6c1" },
+      borderRadius: "50%",
+      width: 56,
+      height: 56,
+      boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+    }}
+  >
+    <Badge badgeContent={cartItemCount} color="error">
+      <ShoppingCartIcon sx={{ fontSize: 30 }} />
+    </Badge>
+  </IconButton>
+</Box>
+
 
         <Box
           sx={{

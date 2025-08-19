@@ -839,14 +839,14 @@ export default function EditarLotePage() {
             onClick={handleOpenFinishDialog}
             disabled={!hasChanges || loading}
             sx={{
-              bgcolor: hasChanges && !loading ? "#4caf50" : "#cccccc",
-              color: "white",
+              bgcolor: hasChanges && !loading ? "#FADADD" : "#cccccc",
+              color: "black",
               fontWeight: "bold",
               borderRadius: 3,
               px: 3,
               py: 1.5,
               "&:hover": {
-                bgcolor: hasChanges && !loading ? "#45a049" : "#cccccc",
+                bgcolor: hasChanges && !loading ? "#FADADD" : "#cccccc",
               },
             }}
           >

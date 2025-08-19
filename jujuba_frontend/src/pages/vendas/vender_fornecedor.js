@@ -523,7 +523,7 @@ export default function FornecedoresPage() {
                               e.stopPropagation()
                               handleViewFornecedor(fornecedor.id)
                             }}
-                            sx={{ color: "text.secondary" }}
+                            sx={{ color: "#00509E" }}
                           >
                             <VisibilityIcon fontSize="small" />
                           </IconButton>
@@ -533,7 +533,7 @@ export default function FornecedoresPage() {
                               e.stopPropagation()
                               handleDeleteFornecedor(fornecedor.id)
                             }}
-                            sx={{ color: "text.secondary" }}
+                            sx={{ color: "#d32f2f" }}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
