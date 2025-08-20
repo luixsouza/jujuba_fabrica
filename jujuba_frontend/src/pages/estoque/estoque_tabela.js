@@ -27,6 +27,11 @@ import {
   Badge,
   Grid,
   Chip,
+  Avatar,
+  Paper,
+  Tabs,
+  Tab,
+  Slide,
 } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import Sidebar from "../../components/sidebar"
@@ -34,14 +39,16 @@ import VisibilityIcon from "@mui/icons-material/Visibility"
 import SearchIcon from "@mui/icons-material/Search"
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"
 import InventoryIcon from "@mui/icons-material/Inventory"
-import QrCodeIcon from "@mui/icons-material/QrCode"
-import CategoryIcon from "@mui/icons-material/Category"
-import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import { forwardRef } from "react"
 import { useRouter } from "next/navigation"
 
 // Importações da API corrigidas
 import { listarProdutos } from "../api/produtos"
 import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho" // Agora aponta para o arquivo correto
+
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />
+})
 
 const normalizarProduto = (produto) => {
   if (!produto || typeof produto !== "object") {
@@ -130,6 +137,7 @@ export default function EstoquePage() {
   const [produtoSelecionado, setProdutoSelecionado] = useState(null)
   const [searchOptions, setSearchOptions] = useState([])
   const [cartItemCount, setCartItemCount] = useState(0)
+  const [tabValue, setTabValue] = useState(0)
 
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
@@ -193,12 +201,18 @@ export default function EstoquePage() {
     if (produtoNormalizado) {
       setProdutoSelecionado(produtoNormalizado)
       setOpenProductModal(true)
+      setTabValue(0)
     }
   }
 
   const handleCloseProductModal = () => {
     setOpenProductModal(false)
     setProdutoSelecionado(null)
+    setTabValue(0)
+  }
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue)
   }
 
   const handleAddToCart = async (produto) => {
@@ -269,59 +283,58 @@ export default function EstoquePage() {
         }}
       >
         {/* Cabeçalho: título central + botão do carrinho à direita (mesma largura da busca) */}
-<Box
-  sx={{
-    position: "relative",
-    width: "100%",
-    maxWidth: "1800px", // mesmo limite da barra de pesquisa
-    mx: "auto",
-    mb: "50px",         // mantém respiro antes da busca
-  }}
->
-  {/* Título exatamente como estava */}
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }}
-  >
-    <Typography
-      variant="h4"
-      sx={{
-        fontWeight: "bold",
-        fontSize: "50px",
-        color: "#000000",
-        textAlign: "center",
-      }}
-    >
-      Estoque
-    </Typography>
-  </Box>
+        <Box
+          sx={{
+            position: "relative",
+            width: "100%",
+            maxWidth: "1800px", // mesmo limite da barra de pesquisa
+            mx: "auto",
+            mb: "50px", // mantém respiro antes da busca
+          }}
+        >
+          {/* Título exatamente como estava */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: "bold",
+                fontSize: "50px",
+                color: "#000000",
+                textAlign: "center",
+              }}
+            >
+              Estoque
+            </Typography>
+          </Box>
 
-  {/* Botão do carrinho alinhado à direita, na mesma linha visual do título */}
-  <IconButton
-    onClick={handleNavigateToCart}
-    sx={{
-      position: "absolute",
-      right: 0,
-      top: "50%",
-      transform: "translateY(-50%)",
-      bgcolor: "#FADADD",
-      color: "#333",
-      "&:hover": { bgcolor: "#ffb6c1" },
-      borderRadius: "50%",
-      width: 56,
-      height: 56,
-      boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-    }}
-  >
-    <Badge badgeContent={cartItemCount} color="error">
-      <ShoppingCartIcon sx={{ fontSize: 30 }} />
-    </Badge>
-  </IconButton>
-</Box>
-
+          {/* Botão do carrinho alinhado à direita, na mesma linha visual do título */}
+          <IconButton
+            onClick={handleNavigateToCart}
+            sx={{
+              position: "absolute",
+              right: 0,
+              top: "50%",
+              transform: "translateY(-50%)",
+              bgcolor: "#FADADD",
+              color: "#333",
+              "&:hover": { bgcolor: "#ffb6c1" },
+              borderRadius: "50%",
+              width: 56,
+              height: 56,
+              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <Badge badgeContent={cartItemCount} color="error">
+              <ShoppingCartIcon sx={{ fontSize: 30 }} />
+            </Badge>
+          </IconButton>
+        </Box>
 
         <Box
           sx={{
@@ -533,302 +546,241 @@ export default function EstoquePage() {
 
       <Dialog
         open={openProductModal}
+        TransitionComponent={Transition}
+        keepMounted
         onClose={handleCloseProductModal}
         maxWidth="md"
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 3,
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+            borderRadius: "20px",
+            background: "#F5F5F5",
+            boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+            overflow: "visible",
+            maxHeight: "90vh",
           },
         }}
       >
-        {produtoSelecionado && (
-          <>
-            <DialogTitle
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            pb: 2,
+            pt: 4,
+            position: "relative",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseProductModal}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: "#666",
+              "&:hover": {
+                backgroundColor: "rgba(0, 0, 0, 0.1)",
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Avatar
               sx={{
-                bgcolor: "linear-gradient(135deg, #FADADD 0%, #FFE4E6 100%)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                p: 3,
-                borderBottom: "1px solid #f0f0f0",
+                width: 80,
+                height: 80,
+                backgroundColor: "#9AE4FF",
+                boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
               }}
             >
-              <Box>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: "#333", mb: 1 }}>
-                  {produtoSelecionado.descricao}
-                </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: "#00509E" }}>
-                    R$ {formatarPreco(produtoSelecionado.preco)}
-                  </Typography>
-                  <Chip
-                    icon={<CheckCircleIcon />}
-                    label={produtoSelecionado.estadoConservacao}
-                    color="success"
-                    size="small"
-                    sx={{ fontWeight: 600 }}
-                  />
-                </Box>
-              </Box>
-              <IconButton onClick={handleCloseProductModal} size="large" sx={{ color: "#333" }}>
-                <CloseIcon />
-              </IconButton>
-            </DialogTitle>
+              <InventoryIcon sx={{ fontSize: 40, color: "white" }} />
+            </Avatar>
 
-            <DialogContent sx={{ p: 4 }}>
-              <Grid container spacing={4}>
-                <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: "#333", textAlign: "center" }}>
-                    Informações do Produto
-                  </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: "bold",
+                color: "#333",
+                textAlign: "center",
+              }}
+            >
+              {produtoSelecionado?.descricao || "Produto"}
+            </Typography>
+          </Box>
+        </DialogTitle>
 
-                  <Grid container spacing={3} sx={{ mb: 4 }}>
-                    <Grid item xs={6} md={3}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          p: 3,
-                          bgcolor: "#FADADD",
-                          borderRadius: 3,
-                          textAlign: "center",
-                          border: "1px solid #e9ecef",
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                          },
-                        }}
-                      >
-                        <QrCodeIcon sx={{ color: "#00509E", mb: 2, fontSize: "2.5rem" }} />
-                        <Typography variant="body2" sx={{ color: "#666", mb: 1, fontWeight: 500 }}>
-                          ID do Produto
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: "#333" }}>
-                          {produtoSelecionado.id || "N/A"}
-                        </Typography>
-                      </Box>
-                    </Grid>
+        <DialogContent sx={{ px: 4, pb: 2 }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            centered
+            sx={{
+              mb: 3,
+              "& .MuiTab-root": {
+              fontWeight: "bold",
+              fontSize: "16px",
+              color: "#333", // cor padrão quando não selecionado
+            },
+            "& .MuiTab-root.Mui-selected": {
+              color: "#9AE4FF", // cor azul quando ativo
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
+              },
+            }}
+          >
+            <Tab label="Informações Básicas" />
+            <Tab label="Detalhes Adicionais" />
+          </Tabs>
 
-                    <Grid item xs={6} md={3}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          p: 3,
-                          bgcolor: "#FADADD",
-                          borderRadius: 3,
-                          textAlign: "center",
-                          border: "1px solid #e9ecef",
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                          },
-                        }}
-                      >
-                        <InventoryIcon sx={{ color: "#00509E", mb: 2, fontSize: "2.5rem" }} />
-                        <Typography variant="body2" sx={{ color: "#666", mb: 1, fontWeight: 500 }}>
-                          Tamanho
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: "#333" }}>
-                          {produtoSelecionado.tamanho}
-                        </Typography>
-                      </Box>
-                    </Grid>
-
-                    <Grid item xs={6} md={3}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          p: 3,
-                          bgcolor: "#FADADD",
-                          borderRadius: 3,
-                          textAlign: "center",
-                          border: "1px solid #e9ecef",
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                          },
-                        }}
-                      >
-                        <CategoryIcon sx={{ color: "#00509E", mb: 2, fontSize: "2.5rem" }} />
-                        <Typography variant="body2" sx={{ color: "#666", mb: 1, fontWeight: 500 }}>
-                          Gênero
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: "#333" }}>
-                          {produtoSelecionado.genero}
-                        </Typography>
-                      </Box>
-                    </Grid>
-
-                    <Grid item xs={6} md={3}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          p: 3,
-                          bgcolor: "#FADADD",
-                          borderRadius: 3,
-                          textAlign: "center",
-                          border: "1px solid #e9ecef",
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                          },
-                        }}
-                      >
-                        <InventoryIcon sx={{ color: "#00509E", mb: 2, fontSize: "2.5rem" }} />
-                        <Typography variant="body2" sx={{ color: "#666", mb: 1, fontWeight: 500 }}>
-                          Quantidade
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: "#333" }}>
-                          {produtoSelecionado.quantidade}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-
-                  <Box sx={{ mt: 4 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: "#333", textAlign: "center" }}>
-                      Detalhes Adicionais
+          {/* Tab 0: Informações Básicas */}
+          {tabValue === 0 && produtoSelecionado && (
+            <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Dados do Produto
                     </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>ID:</strong> #{produtoSelecionado.id || "N/A"}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Descrição:</strong> {produtoSelecionado.descricao}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Estado:</strong>{" "}
+                      <Chip label={produtoSelecionado.estadoConservacao} color="success" size="small" />
+                    </Typography>
+                  </Paper>
+                </Grid>
 
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <Box
-                          sx={{
-                            p: 3,
-                            border: "2px solid #e9ecef",
-                            borderRadius: 3,
-                            bgcolor: "#FADADD",
-                            transition: "all 0.2s ease",
-                            "&:hover": {
-                              borderColor: "#FADADD",
-                              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                            },
-                          }}
-                        >
-                          <Typography variant="body1" sx={{ fontWeight: 600, color: "#00509E", mb: 1 }}>
-                            Marca
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 500, color: "#333" }}>
-                            {produtoSelecionado.marca}
-                          </Typography>
-                        </Box>
-                      </Grid>
-
-                      {produtoSelecionado.categoria && produtoSelecionado.categoria !== "Sem categoria" && (
-                        <Grid item xs={12} sm={6}>
-                          <Box
-                            sx={{
-                              p: 3,
-                              border: "2px solid #e9ecef",
-                              borderRadius: 3,
-                              bgcolor: "#FADADD",
-                              transition: "all 0.2s ease",
-                              "&:hover": {
-                                borderColor: "#FADADD",
-                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                              },
-                            }}
-                          >
-                            <Typography variant="body1" sx={{ fontWeight: 600, color: "#00509E", mb: 1 }}>
-                              Categoria
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 500, color: "#333" }}>
-                              {produtoSelecionado.categoria}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      )}
-
-                      {produtoSelecionado.cor && produtoSelecionado.cor !== "Não informada" && (
-                        <Grid item xs={12} sm={6}>
-                          <Box
-                            sx={{
-                              p: 3,
-                              border: "2px solid #e9ecef",
-                              borderRadius: 3,
-                              bgcolor: "#fff",
-                              transition: "all 0.2s ease",
-                              "&:hover": {
-                                borderColor: "#FADADD",
-                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                              },
-                            }}
-                          >
-                            <Typography variant="body1" sx={{ fontWeight: 600, color: "#00509E", mb: 1 }}>
-                              Cor
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 500, color: "#333" }}>
-                              {produtoSelecionado.cor}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      )}
-                    </Grid>
-                  </Box>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Preço e Estoque
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1, fontSize: "18px", fontWeight: "bold", color: "#4CAF50" }}>
+                      <strong>Preço:</strong> R$ {formatarPreco(produtoSelecionado.preco)}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Quantidade:</strong> {produtoSelecionado.quantidade} unidades
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
+                    </Typography>
+                  </Paper>
                 </Grid>
               </Grid>
-            </DialogContent>
+            </Box>
+          )}
 
-            <DialogActions sx={{ p: 3, bgcolor: "#f8f9fa", borderTop: "1px solid #e9ecef" }}>
-              <Button
-                variant="outlined"
-                onClick={handleCloseProductModal}
-                sx={{
-                  borderRadius: 3,
-                  px: 4,
-                  py: 1.5,
-                  borderColor: "#dee2e6",
-                  color: "#6c757d",
-                  fontWeight: 600,
-                  textTransform: "none",
-                  fontSize: "1rem",
-                  "&:hover": {
-                    borderColor: "#adb5bd",
-                    bgcolor: "#f8f9fa",
-                  },
-                }}
-              >
-                Fechar
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<ShoppingCartIcon />}
-                onClick={() => handleAddToCart(produtoSelecionado)}
-                sx={{
-                  borderRadius: 3,
-                  px: 4,
-                  py: 1.5,
-                  bgcolor: "#FADADD",
-                  color: "#333",
-                  fontWeight: 600,
-                  textTransform: "none",
-                  fontSize: "1rem",
-                  boxShadow: "0 2px 8px rgba(250, 218, 221, 0.4)",
-                  "&:hover": {
-                    bgcolor: "#ffb6c1",
-                    boxShadow: "0 4px 12px rgba(250, 218, 221, 0.6)",
-                    transform: "translateY(-1px)",
-                  },
-                }}
-              >
-                Adicionar ao Carrinho
-              </Button>
-            </DialogActions>
-          </>
-        )}
+          {/* Tab 1: Detalhes Adicionais */}
+          {tabValue === 1 && produtoSelecionado && (
+            <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Características
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                       <strong>Marca:</strong> {produtoSelecionado.marca}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Gênero:</strong> {produtoSelecionado.genero}
+                    </Typography>
+                  </Paper>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Controle
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Data de Adição:</strong>{" "}
+                      {produtoSelecionado.dataAdicao
+                        ? new Date(produtoSelecionado.dataAdicao).toLocaleDateString("pt-BR")
+                        : "Não informada"}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Status:</strong>{" "}
+                      <Chip
+                        label={produtoSelecionado.ativo ? "Ativo" : "Inativo"}
+                        color={produtoSelecionado.ativo ? "success" : "error"}
+                        size="small"
+                      />
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            justifyContent: "center",
+            gap: 2,
+            px: 4,
+            pb: 4,
+          }}
+        >
+          <Button
+            onClick={handleCloseProductModal}
+            sx={{
+              backgroundColor: "#FADADD",
+              color: "#333",
+              fontWeight: "bold",
+              fontSize: "16px",
+              borderRadius: "25px",
+              padding: "12px 32px",
+              minWidth: "120px",
+              textTransform: "none",
+              boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+              "&:hover": {
+                backgroundColor: "#FFB6C1",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+              },
+              transition: "all 0.3s ease",
+            }}
+          >
+            Fechar
+          </Button>
+
+          <Button
+            startIcon={<ShoppingCartIcon />}
+            onClick={() => handleAddToCart(produtoSelecionado)}
+            sx={{
+              backgroundColor: "#FADADD",
+              color: "#333",
+              fontWeight: "bold",
+              fontSize: "16px",
+              borderRadius: "25px",
+              padding: "12px 32px",
+              minWidth: "180px",
+              textTransform: "none",
+              boxShadow: "0px 4px 12px rgba(250, 218, 221, 0.4)",
+              "&:hover": {
+                backgroundColor: "#FFB6C1",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 16px rgba(250, 218, 221, 0.6)",
+              },
+              transition: "all 0.3s ease",
+            }}
+          >
+            Adicionar ao Carrinho
+          </Button>
+        </DialogActions>
       </Dialog>
 
       <Snackbar

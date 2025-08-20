@@ -423,10 +423,10 @@ export default function CadastroLotePage() {
               onClick={handleAddItem}
               disabled={loading}
               sx={{
-                backgroundColor: "#ffd0e8",
+                backgroundColor: "#FADADD",
                 color: "#333",
                 "&:hover": {
-                  backgroundColor: "#ffb0d8",
+                  backgroundColor: "#FADADD",
                 },
                 px: 4,
                 py: 1.5,

@@ -581,7 +581,7 @@ const VendasPage = () => {
         PaperProps={{
           sx: {
             borderRadius: "20px",
-            background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+            background: "#F5F5F5",
             boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
             overflow: "visible",
             maxHeight: "90vh",
@@ -623,7 +623,7 @@ const VendasPage = () => {
               sx={{
                 width: 80,
                 height: 80,
-                backgroundColor: "#00509E",
+                backgroundColor: "#9AE4FF",
                 boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
               }}
             >
@@ -653,6 +653,13 @@ const VendasPage = () => {
               "& .MuiTab-root": {
                 fontWeight: "bold",
                 fontSize: "16px",
+                color: "#333", // cor padrão quando não selecionado
+            },
+            "& .MuiTab-root.Mui-selected": {
+              color: "#9AE4FF", // cor azul quando ativo
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
               },
             }}
           >
@@ -666,7 +673,7 @@ const VendasPage = () => {
             <Box>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, backgroundColor: "rgba(255, 255, 255, 0.7)" }}>
+                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
                       Dados da Venda
                     </Typography>
@@ -688,7 +695,7 @@ const VendasPage = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, backgroundColor: "rgba(255, 255, 255, 0.7)" }}>
+                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
                       Valores
                     </Typography>
@@ -706,7 +713,7 @@ const VendasPage = () => {
 
                 {detailsModal.venda.fornecedora && (
                   <Grid item xs={12}>
-                    <Paper sx={{ p: 2, backgroundColor: "rgba(154, 228, 255, 0.3)" }}>
+                    <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
                       <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
                         Fornecedora Principal
                       </Typography>
@@ -733,7 +740,7 @@ const VendasPage = () => {
                 Produtos Vendidos ({detailsModal.venda.itens?.length || 0} itens)
               </Typography>
               {detailsModal.venda.itens?.map((item, index) => (
-                <Paper key={index} sx={{ p: 2, mb: 2, backgroundColor: "rgba(255, 255, 255, 0.7)" }}>
+                <Paper key={index} sx={{ p: 2, mb: 2, backgroundColor: "#FADADD" }}>
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={6}>
                       <Typography variant="body1" sx={{ fontWeight: "bold", mb: 1 }}>
@@ -777,7 +784,7 @@ const VendasPage = () => {
 
                 if (fornecedores.length === 0) {
                   return (
-                    <Paper sx={{ p: 3, backgroundColor: "rgba(255, 255, 255, 0.7)", textAlign: "center" }}>
+                    <Paper sx={{ p: 3, backgroundColor: "#FADADD", textAlign: "center" }}>
                       <Typography variant="body1" sx={{ color: "#666" }}>
                         Nenhum produto possui fornecedor associado nesta venda.
                       </Typography>
@@ -786,7 +793,7 @@ const VendasPage = () => {
                 }
 
                 return fornecedores.map((fornecedora, index) => (
-                  <Paper key={fornecedora.id} sx={{ p: 3, mb: 2, backgroundColor: "rgba(154, 228, 255, 0.3)" }}>
+                  <Paper key={fornecedora.id} sx={{ p: 3, mb: 2, backgroundColor: "#FADADD" }}>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                       <Avatar sx={{ backgroundColor: "#00509E", mr: 2 }}>
                         <PersonIcon />
@@ -810,7 +817,7 @@ const VendasPage = () => {
                     {fornecedora.produtos.map((produtoInfo, prodIndex) => (
                       <Box
                         key={prodIndex}
-                        sx={{ ml: 2, mb: 1, p: 1, backgroundColor: "rgba(255, 255, 255, 0.5)", borderRadius: 1 }}
+                        sx={{ ml: 2, mb: 1, p: 1, backgroundColor: "#FADADD", borderRadius: 1 }}
                       >
                         <Grid container spacing={2} alignItems="center">
                           <Grid item xs={12} md={6}>
@@ -833,7 +840,7 @@ const VendasPage = () => {
                       </Box>
                     ))}
 
-                    <Box sx={{ mt: 2, p: 1, backgroundColor: "rgba(76, 175, 80, 0.1)", borderRadius: 1 }}>
+                    <Box sx={{ mt: 2, p: 1, backgroundColor: "#FADADD", borderRadius: 1 }}>
                       <Typography variant="body1" sx={{ fontWeight: "bold", textAlign: "right" }}>
                         Total desta fornecedora:{" "}
                         {formatarValor(fornecedora.produtos.reduce((sum, p) => sum + (p.subtotal || 0), 0))}
@@ -857,7 +864,7 @@ const VendasPage = () => {
           <Button
             onClick={handleCloseDetailsModal}
             sx={{
-              backgroundColor: "#9AE4FF",
+              backgroundColor: "#FADADD",
               color: "#333",
               fontWeight: "bold",
               fontSize: "16px",
@@ -867,7 +874,7 @@ const VendasPage = () => {
               textTransform: "none",
               boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
               "&:hover": {
-                backgroundColor: "#7DD3FC",
+                backgroundColor: "#FADADD",
                 transform: "translateY(-2px)",
                 boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
               },
