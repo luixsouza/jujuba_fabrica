@@ -329,7 +329,7 @@ const editLote = async (id, loteData) => {
   }
 }
 
-const deletarLote = async (id) => {///
+const deletarLote = async (id) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: "DELETE",
@@ -398,6 +398,42 @@ const getFornecedoras = async () => {
   }
 }
 
+const testApiConnection = async () => {
+  try {
+    console.log("Testando conexão com a API...")
+
+    const response = await fetch(`${BASE_URL}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    })
+
+    if (response.ok) {
+      console.log("Conexão com API estabelecida com sucesso")
+      return {
+        success: true,
+        status: response.status,
+        message: "Conexão estabelecida com sucesso",
+      }
+    } else {
+      console.warn(`API respondeu com status ${response.status}`)
+      return {
+        success: false,
+        status: response.status,
+        message: `API respondeu com status ${response.status}`,
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao testar conexão com API:", error)
+    return {
+      success: false,
+      status: null,
+      message: error.message || "Erro de conectividade",
+    }
+  }
+}
+
 // Exportar usando CommonJS para compatibilidade
 module.exports = {
   createLote,
@@ -405,6 +441,8 @@ module.exports = {
   getLoteById,
   editLote,
   deletarLote,
+  deleteLote: deletarLote,
+  testApiConnection,
   getFornecedoras,
   ESTADOS_CONSERVACAO,
   GENEROS,

@@ -1,5 +1,6 @@
 package com.jujuba.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.annotation.CreatedDate;
@@ -27,4 +28,9 @@ public class Lote {
 
     @OneToMany(mappedBy = "lote", cascade = CascadeType.ALL)
     private List<Produto> produtos;
+
+    public void setDataRecebimento(LocalDate now) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setDataRecebimento'");
+    }
 }
