@@ -88,7 +88,7 @@ class FornecedoraControllerTest {
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         verify(arquivoService, times(1)).salvarContrato(any(MultipartFile.class));
-        verify(fornecedoraService, times(2)).salvar(any(Fornecedora.class));
+        verify(fornecedoraService, times(1)).salvar(any(Fornecedora.class));
     }
 
     @Test
