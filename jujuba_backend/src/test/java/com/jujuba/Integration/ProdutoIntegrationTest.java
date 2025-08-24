@@ -11,7 +11,7 @@ import com.jujuba.utils.enums.Genero;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureWebMvc
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 public class ProdutoIntegrationTest {
@@ -51,7 +51,7 @@ public class ProdutoIntegrationTest {
         loteRepository.deleteAll();
         fornecedoraRepository.deleteAll();
 
-        // Criar fornecedora para o lote
+        // Criar fornecedora
         Fornecedora fornecedora = new Fornecedora();
         fornecedora.setNome("Fornecedora Teste");
         fornecedora.setContato("11999999999");
@@ -61,13 +61,12 @@ public class ProdutoIntegrationTest {
         fornecedora.setCreditoLoja(BigDecimal.valueOf(100.00));
         fornecedora = fornecedoraRepository.save(fornecedora);
 
-        // Criar lote
+        // Criar lote (dataCriacao preenchida automaticamente)
         loteTeste = new Lote();
         loteTeste.setFornecedora(fornecedora);
-        loteTeste.setDataRecebimento(LocalDate.now());
         loteTeste = loteRepository.save(loteTeste);
 
-        // Criar produto
+        // Criar produto de teste
         produtoTeste = new Produto();
         produtoTeste.setDescricao("Camiseta Teste");
         produtoTeste.setMarca("Marca Teste");
@@ -81,8 +80,8 @@ public class ProdutoIntegrationTest {
 
     @Test
     void deveListarTodosProdutos() throws Exception {
-        Produto produto1 = produtoRepository.save(produtoTeste);
-        
+        produtoRepository.save(produtoTeste);
+
         Produto produto2 = new Produto();
         produto2.setDescricao("Calça Teste");
         produto2.setMarca("Outra Marca");
@@ -158,10 +157,8 @@ public class ProdutoIntegrationTest {
 
     @Test
     void deveListarProdutosPorEstadoConservacao() throws Exception {
-        // Produto em estado BOM
         Produto produtoBom = produtoRepository.save(produtoTeste);
-        
-        // Produto em estado OTIMO
+
         Produto produtoOtimo = new Produto();
         produtoOtimo.setDescricao("Produto Ótimo");
         produtoOtimo.setMarca("Marca Premium");
@@ -182,10 +179,8 @@ public class ProdutoIntegrationTest {
 
     @Test
     void deveListarProdutosPorGenero() throws Exception {
-        // Produto UNISSEX
         Produto produtoUnissex = produtoRepository.save(produtoTeste);
-        
-        // Produto FEMININO
+
         Produto produtoFeminino = new Produto();
         produtoFeminino.setDescricao("Blusa Feminina");
         produtoFeminino.setMarca("Marca Feminina");

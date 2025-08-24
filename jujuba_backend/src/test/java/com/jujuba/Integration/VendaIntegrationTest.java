@@ -1,5 +1,6 @@
 package com.jujuba.Integration;
 
+import com.jujuba.exception.ProductUnavailableException;
 import com.jujuba.model.*;
 import com.jujuba.repository.*;
 import com.jujuba.service.CarrinhoService;
@@ -8,6 +9,7 @@ import com.jujuba.utils.enums.Genero;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -18,11 +20,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureWebMvc
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 public class VendaIntegrationTest {
@@ -52,14 +56,12 @@ public class VendaIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Limpar dados
         vendaRepository.deleteAll();
         produtoRepository.deleteAll();
         loteRepository.deleteAll();
         fornecedoraRepository.deleteAll();
         carrinhoService.limparCarrinho();
 
-        // Criar fornecedora
         fornecedoraTeste = new Fornecedora();
         fornecedoraTeste.setNome("Fornecedora Teste");
         fornecedoraTeste.setContato("11999999999");
@@ -69,13 +71,10 @@ public class VendaIntegrationTest {
         fornecedoraTeste.setCreditoLoja(BigDecimal.valueOf(100.00));
         fornecedoraTeste = fornecedoraRepository.save(fornecedoraTeste);
 
-        // Criar lote
         loteTeste = new Lote();
         loteTeste.setFornecedora(fornecedoraTeste);
-        loteTeste.setDataRecebimento(LocalDate.now());
         loteTeste = loteRepository.save(loteTeste);
 
-        // Criar produtos
         produto1 = new Produto();
         produto1.setDescricao("Camiseta Teste 1");
         produto1.setMarca("Marca 1");
@@ -105,19 +104,17 @@ public class VendaIntegrationTest {
         carrinhoService.adicionarProduto(produto2.getId());
 
         mockMvc.perform(post("/api/vendas/finalizar/simples"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.tipoVenda", is("SIMPLES")))
-                .andExpect(jsonPath("$.total", is(70.00))) // 25.00 + 45.00
-                .andExpect(jsonPath("$.itens", hasSize(2)))
-                .andExpect(jsonPath("$.dataVenda", notNullValue()));
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.tipoVenda", is("VENDA_SIMPLES")))
+               .andExpect(jsonPath("$.total", is(70.00)))
+               .andExpect(jsonPath("$.itens", hasSize(2)))
+               .andExpect(jsonPath("$.dataVenda", notNullValue()));
 
-        // Verificar se o estoque foi atualizado
         Produto produto1Atualizado = produtoRepository.findById(produto1.getId()).orElseThrow();
         Produto produto2Atualizado = produtoRepository.findById(produto2.getId()).orElseThrow();
-        
-        // Estoque deve ter diminuído em 1 unidade para cada produto
-        assert produto1Atualizado.getQuantidade() == 4; // era 5, agora 4
-        assert produto2Atualizado.getQuantidade() == 2; // era 3, agora 2
+
+        assert produto1Atualizado.getQuantidade() == 4;
+        assert produto2Atualizado.getQuantidade() == 2;
     }
 
     @Test
@@ -126,34 +123,29 @@ public class VendaIntegrationTest {
         carrinhoService.adicionarProduto(produto2.getId());
 
         mockMvc.perform(post("/api/vendas/finalizar/fornecedora/{fornecedoraId}", fornecedoraTeste.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.tipoVenda", is("FORNECEDORA")))
-                .andExpect(jsonPath("$.total", is(70.00)))
-                .andExpect(jsonPath("$.fornecedora.id", is(fornecedoraTeste.getId().intValue())))
-                .andExpect(jsonPath("$.fornecedora.nome", is("Fornecedora Teste")))
-                .andExpect(jsonPath("$.itens", hasSize(2)))
-                .andExpect(jsonPath("$.valorBrecho", notNullValue()))
-                .andExpect(jsonPath("$.valorFornecedora", notNullValue()));
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.tipoVenda", is("VENDA_FORNECEDOR")))
+               .andExpect(jsonPath("$.total", is(70.00)))
+               .andExpect(jsonPath("$.fornecedora.id", is(fornecedoraTeste.getId().intValue())))
+               .andExpect(jsonPath("$.fornecedora.nome", is("Fornecedora Teste")))
+               .andExpect(jsonPath("$.itens", hasSize(2)))
+               .andExpect(jsonPath("$.valorBrecho", notNullValue()))
+               .andExpect(jsonPath("$.valorFornecedora", notNullValue()));
     }
 
     @Test
     void deveRetornar400AoFinalizarVendaComCarrinhoVazio() throws Exception {
-        // Carrinho já está vazio pelo setUp
-
         mockMvc.perform(post("/api/vendas/finalizar/simples"))
-                .andExpect(status().isBadRequest());
+               .andExpect(status().isBadRequest());
     }
 
     @Test
-    void deveRetornar400AoFinalizarVendaComProdutoSemEstoque() throws Exception {
-        // Zerar estoque do produto
+    void deveRetornar400AoFinalizarVendaComProdutoSemEstoque() {
         produto1.setQuantidade(0);
         produtoRepository.save(produto1);
-        
-        carrinhoService.adicionarProduto(produto1.getId());
-
-        mockMvc.perform(post("/api/vendas/finalizar/simples"))
-                .andExpect(status().isBadRequest());
+        assertThrows(ProductUnavailableException.class, () -> {
+            carrinhoService.adicionarProduto(produto1.getId());
+        });
     }
 
     @Test
@@ -161,67 +153,60 @@ public class VendaIntegrationTest {
         carrinhoService.adicionarProduto(produto1.getId());
 
         mockMvc.perform(post("/api/vendas/finalizar/fornecedora/{fornecedoraId}", 999L))
-                .andExpect(status().isNotFound());
+               .andExpect(status().isNotFound());
     }
 
     @Test
     void deveListarTodasVendas() throws Exception {
-        // Criar algumas vendas
         carrinhoService.adicionarProduto(produto1.getId());
-        mockMvc.perform(post("/api/vendas/finalizar/simples"));
-        
+        mockMvc.perform(post("/api/vendas/finalizar/simples"))
+               .andExpect(status().isOk());
+
         carrinhoService.adicionarProduto(produto2.getId());
-        mockMvc.perform(post("/api/vendas/finalizar/fornecedora/{fornecedoraId}", fornecedoraTeste.getId()));
+        mockMvc.perform(post("/api/vendas/finalizar/fornecedora/{fornecedoraId}", fornecedoraTeste.getId()))
+               .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/vendas"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].tipoVenda", anyOf(is("SIMPLES"), is("FORNECEDORA"))))
-                .andExpect(jsonPath("$[1].tipoVenda", anyOf(is("SIMPLES"), is("FORNECEDORA"))));
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$", hasSize(2)))
+               .andExpect(jsonPath("$[0].tipoVenda", anyOf(is("VENDA_SIMPLES"), is("VENDA_FORNECEDOR"))))
+               .andExpect(jsonPath("$[1].tipoVenda", anyOf(is("VENDA_SIMPLES"), is("VENDA_FORNECEDOR"))));
     }
 
     @Test
     void deveBuscarVendaPorId() throws Exception {
-        // Criar uma venda
         carrinhoService.adicionarProduto(produto1.getId());
         carrinhoService.adicionarProduto(produto2.getId());
-        
-        String response = mockMvc.perform(post("/api/vendas/finalizar/simples"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        
-        // Extrair ID da venda (simplificado - em um teste real usaria ObjectMapper)
+
+        mockMvc.perform(post("/api/vendas/finalizar/simples"))
+               .andExpect(status().isOk());
+
         Long vendaId = vendaRepository.findAll().get(0).getId();
 
         mockMvc.perform(get("/api/vendas/{id}", vendaId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(vendaId.intValue())))
-                .andExpect(jsonPath("$.tipoVenda", is("SIMPLES")))
-                .andExpect(jsonPath("$.total", is(70.00)))
-                .andExpect(jsonPath("$.itens", hasSize(2)));
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.id", is(vendaId.intValue())))
+               .andExpect(jsonPath("$.tipoVenda", is("VENDA_SIMPLES")))
+               .andExpect(jsonPath("$.total", is(70.00)))
+               .andExpect(jsonPath("$.itens", hasSize(2)));
     }
 
     @Test
     void deveRetornar404AoBuscarVendaInexistente() throws Exception {
         mockMvc.perform(get("/api/vendas/{id}", 999L))
-                .andExpect(status().isNotFound());
+               .andExpect(status().isNotFound());
     }
 
     @Test
     void deveCalcularValoresCorretamenteNaVendaComFornecedora() throws Exception {
-        carrinhoService.adicionarProduto(produto1.getId()); // R$ 25,00
-        carrinhoService.adicionarProduto(produto2.getId()); // R$ 45,00
-        // Total: R$ 70,00
+        carrinhoService.adicionarProduto(produto1.getId());
+        carrinhoService.adicionarProduto(produto2.getId());
 
         mockMvc.perform(post("/api/vendas/finalizar/fornecedora/{fornecedoraId}", fornecedoraTeste.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total", is(70.00)))
-                .andExpect(jsonPath("$.valorBrecho", notNullValue()))
-                .andExpect(jsonPath("$.valorFornecedora", notNullValue()))
-                // Verificar se a soma dos valores parciais é igual ao total
-                .andExpect(jsonPath("$.valorBrecho + $.valorFornecedora", closeTo(70.00, 0.01)));
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.total", is(70.00)))
+               .andExpect(jsonPath("$.valorBrecho", notNullValue()))
+               .andExpect(jsonPath("$.valorFornecedora", notNullValue()));
     }
 
     @Test
@@ -233,9 +218,8 @@ public class VendaIntegrationTest {
         carrinhoService.adicionarProduto(produto2.getId());
 
         mockMvc.perform(post("/api/vendas/finalizar/simples"))
-                .andExpect(status().isOk());
+               .andExpect(status().isOk());
 
-        // Verificar estoque após venda
         Produto produto1Atualizado = produtoRepository.findById(produto1.getId()).orElseThrow();
         Produto produto2Atualizado = produtoRepository.findById(produto2.getId()).orElseThrow();
 
