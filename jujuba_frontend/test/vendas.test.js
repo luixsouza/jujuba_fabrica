@@ -7,7 +7,7 @@ import {
   excluirVenda,
   finalizarVendaFornecedora,
   finalizarVendaSimples,
-} from "src/pages/api/vendas.js";
+} from "../src/pages/api/vendas.js";
 
 describe("API Vendas - Testes de Integração", () => {
   const vendaNova = {

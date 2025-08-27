@@ -1,6 +1,11 @@
 // test/produtos.int.test.js
-import { listarProdutos, buscarProdutoPorId, excluirProduto } from "src/pages/api/produtos.js";
-import httpMocks from "node-mocks-http";
+import { 
+  listarProdutos, 
+  buscarProdutoPorId, 
+  excluirProduto, 
+  criarProduto, 
+  atualizarProduto 
+} from "../src/pages/api/produtos.js";
 
 describe("API Produtos - Testes de Integração", () => {
   const produtoNovo = {
@@ -16,16 +21,13 @@ describe("API Produtos - Testes de Integração", () => {
   let produtoCriado = null;
 
   it("deve criar um produto no backend", async () => {
-    const req = httpMocks.createRequest({ method: "POST", body: produtoNovo });
-    const res = httpMocks.createResponse();
+    const result = await criarProduto(produtoNovo);
 
-    await (await import("src/pages/api/produtos.js")).default(req, res);
+    expect(result.sucesso).toBe(true);
+    expect(result.produto.id).toBeDefined();
+    expect(result.produto.descricao).toBe(produtoNovo.descricao);
 
-    expect(res.statusCode).toBe(201);
-    const data = res._getJSONData();
-    expect(data.id).toBeDefined();
-    expect(data.descricao).toBe(produtoNovo.descricao);
-    produtoCriado = data; // salvar para os proximos testes
+    produtoCriado = result.produto; // salvar para os próximos testes
   });
 
   it("deve listar produtos do backend", async () => {
@@ -42,25 +44,15 @@ describe("API Produtos - Testes de Integração", () => {
 
   it("deve atualizar produto no backend", async () => {
     const atualizado = { ...produtoCriado, descricao: "Produto Atualizado" };
-    const req = httpMocks.createRequest({ method: "PUT", body: atualizado });
-    const res = httpMocks.createResponse();
+    const result = await atualizarProduto(produtoCriado.id, atualizado);
 
-    await (await import("src/pages/api/produtos.js")).default(req, res);
-
-    expect(res.statusCode).toBe(200);
-    const data = res._getJSONData();
-    expect(data.descricao).toBe("Produto Atualizado");
+    expect(result.sucesso).toBe(true);
+    expect(result.produto.descricao).toBe("Produto Atualizado");
   });
 
   it("deve excluir produto do backend", async () => {
-    const req = httpMocks.createRequest({
-      method: "DELETE",
-      query: { id: produtoCriado.id },
-    });
-    const res = httpMocks.createResponse();
+    const result = await excluirProduto(produtoCriado.id);
 
-    await (await import("src/pages/api/produtos.js")).default(req, res);
-
-    expect(res.statusCode).toBe(204);
+    expect(result.sucesso).toBe(true);
   });
 });
