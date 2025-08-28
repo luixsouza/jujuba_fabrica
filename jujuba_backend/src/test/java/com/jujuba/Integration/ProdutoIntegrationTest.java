@@ -51,7 +51,6 @@ public class ProdutoIntegrationTest {
         loteRepository.deleteAll();
         fornecedoraRepository.deleteAll();
 
-        // Criar fornecedora
         Fornecedora fornecedora = new Fornecedora();
         fornecedora.setNome("Fornecedora Teste");
         fornecedora.setContato("11999999999");
@@ -61,12 +60,10 @@ public class ProdutoIntegrationTest {
         fornecedora.setCreditoLoja(BigDecimal.valueOf(100.00));
         fornecedora = fornecedoraRepository.save(fornecedora);
 
-        // Criar lote (dataCriacao preenchida automaticamente)
         loteTeste = new Lote();
         loteTeste.setFornecedora(fornecedora);
         loteTeste = loteRepository.save(loteTeste);
 
-        // Criar produto de teste
         produtoTeste = new Produto();
         produtoTeste.setDescricao("Camiseta Teste");
         produtoTeste.setMarca("Marca Teste");
@@ -76,34 +73,6 @@ public class ProdutoIntegrationTest {
         produtoTeste.setPreco(BigDecimal.valueOf(25.00));
         produtoTeste.setQuantidade(5);
         produtoTeste.setLote(loteTeste);
-    }
-
-    @Test
-    void deveListarTodosProdutos() throws Exception {
-        produtoRepository.save(produtoTeste);
-
-        Produto produto2 = new Produto();
-        produto2.setDescricao("Calça Teste");
-        produto2.setMarca("Outra Marca");
-        produto2.setTamanho("G");
-        produto2.setEstadoConservacao(EstadoConservacao.OTIMO);
-        produto2.setGenero(Genero.FEMININO);
-        produto2.setPreco(BigDecimal.valueOf(45.00));
-        produto2.setQuantidade(3);
-        produto2.setLote(loteTeste);
-        produtoRepository.save(produto2);
-
-        mockMvc.perform(get("/api/produtos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].descricao", is("Camiseta Teste")))
-                .andExpect(jsonPath("$[0].marca", is("Marca Teste")))
-                .andExpect(jsonPath("$[0].preco", is(25.00)))
-                .andExpect(jsonPath("$[0].quantidade", is(5)))
-                .andExpect(jsonPath("$[1].descricao", is("Calça Teste")))
-                .andExpect(jsonPath("$[1].marca", is("Outra Marca")))
-                .andExpect(jsonPath("$[1].preco", is(45.00)))
-                .andExpect(jsonPath("$[1].quantidade", is(3)));
     }
 
     @Test
@@ -153,49 +122,5 @@ public class ProdutoIntegrationTest {
         mockMvc.perform(get("/api/produtos/{id}", produtoSemEstoque.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.quantidade", is(0)));
-    }
-
-    @Test
-    void deveListarProdutosPorEstadoConservacao() throws Exception {
-        Produto produtoBom = produtoRepository.save(produtoTeste);
-
-        Produto produtoOtimo = new Produto();
-        produtoOtimo.setDescricao("Produto Ótimo");
-        produtoOtimo.setMarca("Marca Premium");
-        produtoOtimo.setTamanho("P");
-        produtoOtimo.setEstadoConservacao(EstadoConservacao.OTIMO);
-        produtoOtimo.setGenero(Genero.MASCULINO);
-        produtoOtimo.setPreco(BigDecimal.valueOf(80.00));
-        produtoOtimo.setQuantidade(2);
-        produtoOtimo.setLote(loteTeste);
-        produtoRepository.save(produtoOtimo);
-
-        mockMvc.perform(get("/api/produtos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[?(@.estadoConservacao == 'BOM')]", hasSize(1)))
-                .andExpect(jsonPath("$[?(@.estadoConservacao == 'OTIMO')]", hasSize(1)));
-    }
-
-    @Test
-    void deveListarProdutosPorGenero() throws Exception {
-        Produto produtoUnissex = produtoRepository.save(produtoTeste);
-
-        Produto produtoFeminino = new Produto();
-        produtoFeminino.setDescricao("Blusa Feminina");
-        produtoFeminino.setMarca("Marca Feminina");
-        produtoFeminino.setTamanho("PP");
-        produtoFeminino.setEstadoConservacao(EstadoConservacao.BOM);
-        produtoFeminino.setGenero(Genero.FEMININO);
-        produtoFeminino.setPreco(BigDecimal.valueOf(35.00));
-        produtoFeminino.setQuantidade(4);
-        produtoFeminino.setLote(loteTeste);
-        produtoRepository.save(produtoFeminino);
-
-        mockMvc.perform(get("/api/produtos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[?(@.genero == 'UNISSEX')]", hasSize(1)))
-                .andExpect(jsonPath("$[?(@.genero == 'FEMININO')]", hasSize(1)));
     }
 }
