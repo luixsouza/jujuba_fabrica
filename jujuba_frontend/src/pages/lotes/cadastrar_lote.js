@@ -33,6 +33,7 @@ import {
 } from "@mui/material"
 import { ArrowBack, Home, Delete, Visibility, Add, BugReport } from "@mui/icons-material"
 import { createLote, getAllLotes, getFornecedoras, testApiConnection } from "../api/lotes"
+import { editarFornecedora } from "../api/fornecedores" // Assumindo o caminho correto para a função
 import Sidebar from "../../components/sidebar"
 
 // Importar Autocomplete do MUI
@@ -61,6 +62,10 @@ export default function CadastroLotePage() {
     genero: "Unisex",
     quantidade: 1,
   })
+
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [editCredit, setEditCredit] = useState(false)
+  const [newCreditValue, setNewCreditValue] = useState(0)
 
   useEffect(() => {
     // Gerar ID do lote
@@ -191,7 +196,7 @@ export default function CadastroLotePage() {
     }
   }
 
-  const handleFinalizarLote = async () => {
+  const handleOpenConfirm = () => {
     if (items.length === 0) {
       setError("Adicione pelo menos um item ao lote antes de finalizar.")
       return
@@ -202,9 +207,30 @@ export default function CadastroLotePage() {
       return
     }
 
+    const selected = fornecedoras.find((f) => f.id === fornecedoraId)
+    if (selected) {
+      setNewCreditValue(selected.creditoLoja || 0)
+      setEditCredit(false)
+      setConfirmOpen(true)
+    } else {
+      setError("Fornecedora selecionada não encontrada.")
+    }
+  }
+
+  const handleFinalizarComConfirmacao = async () => {
     try {
       setLoading(true)
       setError(null)
+
+      const selected = fornecedoras.find((f) => f.id === fornecedoraId)
+
+      if (editCredit) {
+        const updatedData = {
+          ...selected,
+          creditoLoja: newCreditValue,
+        }
+        await editarFornecedora(fornecedoraId, updatedData)
+      }
 
       const result = await createLote(fornecedoraId, items)
 
@@ -221,6 +247,8 @@ export default function CadastroLotePage() {
       setError(error.message || "Não foi possível finalizar o lote. Tente novamente.")
     } finally {
       setLoading(false)
+      setConfirmOpen(false)
+      setEditCredit(false)
     }
   }
 
@@ -614,13 +642,13 @@ export default function CadastroLotePage() {
         <Box sx={{ textAlign: "center" }}>
           <Button
             variant="contained"
-            onClick={handleFinalizarLote}
+            onClick={handleOpenConfirm}
             disabled={loading || items.length === 0 || !fornecedoraId}
             sx={{
               backgroundColor: "#ffd0e8",
-                color: "#333",
-                "&:hover": {
-                  backgroundColor: "#ffb0d8",
+              color: "#333",
+              "&:hover": {
+                backgroundColor: "#ffb0d8",
               },
               px: 6,
               py: 2,
@@ -637,6 +665,122 @@ export default function CadastroLotePage() {
             )}
           </Button>
         </Box>
+
+        {/* Modal de Confirmação */}
+        <Dialog
+          open={confirmOpen}
+          onClose={() => {
+            setConfirmOpen(false)
+            setEditCredit(false)
+          }}
+          maxWidth="sm"
+          fullWidth
+          sx={{
+            "& .MuiDialog-paper": {
+              borderRadius: "20px",
+              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.2)",
+              backgroundColor: "#F5F5F5",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              textAlign: "center",
+              fontWeight: "bold",
+              color: "#333",
+              backgroundColor: "#FADADD",
+              borderTopLeftRadius: "20px",
+              borderTopRightRadius: "20px",
+            }}
+          >
+            Confirmação de Cadastro do Lote
+          </DialogTitle>
+          <DialogContent sx={{ p: 4 }}>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Valor total do lote: R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Crédito atual da fornecedora: R${" "}
+              {fornecedoras.find((f) => f.id === fornecedoraId)?.creditoLoja?.toFixed(2).replace(".", ",") || "0,00"}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2, fontWeight: "bold" }}>
+              Deseja alterar o valor do crédito?
+            </Typography>
+            {!editCredit ? (
+              <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={() => setEditCredit(true)}
+                  sx={{
+                    backgroundColor: "#ffd0e8",
+                    color: "#333",
+                    "&:hover": { backgroundColor: "#ffb0d8" },
+                    borderRadius: "20px",
+                  }}
+                >
+                  Sim
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleFinalizarComConfirmacao}
+                  sx={{
+                    backgroundColor: "#FADADD",
+                    color: "#333",
+                    "&:hover": { backgroundColor: "#FADADD" },
+                    borderRadius: "20px",
+                  }}
+                >
+                  Não
+                </Button>
+              </Box>
+            ) : (
+              <TextField
+                fullWidth
+                label="Novo valor do crédito (R$)"
+                type="number"
+                value={newCreditValue}
+                onChange={(e) => setNewCreditValue(parseFloat(e.target.value))}
+                variant="outlined"
+                inputProps={{ step: 0.01, min: 0 }}
+                sx={{ mt: 2 }}
+              />
+            )}
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
+            {editCredit && (
+              <Button
+                variant="contained"
+                onClick={handleFinalizarComConfirmacao}
+                disabled={loading || isNaN(newCreditValue) || newCreditValue < 0}
+                sx={{
+                  backgroundColor: "#ffd0e8",
+                  color: "#333",
+                  "&:hover": { backgroundColor: "#ffb0d8" },
+                  borderRadius: "20px",
+                  px: 4,
+                }}
+              >
+                Confirmar Alteração
+              </Button>
+            )}
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setConfirmOpen(false)
+                setEditCredit(false)
+              }}
+              sx={{
+                color: "#333",
+                borderColor: "#ffd0e8",
+                "&:hover": { borderColor: "#ffb0d8" },
+                borderRadius: "20px",
+                px: 4,
+              }}
+            >
+              Cancelar
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         <Dialog open={debugDialog} onClose={() => setDebugDialog(false)} maxWidth="md" fullWidth>
           <DialogTitle>Informações de Debug da API</DialogTitle>

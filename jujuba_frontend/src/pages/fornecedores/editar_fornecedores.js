@@ -70,6 +70,7 @@ export default function FornecedoresEdicao() {
     endereco: "",
     chavePix: "",
     contratoUrl: "",
+    creditoLoja: "",
   })
 
   const [loading, setLoading] = useState(false)
@@ -102,6 +103,7 @@ export default function FornecedoresEdicao() {
         endereco: data.endereco || "",
         chavePix: data.chavePix || "",
         contratoUrl: data.contratoUrl || "",
+        creditoLoja: data.creditoLoja ? data.creditoLoja.toString() : "",
       })
 
       if (data.contratoUrl) {
@@ -173,6 +175,7 @@ export default function FornecedoresEdicao() {
         endereco: fornecedora.endereco.trim(),
         chavePix: fornecedora.chavePix.trim(),
         dataNascimento: fornecedora.dataNascimento || "01/01/2000",
+        creditoLoja: fornecedora.creditoLoja.trim() ? fornecedora.creditoLoja.trim() : null,
       }
 
       const responseData = await editarFornecedora(id, fornecedoraData, selectedFile)
@@ -487,6 +490,33 @@ export default function FornecedoresEdicao() {
                       />
                     </Grid>
 
+                    <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      >
+                        Crédito Loja
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="creditoLoja"
+                        onChange={handleChange}
+                        value={fornecedora.creditoLoja}
+                        variant="outlined"
+                        type="number"
+                        inputProps={{ step: "0.01" }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#FFFFFF",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused": {
+                            backgroundColor: "#FFFFFF",
+                          },
+                        }}
+                      />
+                    </Grid>
+
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 4 }}>
                       <Typography
                         variant="body2"
@@ -613,6 +643,3 @@ export default function FornecedoresEdicao() {
     </Box>
   )
 }
-
-
-//// 

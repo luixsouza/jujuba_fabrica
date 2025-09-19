@@ -90,6 +90,8 @@ export const editarFornecedora = async (id, fornecedoraData) => {
       chavePix: data.chavePix,
       contratoUrl: data.contratoUrl,
       dataNascimento: data.dataNascimento,
+      creditoLoja: data.creditoLoja,
+      
     };
   } catch (error) {
     console.error('Erro ao editar fornecedora:', error);
