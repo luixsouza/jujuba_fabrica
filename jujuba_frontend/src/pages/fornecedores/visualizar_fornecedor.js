@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -17,27 +17,21 @@ import {
   TextField,
   Paper,
   Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-} from "@mui/material"
-import { ArrowBack, Home, Download, BugReport } from "@mui/icons-material"
-import Sidebar from "../../components/sidebar"
-import { useRouter } from "next/router"
-import axios from "axios"
+} from "@mui/material";
+import { ArrowBack, Home, Download, BugReport } from "@mui/icons-material";
+import Sidebar from "../../components/sidebar";
+import { useRouter } from "next/router";
+import axios from "axios";
 
-const BACKEND_BASE_URL = "http://localhost:8080"
-const BASE_URL = "http://localhost:8080/api/fornecedoras"
+const BACKEND_BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8080/api/fornecedoras";
 
 export default function FornecedoresVisualizar() {
-  const theme = useTheme()
-  const router = useRouter()
-  const { id } = router.query
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
-  const isTablet = useMediaQuery(theme.breakpoints.down("md"))
+  const theme = useTheme();
+  const router = useRouter();
+  const { id } = router.query;
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
   const [fornecedora, setFornecedora] = useState({
     nome: "",
@@ -47,79 +41,75 @@ export default function FornecedoresVisualizar() {
     contratoUrl: "",
     dataNascimento: "",
     creditoLoja: "",
-  })
+  });
 
-  const [creditos, setCreditos] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [errorDetails, setErrorDetails] = useState(null)
+  const [loading, setLoading] = useState(true);
+  const [errorDetails, setErrorDetails] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
-  })
+  });
 
   useEffect(() => {
     if (id && typeof id === "string") {
-      fetchFornecedora(id)
-      fetchCreditos(id)
+      fetchFornecedora(id);
     }
-  }, [id])
+  }, [id]);
 
   const fetchFornecedora = async (fornecedoraId) => {
     try {
-      setLoading(true)
-      const response = await axios.get(`${BASE_URL}/${fornecedoraId}`)
-      const data = response.data
+      setLoading(true);
+      const response = await axios.get(`${BASE_URL}/${fornecedoraId}`);
+      const data = response.data;
 
       setFornecedora({
         nome: data.nome || "",
         contato: data.contato || "",
         endereco: data.endereco || "",
         chavePix: data.chavePix || "",
-        dataNascimento: data.dataNascimento || data.dataDeNascimento || "",
+        dataNascimento: data.dataNascimento || "",
         contratoUrl: data.contratoUrl || "",
-        creditoLoja: data.creditoLoja || "",
-      })
+        creditoLoja: data.creditoLoja || 0,
+      });
     } catch (error) {
-      setErrorDetails(error.response?.data || error)
+      const errorDetails = {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      };
+      setErrorDetails(errorDetails);
       setSnackbar({
         open: true,
-        message: `Erro ao carregar dados do fornecedor: ${error.response?.data?.message || error.message}`,
+        message: `Erro ao carregar dados: ${
+          error.response?.data?.message || error.message
+        }`,
         severity: "error",
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
-  const fetchCreditos = async (fornecedoraId) => {
-    try {
-      const response = await axios.get(`${BASE_URL}/${fornecedoraId}/creditos`)
-      setCreditos(response.data)
-    } catch (error) {
-      console.error("Erro ao buscar histórico de créditos:", error)
-    }
-  }
+  };
 
   const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false })
-  }
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const handleDownloadContrato = () => {
     if (fornecedora.contratoUrl) {
       const url = fornecedora.contratoUrl.startsWith("http")
         ? fornecedora.contratoUrl
-        : `${BACKEND_BASE_URL}/${fornecedora.contratoUrl.replace(/^\/+/, "")}`
-
-      window.open(url, "_blank")
+        : `${BACKEND_BASE_URL}/${fornecedora.contratoUrl.replace(/^\/+/, "")}`;
+      window.open(url, "_blank");
     } else {
       setSnackbar({
         open: true,
         message: "Contrato não disponível para download",
         severity: "warning",
-      })
+      });
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -149,7 +139,7 @@ export default function FornecedoresVisualizar() {
           </Typography>
         </Box>
       </Box>
-    )
+    );
   }
 
   return (
@@ -176,7 +166,15 @@ export default function FornecedoresVisualizar() {
               borderRadius: 2,
             }}
           >
-            <Typography variant="h6" sx={{ color: "#d32f2f", mb: 2, display: "flex", alignItems: "center" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: "#d32f2f",
+                mb: 2,
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
               <BugReport sx={{ mr: 1 }} />
               DETALHES DO ERRO
             </Typography>
@@ -214,9 +212,19 @@ export default function FornecedoresVisualizar() {
           <CardContent>
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <Grid container direction="column" alignItems="center" spacing={1}>
+                <Grid
+                  container
+                  direction="column"
+                  alignItems="center"
+                  spacing={1}
+                >
                   <Grid item xs={12} width="100%">
-                    <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      width="100%"
+                    >
                       <ArrowBack
                         sx={{
                           fontSize: "30px",
@@ -249,7 +257,9 @@ export default function FornecedoresVisualizar() {
                       Visualizar Fornecedor
                     </Typography>
 
-                    <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "center", mb: 3 }}
+                    >
                       <Chip
                         label={`ID: ${id || "Carregando..."}`}
                         color="primary"
@@ -269,7 +279,12 @@ export default function FornecedoresVisualizar() {
                   <Grid item xs={12} sm={10} md={8}>
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      sx={{
+                        fontWeight: "normal",
+                        fontSize: "18px",
+                        marginBottom: "4px",
+                        color: "gray",
+                      }}
                     >
                       Nome
                     </Typography>
@@ -293,7 +308,12 @@ export default function FornecedoresVisualizar() {
                   <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      sx={{
+                        fontWeight: "normal",
+                        fontSize: "18px",
+                        marginBottom: "4px",
+                        color: "gray",
+                      }}
                     >
                       Data de Nascimento
                     </Typography>
@@ -317,7 +337,12 @@ export default function FornecedoresVisualizar() {
                   <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      sx={{
+                        fontWeight: "normal",
+                        fontSize: "18px",
+                        marginBottom: "4px",
+                        color: "gray",
+                      }}
                     >
                       Contato
                     </Typography>
@@ -341,7 +366,12 @@ export default function FornecedoresVisualizar() {
                   <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      sx={{
+                        fontWeight: "normal",
+                        fontSize: "18px",
+                        marginBottom: "4px",
+                        color: "gray",
+                      }}
                     >
                       Endereço
                     </Typography>
@@ -365,7 +395,12 @@ export default function FornecedoresVisualizar() {
                   <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      sx={{
+                        fontWeight: "normal",
+                        fontSize: "18px",
+                        marginBottom: "4px",
+                        color: "gray",
+                      }}
                     >
                       Chave Pix
                     </Typography>
@@ -389,14 +424,25 @@ export default function FornecedoresVisualizar() {
                   <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                      sx={{
+                        fontWeight: "normal",
+                        fontSize: "18px",
+                        marginBottom: "4px",
+                        color: "gray",
+                      }}
                     >
                       Crédito na Loja
                     </Typography>
                     <TextField
                       fullWidth
                       name="creditoLoja"
-                      value={fornecedora.creditoLoja ? `R$ ${fornecedora.creditoLoja}` : "R$ 0,00"}
+                      value={
+                        fornecedora.creditoLoja
+                          ? `R$ ${parseFloat(fornecedora.creditoLoja)
+                              .toFixed(2)
+                              .replace(".", ",")}`
+                          : "R$ 0,00"
+                      }
                       variant="outlined"
                       InputProps={{
                         readOnly: true,
@@ -458,42 +504,6 @@ export default function FornecedoresVisualizar() {
             </Grid>
           </CardContent>
         </Card>
-
-        <Card
-          sx={{
-            borderRadius: 10,
-            backgroundColor: "#FADADD",
-            p: 3,
-            maxWidth: "60%",
-            mx: "auto",
-            mt: 4,
-            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-          }}
-        >
-          <CardContent>
-            <Typography variant="h5" sx={{ fontWeight: "bold", textAlign: "center", mb: 2 }}>
-              Histórico de Crédito
-            </Typography>
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Data</TableCell>
-                    <TableCell align="right">Valor</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {creditos.map((credito) => (
-                    <TableRow key={credito.id}>
-                      <TableCell>{new Date(credito.dataAtualizacao).toLocaleString()}</TableCell>
-                      <TableCell align="right">{`R$ ${credito.valor}`}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
       </Box>
       <Snackbar
         open={snackbar.open}
@@ -501,10 +511,14 @@ export default function FornecedoresVisualizar() {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>
-  )
+  );
 }
