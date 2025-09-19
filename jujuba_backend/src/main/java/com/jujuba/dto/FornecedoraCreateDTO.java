@@ -1,5 +1,6 @@
 package com.jujuba.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -33,7 +34,8 @@ public class FornecedoraCreateDTO {
     @Size(max = 100)
     private String chavePix;
 
-    @NotBlank
     @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate dataNascimento;
+
+    private BigDecimal creditoLoja;
 }

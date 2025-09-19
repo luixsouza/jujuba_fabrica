@@ -1,5 +1,6 @@
 package com.jujuba.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -24,5 +25,7 @@ public class FornecedoraResponseDTO {
     
     @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate dataNascimento;
+
+    private BigDecimal creditoLoja;
 }
 

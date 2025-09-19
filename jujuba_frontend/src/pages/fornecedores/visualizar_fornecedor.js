@@ -17,10 +17,16 @@ import {
   TextField,
   Paper,
   Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material"
 import { ArrowBack, Home, Download, BugReport } from "@mui/icons-material"
 import Sidebar from "../../components/sidebar"
-import { useRouter } from "next/router" // Alterado de next/navigation para next/router
+import { useRouter } from "next/router"
 import axios from "axios"
 
 const BACKEND_BASE_URL = "http://localhost:8080"
@@ -28,12 +34,11 @@ const BASE_URL = "http://localhost:8080/api/fornecedoras"
 
 export default function FornecedoresVisualizar() {
   const theme = useTheme()
-  const router = useRouter() // Usando router do next/router
-  const { id } = router.query // Obtendo o ID da query parameter
+  const router = useRouter()
+  const { id } = router.query
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
-  // Atualizar o estado para incluir creditoLoja e usar dataNascimento
   const [fornecedora, setFornecedora] = useState({
     nome: "",
     contato: "",
@@ -44,6 +49,7 @@ export default function FornecedoresVisualizar() {
     creditoLoja: "",
   })
 
+  const [creditos, setCreditos] = useState([])
   const [loading, setLoading] = useState(true)
   const [errorDetails, setErrorDetails] = useState(null)
   const [snackbar, setSnackbar] = useState({
@@ -55,18 +61,14 @@ export default function FornecedoresVisualizar() {
   useEffect(() => {
     if (id && typeof id === "string") {
       fetchFornecedora(id)
+      fetchCreditos(id)
     }
   }, [id])
 
-  // Atualizar a função fetchFornecedora com melhor tratamento de erro
   const fetchFornecedora = async (fornecedoraId) => {
     try {
       setLoading(true)
-      console.log("Buscando fornecedor com ID:", fornecedoraId)
-
       const response = await axios.get(`${BASE_URL}/${fornecedoraId}`)
-      console.log("Resposta da API:", response.data)
-
       const data = response.data
 
       setFornecedora({
@@ -78,26 +80,8 @@ export default function FornecedoresVisualizar() {
         contratoUrl: data.contratoUrl || "",
         creditoLoja: data.creditoLoja || "",
       })
-
-      setSnackbar({
-        open: true,
-        message: "Dados carregados com sucesso!",
-        severity: "success",
-      })
     } catch (error) {
-      console.error("Erro ao buscar dados do fornecedor:", error)
-
-      
-      const errorDetails = {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message,
-      }
-
-      console.error("Detalhes do erro:", errorDetails)
-      setErrorDetails(errorDetails)
-
+      setErrorDetails(error.response?.data || error)
       setSnackbar({
         open: true,
         message: `Erro ao carregar dados do fornecedor: ${error.response?.data?.message || error.message}`,
@@ -108,26 +92,34 @@ export default function FornecedoresVisualizar() {
     }
   }
 
+  const fetchCreditos = async (fornecedoraId) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/${fornecedoraId}/creditos`)
+      setCreditos(response.data)
+    } catch (error) {
+      console.error("Erro ao buscar histórico de créditos:", error)
+    }
+  }
+
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false })
   }
 
-const handleDownloadContrato = () => {
-  if (fornecedora.contratoUrl) {
-    const url = fornecedora.contratoUrl.startsWith("http")
-      ? fornecedora.contratoUrl
-      : `${BACKEND_BASE_URL}/${fornecedora.contratoUrl.replace(/^\/+/, "")}`
+  const handleDownloadContrato = () => {
+    if (fornecedora.contratoUrl) {
+      const url = fornecedora.contratoUrl.startsWith("http")
+        ? fornecedora.contratoUrl
+        : `${BACKEND_BASE_URL}/${fornecedora.contratoUrl.replace(/^\/+/, "")}`
 
-    window.open(url, "_blank")
-  } else {
-    setSnackbar({
-      open: true,
-      message: "Contrato não disponível para download",
-      severity: "warning",
-    })
+      window.open(url, "_blank")
+    } else {
+      setSnackbar({
+        open: true,
+        message: "Contrato não disponível para download",
+        severity: "warning",
+      })
+    }
   }
-}
-
 
   if (loading) {
     return (
@@ -174,7 +166,6 @@ const handleDownloadContrato = () => {
       </Box>
 
       <Box sx={{ flex: 1, p: 3 }}>
-        {/* Seção de Debug de Erro */}
         {errorDetails && (
           <Paper
             sx={{
@@ -465,6 +456,42 @@ const handleDownloadContrato = () => {
                 </Grid>
               </Grid>
             </Grid>
+          </CardContent>
+        </Card>
+
+        <Card
+          sx={{
+            borderRadius: 10,
+            backgroundColor: "#FADADD",
+            p: 3,
+            maxWidth: "60%",
+            mx: "auto",
+            mt: 4,
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+          }}
+        >
+          <CardContent>
+            <Typography variant="h5" sx={{ fontWeight: "bold", textAlign: "center", mb: 2 }}>
+              Histórico de Crédito
+            </Typography>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Data</TableCell>
+                    <TableCell align="right">Valor</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {creditos.map((credito) => (
+                    <TableRow key={credito.id}>
+                      <TableCell>{new Date(credito.dataAtualizacao).toLocaleString()}</TableCell>
+                      <TableCell align="right">{`R$ ${credito.valor}`}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </CardContent>
         </Card>
       </Box>

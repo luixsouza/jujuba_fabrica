@@ -5,6 +5,7 @@ import com.jujuba.dto.FornecedoraResponseDTO;
 import com.jujuba.model.Fornecedora;
 
 public class FornecedoraMapper {
+
     public static Fornecedora toFornecedora(FornecedoraCreateDTO dto) {
         Fornecedora fornecedora = new Fornecedora();
         fornecedora.setNome(dto.getNome());
@@ -12,7 +13,17 @@ public class FornecedoraMapper {
         fornecedora.setEndereco(dto.getEndereco());
         fornecedora.setChavePix(dto.getChavePix());
         fornecedora.setDataNascimento(dto.getDataNascimento());
+        fornecedora.setCreditoLoja(dto.getCreditoLoja());
         return fornecedora;
+    }
+
+    public static void updateFornecedoraFromDTO(Fornecedora fornecedora, FornecedoraCreateDTO dto) {
+        fornecedora.setNome(dto.getNome());
+        fornecedora.setContato(dto.getContato());
+        fornecedora.setEndereco(dto.getEndereco());
+        fornecedora.setChavePix(dto.getChavePix());
+        fornecedora.setDataNascimento(dto.getDataNascimento());
+        fornecedora.setCreditoLoja(dto.getCreditoLoja());
     }
 
     public static FornecedoraResponseDTO toDTO(Fornecedora fornecedora) {
@@ -23,7 +34,8 @@ public class FornecedoraMapper {
             fornecedora.getEndereco(),
             fornecedora.getChavePix(),
             fornecedora.getContratoUrl(),
-            fornecedora.getDataNascimento()
+            fornecedora.getDataNascimento(),
+            fornecedora.getCreditoLoja()
         );
     }
 }
