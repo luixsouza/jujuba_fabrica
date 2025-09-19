@@ -233,10 +233,10 @@ export default function VisualizarLotePage() {
           <IconButton
             onClick={handleGoBack}
             sx={{
-              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.15)",
+              backgroundColor: "#9AE4FF",
               "&:hover": {
+                backgroundColor: "#9AE4FF",
                 transform: "translateY(-2px)",
-                boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.2)",
               },
               transition: "all 0.3s ease",
             }}
@@ -273,11 +273,10 @@ export default function VisualizarLotePage() {
           <IconButton
             onClick={handleGoHome}
             sx={{
-             
-              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.15)",
+              backgroundColor: "#9AE4FF",
               "&:hover": {
+                backgroundColor: "#9AE4FF",
                 transform: "translateY(-2px)",
-                boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.2)",
               },
               transition: "all 0.3s ease",
             }}

@@ -1,7 +1,9 @@
 "use client"
 
+import React from 'react';
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { Slide } from '@mui/material';
 
 // Material-UI imports
 import Box from "@mui/material/Box"
@@ -30,6 +32,10 @@ import Grid from "@mui/material/Grid"
 import Snackbar from "@mui/material/Snackbar"
 import Alert from "@mui/material/Alert"
 import CircularProgress from "@mui/material/CircularProgress"
+import Avatar from "@mui/material/Avatar";
+import Tabs from "@mui/material/Tabs" 
+import Tab from "@mui/material/Tab" 
+import Chip from "@mui/material/Chip" 
 
 // Material-UI icons
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
@@ -40,6 +46,10 @@ import SaveIcon from "@mui/icons-material/Save"
 import CancelIcon from "@mui/icons-material/Cancel"
 import AddIcon from "@mui/icons-material/Add"
 import DeleteIcon from "@mui/icons-material/Delete"
+import CloseIcon from '@mui/icons-material/Close';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import PersonIcon from '@mui/icons-material/Person';
+import InventoryIcon from '@mui/icons-material/Inventory'
 
 // Import API functions
 import { getLoteById, editLote, getAllLotes, getFornecedoras, ESTADOS_CONSERVACAO, GENEROS } from "../api/lotes"
@@ -51,7 +61,6 @@ export default function EditarLotePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const loteId = searchParams.get("id") || ""
-
   // State management
   const [editingItemId, setEditingItemId] = useState(null)
   const [openNewItemDialog, setOpenNewItemDialog] = useState(false)
@@ -69,7 +78,9 @@ export default function EditarLotePage() {
   const [selectedFornecedora, setSelectedFornecedora] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [viewingItem, setViewingItem] = useState(null)
 
+  const handleCloseViewItem = () => setViewingItem(null)
   // State for edited item
   const [editedItem, setEditedItem] = useState({
     descricao: "",
@@ -91,6 +102,30 @@ export default function EditarLotePage() {
     tamanho: "",
     genero: "UNISSEX",
   })
+  // Estado do modal de visualização
+const [openProductModal, setOpenProductModal] = useState(false)
+const [produtoSelecionado, setProdutoSelecionado] = useState(null)
+const [tabValue, setTabValue] = useState(0)
+
+// Funções para abrir e fechar modal
+const handleOpenProductModal = (item) => {
+  setProdutoSelecionado(item)
+  setOpenProductModal(true)
+}
+
+const handleCloseProductModal = () => {
+  setOpenProductModal(false)
+  setProdutoSelecionado(null)
+  setTabValue(0)
+}
+
+// Função para mudar abas
+const handleTabChange = (event, newValue) => {
+  setTabValue(newValue)
+}
+
+// Função auxiliar para formatar preço
+const formatarPreco = (preco) => Number(preco).toFixed(2)
 
   // Fetch initial data
   useEffect(() => {
@@ -189,9 +224,10 @@ export default function EditarLotePage() {
   }
 
   // Item handlers
-  const handleViewItem = (itemId) => {
-    router.push(`/estoque/visualizar_produto?id=${itemId}`)
+    const handleViewItem = (item) => {
+    setViewingItem(item)
   }
+
 
   const handleEditItem = (item) => {
     setEditingItemId(item.id)
@@ -470,7 +506,7 @@ export default function EditarLotePage() {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#9AE4FF",
+    backgroundColor: "transparent",
     marginTop: "50px",
   }}
 >
@@ -786,7 +822,7 @@ export default function EditarLotePage() {
                           </>
                         ) : (
                           <>
-                            <IconButton size="small" onClick={() => handleViewItem(item.id)} sx={{ color: "#00509E" }}>
+                            <IconButton size="small" onClick={() => handleOpenProductModal(item)} sx={{ color: "#00509E" }}>
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
                             <IconButton size="small" onClick={() => handleEditItem(item)} sx={{ color: "#00509E" }}>
@@ -854,10 +890,201 @@ export default function EditarLotePage() {
           </Button>
         </Box>
       </Box>
+<Dialog
+  open={openProductModal}
+  onClose={handleCloseProductModal}
+  maxWidth="md"
+  fullWidth
+  PaperProps={{
+    sx: {
+      borderRadius: "20px",
+      background: "#F5F5F5",
+      boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+      overflow: "visible",
+      maxHeight: "90vh",
+    },
+  }}
+>
+  <DialogTitle
+    sx={{
+      textAlign: "center",
+      pb: 2,
+      pt: 4,
+      position: "relative",
+    }}
+  >
+    <IconButton
+      onClick={handleCloseProductModal}
+      sx={{
+        position: "absolute",
+        right: 8,
+        top: 8,
+        color: "#666",
+        "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.1)" },
+      }}
+    >
+      <CloseIcon />
+    </IconButton>
+
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 2,
+      }}
+    >
+      <Avatar
+        sx={{
+          width: 80,
+          height: 80,
+          backgroundColor: "#9AE4FF",
+          boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
+        }}
+      >
+        <InventoryIcon sx={{ fontSize: 40, color: "white" }} />
+      </Avatar>
+
+      <Typography
+        variant="h5"
+        sx={{ fontWeight: "bold", color: "#333", textAlign: "center" }}
+      >
+        {produtoSelecionado?.descricao || "Produto"}
+      </Typography>
+    </Box>
+  </DialogTitle>
+
+  <DialogContent sx={{ px: 4, pb: 2 }}>
+    <Tabs
+      value={tabValue}
+      onChange={handleTabChange}
+      centered
+      sx={{
+        mb: 3,
+        "& .MuiTab-root": { fontWeight: "bold", fontSize: "16px", color: "#333" },
+        "& .MuiTab-root.Mui-selected": { color: "#9AE4FF" },
+        "& .MuiTabs-indicator": { backgroundColor: "#9AE4FF" },
+      }}
+    >
+      <Tab label="Informações Básicas" />
+      <Tab label="Detalhes Adicionais" />
+    </Tabs>
+
+    {tabValue === 0 && produtoSelecionado && (
+      <Box>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                Dados do Produto
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>ID:</strong> #{produtoSelecionado.id || "N/A"}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Descrição:</strong> {produtoSelecionado.descricao}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Estado:</strong>{" "}
+                <Chip label={produtoSelecionado.estadoConservacao} color="success" size="small" />
+              </Typography>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                Preço e Estoque
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ mb: 1, fontSize: "18px", fontWeight: "bold", color: "#4CAF50" }}
+              >
+                <strong>Preço:</strong> R$ {formatarPreco(produtoSelecionado.preco)}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Quantidade:</strong> {produtoSelecionado.quantidade} unidades
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+    )}
+
+    {tabValue === 1 && produtoSelecionado && (
+      <Box>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                Características
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Marca:</strong> {produtoSelecionado.marca}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Gênero:</strong> {produtoSelecionado.genero}
+              </Typography>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                Controle
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Data de Adição:</strong>{" "}
+                {produtoSelecionado.dataAdicao
+                  ? new Date(produtoSelecionado.dataAdicao).toLocaleDateString("pt-BR")
+                  : "Não informada"}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Status:</strong>{" "}
+                <Chip
+                  label={produtoSelecionado.ativo ? "Ativo" : "Inativo"}
+                  color={produtoSelecionado.ativo ? "success" : "error"}
+                  size="small"
+                />
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+    )}
+  </DialogContent>
+
+  <DialogActions sx={{ justifyContent: "center", gap: 2, px: 4, pb: 4 }}>
+    <Button
+      onClick={handleCloseProductModal}
+      sx={{
+        backgroundColor: "#FADADD",
+        color: "#333",
+        fontWeight: "bold",
+        fontSize: "16px",
+        borderRadius: "25px",
+        padding: "12px 32px",
+        minWidth: "120px",
+        textTransform: "none",
+        boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+        "&:hover": {
+          backgroundColor: "#FFB6C1",
+          transform: "translateY(-2px)",
+          boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+        },
+      }}
+    >
+      Fechar
+    </Button>
+  </DialogActions>
+</Dialog>
 
       {/* New Item Dialog */}
       <Dialog open={openNewItemDialog} onClose={handleCloseNewItemDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Adicionar Novo Produto</DialogTitle>
+        <DialogTitle align="center">Adicionar Novo Produto</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -957,37 +1184,234 @@ export default function EditarLotePage() {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
-        <DialogTitle>Confirmar Exclusão</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Tem certeza que deseja remover o produto "{itemToDelete?.descricao}" do lote?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)}>Cancelar</Button>
-          <Button onClick={confirmDeleteItem} variant="contained" color="error">
-            Remover
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Modal de Confirmação de Exclusão de Produto */}
+        <Dialog
+          open={openDeleteDialog}
+          onClose={() => setOpenDeleteDialog(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: "20px",
+              background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+              boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+              overflow: "visible",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              textAlign: "center",
+              pb: 2,
+              pt: 4,
+              position: "relative",
+            }}
+          >
+            <IconButton
+              onClick={() => setOpenDeleteDialog(false)}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                color: "#666",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.1)",
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
 
-      {/* Finish Dialog */}
-      <Dialog open={openFinishDialog} onClose={handleCloseFinishDialog}>
-        <DialogTitle>Salvar Alterações do Lote</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Tem certeza que deseja salvar todas as alterações feitas no lote? Esta ação não pode ser desfeita.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseFinishDialog}>Cancelar</Button>
-          <Button onClick={handleFinishLote} variant="contained" color="primary">
-            Salvar Alterações
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 80,
+                  height: 80,
+                  backgroundColor: "#ff5722",
+                  boxShadow: "0px 8px 20px rgba(255, 87, 34, 0.3)",
+                }}
+              >
+                <WarningAmberIcon sx={{ fontSize: 40, color: "white" }} />
+              </Avatar>
+
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#333",
+                  textAlign: "center",
+                }}
+              >
+                Confirmar Exclusão
+              </Typography>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ textAlign: "center", px: 4, pb: 2 }}>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#555",
+                fontSize: "18px",
+                lineHeight: 1.6,
+                maxWidth: "400px",
+                mx: "auto",
+              }}
+            >
+              Tem certeza que deseja remover o produto "<strong>{itemToDelete?.descricao}</strong>" do lote?
+              <br />
+              <strong>Esta ação não pode ser desfeita.</strong>
+            </Typography>
+          </DialogContent>
+
+          <DialogActions
+            sx={{
+              justifyContent: "center",
+              gap: 2,
+              px: 4,
+              pb: 4,
+            }}
+          >
+            <Button
+              onClick={() => setOpenDeleteDialog(false)}
+              sx={{
+                backgroundColor: "#9AE4FF",
+                color: "#333",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#7DD3FC",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+                },
+              }}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              onClick={confirmDeleteItem}
+              sx={{
+                backgroundColor: "#ff5722",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(255, 87, 34, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#e64a19",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(255, 87, 34, 0.6)",
+                },
+              }}
+            >
+              Excluir
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+
+              {/* Finish Dialog */}
+              <Dialog
+          open={openFinishDialog}
+          onClose={handleCloseFinishDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: "20px",
+              background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+              boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+              overflow: "visible",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              textAlign: "center",
+              pb: 2,
+              pt: 4,
+              position: "relative",
+              fontWeight: "bold",
+              color: "#333",
+            }}
+          >
+            Salvar Alterações do Lote
+          </DialogTitle>
+          <DialogContent sx={{ textAlign: "center", px: 4, pb: 2 }}>
+            <DialogContentText sx={{ color: "#555", fontSize: "18px", lineHeight: 1.6, maxWidth: "400px", mx: "auto" }}>
+              Você tem certeza que deseja salvar as alterações feitas no lote?
+            </DialogContentText>
+          </DialogContent>
+
+          <DialogActions
+            sx={{
+              justifyContent: "center",
+              gap: 2,
+              px: 4,
+              pb: 4,
+            }}
+          >
+            <Button
+              onClick={handleCloseFinishDialog}
+              sx={{
+                backgroundColor: "#9AE4FF",
+                color: "#333",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#7DD3FC",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+                },
+              }}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              onClick={handleFinishLote}
+              sx={{
+                backgroundColor: "#4CAF50",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(76, 175, 80, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#388E3C",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(76, 175, 80, 0.6)",
+                },
+              }}
+            >
+              Salvar
+            </Button>
+          </DialogActions>
+        </Dialog>
 
       {/* Snackbar */}
       <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar}>
