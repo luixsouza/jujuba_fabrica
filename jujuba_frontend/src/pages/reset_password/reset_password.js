@@ -22,6 +22,7 @@ import LockResetIcon from "@mui/icons-material/LockReset"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
 import Link from "next/link"
+import Image from "next/image"
 
 const ResetPassword = () => {
   const [resetSent, setResetSent] = useState(false)
@@ -67,6 +68,7 @@ const ResetPassword = () => {
           rel="stylesheet"
         />
       </Head>
+
       <Box
         sx={{
           position: "absolute",
@@ -80,50 +82,183 @@ const ResetPassword = () => {
           background: "linear-gradient(135deg, #FADADD 0%, #9AE4FF 100%)",
         }}
       >
-        <Container maxWidth="sm">
+        <Container maxWidth="md">
           <Paper
             elevation={3}
             sx={{
-              padding: { xs: "1.5rem", sm: "2.5rem" },
-              borderRadius: "16px",
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              backdropFilter: "blur(10px)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-              transition: "transform 0.3s ease-in-out",
-              "&:hover": {
-                transform: "translateY(-5px)",
-              },
+              display: "flex",
+              borderRadius: "24px",
               overflow: "hidden",
-              position: "relative",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+              height: "450px",
+              width: "100%",
+              maxWidth: "800px",
+              margin: "0 auto",
             }}
           >
+            {/* Left side - Logo and clouds */}
             <Box
               sx={{
-                position: "absolute",
-                top: -50,
-                right: -50,
-                width: 150,
-                height: 150,
-                borderRadius: "50%",
-                background: "linear-gradient(45deg, rgba(154, 228, 255, 0.2), rgba(250, 218, 221, 0.2))",
-                zIndex: 0,
+                width: "50%",
+                backgroundColor: "#9AE4FF",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                position: "relative",
+                padding: 4,
               }}
-            />
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: -30,
-                left: -30,
-                width: 100,
-                height: 100,
-                borderRadius: "50%",
-                background: "linear-gradient(45deg, rgba(250, 218, 221, 0.2), rgba(154, 228, 255, 0.2))",
-                zIndex: 0,
-              }}
-            />
+            >
+              {/* Nuvens com imagem */}
+              <Image
+                src="/Imagens/Nuvem.png"
+                alt="Nuvem"
+                width={110}
+                height={70}
+                style={{
+                  position: "absolute",
+                  top: "15%",
+                  left: "15%",
+                  objectFit: "contain",
+                }}
+              />
+              <Image
+                src="/Imagens/Nuvem.png"
+                alt="Nuvem"
+                width={110}
+                height={70}
+                style={{
+                  position: "absolute",
+                  bottom: "20%",
+                  right: "20%",
+                  objectFit: "contain",
+                }}
+              />
+              <Image
+                src="/Imagens/Nuvem.png"
+                alt="Nuvem"
+                width={70}
+                height={50}
+                style={{
+                  position: "absolute",
+                  top: "70%",
+                  left: "25%",
+                  objectFit: "contain",
+                }}
+              />
+              <Image
+                src="/Imagens/Nuvem.png"
+                alt="Nuvem extra"
+                width={90}
+                height={60}
+                style={{
+                  position: "absolute",
+                  top: "10%",
+                  right: "10%",
+                  objectFit: "contain",
+                }}
+              />
+              <Image
+                src="/Imagens/Nuvem.png"
+                alt="Nuvem extra"
+                width={100}
+                height={65}
+                style={{
+                  position: "absolute",
+                  bottom: "10%",
+                  left: "10%",
+                  objectFit: "contain",
+                }}
+              />
+              <Image
+                src="/Imagens/Nuvem.png"
+                alt="Nuvem extra"
+                width={80}
+                height={50}
+                style={{
+                  position: "absolute",
+                  top: "40%",
+                  left: "5%",
+                  objectFit: "contain",
+                }}
+              />
 
-            <Box sx={{ position: "relative", zIndex: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              {/* Logo com imagem */}
+              <Box
+                sx={{
+                  width: "180px",
+                  height: "180px",
+                  borderRadius: "50%",
+                  backgroundColor: "#FFF9ac",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: "160px",
+                    height: "160px",
+                    borderRadius: "50%",
+                    backgroundColor: "#9AE4FF",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Image
+                    src="/Imagens/LogoJujuba.png"
+                    alt="Logo"
+                    width={345}
+                    height={242}
+                    style={{ borderRadius: "50%" }}
+                  />
+                </Box>
+              </Box>
+
+              {/* Anéis ao redor da logo */}
+              {[1, 2, 3, 4].map((i) => (
+                <Box
+                  key={i}
+                  sx={{
+                    position: "absolute",
+                    width: `${180 + i * 20}px`,
+                    height: `${180 + i * 20}px`,
+                    borderRadius: "50%",
+                    border: `1px solid rgba(255, 255, 255, ${1 - i * 0.2})`,
+                    boxShadow: `0 0 ${2 * i}px rgba(0, 0, 0, ${0.1 - i * 0.02})`,
+                    backdropFilter: "blur(1px)",
+                    zIndex: 0,
+                  }}
+                />
+              ))}
+            </Box>
+
+            {/* Right side - Reset password form */}
+            <Box
+              sx={{
+                width: "50%",
+                backgroundColor: "#FADADD",
+                padding: 4,
+                display: "flex",
+                flexDirection: "column",
+                position: "relative",
+                zIndex: 1,
+                overflowY: "auto",
+              }}
+            >
+              {/* Alinha o botão voltar e título na mesma linha */}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  mb: 2,
+                  gap: 1,
+                }}
+              >
                 <Link href="/" passHref>
                   <IconButton
                     sx={{
@@ -137,48 +272,34 @@ const ResetPassword = () => {
                     <ArrowBackIcon />
                   </IconButton>
                 </Link>
-                <Box sx={{ flexGrow: 1 }} />
-              </Box>
-
-              <Box sx={{ textAlign: "center", mb: 4 }}>
-                <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-                  <Avatar
-                    sx={{
-                      width: 70,
-                      height: 70,
-                      background: "linear-gradient(135deg, #9AE4FF, #FADADD)",
-                      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-                    }}
-                  >
-                    <LockResetIcon sx={{ fontSize: 40, color: "#fff" }} />
-                  </Avatar>
-                </Box>
                 <Typography
                   variant="h4"
                   sx={{
-                    fontSize: { xs: "1.5rem", sm: "1.8rem" },
                     fontWeight: 700,
                     color: "#333",
                     fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    mb: 1,
+                    m: 0,
                   }}
                 >
                   Redefinir Senha
                 </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontSize: "0.9rem",
-                    color: "#666",
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    mb: 1,
-                    px: 2,
-                  }}
-                >
-                  Digite seu email abaixo e enviaremos instruções para redefinir sua senha
-                </Typography>
-                <Divider sx={{ width: "60%", margin: "1rem auto", opacity: 0.6 }} />
               </Box>
+
+              {/* Texto explicativo */}
+              <Typography
+                variant="body1"
+                sx={{
+                  fontSize: "0.9rem",
+                  color: "#666",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  mb: 2,
+                  px: 1,
+                }}
+              >
+                Digite seu email abaixo e enviaremos instruções para redefinir sua senha
+              </Typography>
+
+              <Divider sx={{ width: "60%", margin: "0 auto 1.5rem auto", opacity: 0.6 }} />
 
               <Collapse in={resetSent}>
                 <Alert
@@ -205,37 +326,38 @@ const ResetPassword = () => {
               </Collapse>
 
               <form onSubmit={formik.handleSubmit}>
-                <Box sx={{ mb: 3 }}>
-                  <TextField
-                    fullWidth
-                    id="email"
-                    name="email"
-                    label="Email"
-                    variant="outlined"
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.email && Boolean(formik.errors.email)}
-                    helperText={formik.touched.email && formik.errors.email}
-                    disabled={resetSent}
-                    sx={{
-                      mb: 2,
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#9AE4FF",
-                          borderWidth: "2px",
-                        },
-                        "&:hover fieldset": {
-                          borderColor: "#FADADD",
-                        },
+                <TextField
+                  fullWidth
+                  id="email"
+                  name="email"
+                  label="Email"
+                  variant="outlined"
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.email && Boolean(formik.errors.email)}
+                  helperText={formik.touched.email && formik.errors.email}
+                  disabled={resetSent}
+                  sx={{
+                    mb: 3,
+                    backgroundColor: "white",
+                    borderRadius: "4px",
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": {
+                        borderColor: "#E0E0E0",
                       },
-                      "& .MuiInputLabel-root.Mui-focused": {
-                        color: "#9AE4FF",
+                      "&:hover fieldset": {
+                        borderColor: "#9AE4FF",
                       },
-                    }}
-                  />
-                </Box>
+                      "&.Mui-focused fieldset": {
+                        borderColor: "#9AE4FF",
+                      },
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#9AE4FF",
+                    },
+                  }}
+                />
 
                 <Button
                   type="submit"
@@ -243,52 +365,21 @@ const ResetPassword = () => {
                   disabled={resetSent}
                   sx={{
                     py: 1.5,
-                    background: resetSent
-                      ? "rgba(154, 228, 255, 0.5)"
-                      : "linear-gradient(90deg, #FADADD 0%, #9AE4FF 100%)",
-                    color: resetSent ? "#666" : "#333",
+                    backgroundColor: "#9AE4FF",
+                    color: "#333",
                     fontWeight: 600,
-                    borderRadius: "10px",
+                    borderRadius: "20px",
                     textTransform: "none",
                     fontSize: "1rem",
-                    boxShadow: resetSent ? "none" : "0 4px 10px rgba(0, 0, 0, 0.05)",
-                    transition: "all 0.3s ease",
+                    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",
                     "&:hover": {
-                      background: resetSent
-                        ? "rgba(154, 228, 255, 0.5)"
-                        : "linear-gradient(90deg, #f8c8cb 0%, #7bc8ff 100%)",
-                      boxShadow: resetSent ? "none" : "0 6px 15px rgba(0, 0, 0, 0.1)",
-                      transform: resetSent ? "none" : "translateY(-2px)",
+                      backgroundColor: "#7bc8ff",
                     },
-                    "&:active": {
-                      transform: "translateY(0)",
-                    },
+                    transition: "all 0.3s ease",
                   }}
                 >
                   {resetSent ? "Email Enviado" : "Enviar Instruções"}
                 </Button>
-
-                {resetSent && (
-                  <Box sx={{ mt: 3, textAlign: "center" }}>
-                    <Button
-                      component={Link}
-                      href="/"
-                      variant="outlined"
-                      sx={{
-                        borderRadius: "10px",
-                        borderColor: "#9AE4FF",
-                        color: "#666",
-                        textTransform: "none",
-                        "&:hover": {
-                          borderColor: "#FADADD",
-                          backgroundColor: "rgba(250, 218, 221, 0.05)",
-                        },
-                      }}
-                    >
-                      Voltar para o Login
-                    </Button>
-                  </Box>
-                )}
               </form>
 
               {formik.errors.submit && (
@@ -345,42 +436,9 @@ const ResetPassword = () => {
             </Box>
           </Paper>
         </Container>
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            gap: "8px",
-          }}
-        >
-          {[0, 1, 2].map((i) => (
-            <Box
-              key={i}
-              sx={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                backgroundColor: i === 0 ? "#FADADD" : i === 1 ? "#f8c8cb" : "#9AE4FF",
-                animation: "bounce 1.5s infinite",
-                animationDelay: `${i * 0.15}s`,
-                "@keyframes bounce": {
-                  "0%, 100%": {
-                    transform: "translateY(0)",
-                  },
-                  "50%": {
-                    transform: "translateY(-10px)",
-                  },
-                },
-              }}
-            />
-          ))}
-        </Box>
       </Box>
     </>
   )
 }
 
 export default ResetPassword
-

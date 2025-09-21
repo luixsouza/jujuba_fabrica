@@ -1,7 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, forwardRef } from "react"
 import { useRouter } from "next/navigation"
+
+// Material-UI
 import {
   Box,
   Typography,
@@ -15,6 +17,8 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableContainer,
+  Paper,
   Button,
   Autocomplete,
   Dialog,
@@ -28,7 +32,11 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Avatar,
+  Slide,
 } from "@mui/material"
+
+// Ícones
 import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
@@ -43,11 +51,13 @@ import {
   CalendarMonth as CalendarMonthIcon,
   Warning as WarningIcon,
 } from "@mui/icons-material"
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+
+// Componentes e APIs
 import Sidebar from "../../components/sidebar"
-import {
-  removerDoCarrinho,
-  listarCarrinho,
-} from "../api/carrinho";
+import { removerDoCarrinho, listarCarrinho } from "../api/carrinho"
 import { finalizarVendaSimples } from "../api/vendas"
 
 // Função de formatação segura
@@ -58,7 +68,6 @@ const formatarPreco = (valor) => {
   }
   return numero.toFixed(2).replace(".", ",");
 };
-
 export default function CarrinhoPage() {
   const router = useRouter()
   const [search, setSearch] = useState("")
@@ -77,6 +86,29 @@ export default function CarrinhoPage() {
     message: "",
     severity: "success",
   });
+  const [tabValue, setTabValue] = useState(0);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
+
+  const [openProductModal, setOpenProductModal] = useState(false);
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+
+  const handleOpenProductModal = (produto) => {
+    setProdutoSelecionado(produto);
+    setOpenProductModal(true);
+  };
+
+  const handleCloseProductModal = () => {
+    setOpenProductModal(false);
+    setProdutoSelecionado(null);
+  };
 
   useEffect(() => {
     const fetchCartItems = async () => {
@@ -249,8 +281,12 @@ export default function CarrinhoPage() {
                         <TableCell align="center">R$ {formatarPreco(item.preco)}</TableCell>
                         <TableCell align="center">{item.lote || "-"}</TableCell>
                         <TableCell align="center">
-                          <IconButton size="small" onClick={() => handleViewItem(item)}><VisibilityIcon fontSize="small" /></IconButton>
-                          <IconButton size="small" onClick={() => handleConfirmDeleteItem(item.id)}><DeleteIcon fontSize="small" /></IconButton>
+                          <IconButton size="small" onClick={() => handleOpenProductModal(item)} sx={{ color: "#00509E" }}>
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => handleConfirmDeleteItem(item.id)} sx={{ color: "#00509E" }}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
                         </TableCell>
                       </TableRow>
                     ))
@@ -274,78 +310,475 @@ export default function CarrinhoPage() {
       </Box>
 
       {/* Modals (com as mesmas correções) */}
-      <Dialog open={openSellModal} onClose={handleCloseSellModal} PaperProps={{ sx: { borderRadius: 4, boxShadow: "0 4px 20px rgba(0,0,0,0.15)", bgcolor: "white", maxWidth: "350px", width: "100%", m: 0, p: 0 } }}>
-        <DialogContent sx={{ p: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <IconButton edge="start" color="inherit" onClick={handleCloseSellModal} aria-label="close" sx={{ p: 0.5, mr: 1 }}><ArrowBackIcon /></IconButton>
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "1.2rem", color: "#333", flex: 1, textAlign: "center", mr: 4 }}>Vender</Typography>
-          </Box>
-          <Table sx={{ mb: 3 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ bgcolor: "#ffc1cc", color: "#333", fontWeight: 500, fontSize: "0.9rem", p: 1.5, textAlign: "center", border: "1px solid #e0e0e0" }}>Forma de pagamento</TableCell>
-                <TableCell sx={{ bgcolor: "#ffc1cc", color: "#333", fontWeight: 500, fontSize: "0.9rem", p: 1.5, textAlign: "center", border: "1px solid #e0e0e0" }}>Total da compra</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ bgcolor: "#f5f5f5", color: "#333", fontSize: "0.9rem", p: 1.5, textAlign: "center", border: "1px solid #e0e0e0" }}>Pix</TableCell>
-                <TableCell sx={{ bgcolor: "#f5f5f5", color: "#333", fontSize: "0.9rem", p: 1.5, textAlign: "center", border: "1px solid #e0e0e0" }}>R$ {formatarPreco(totalValue)}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-            <Button variant="contained" onClick={handleFinalizarVenda} sx={{ bgcolor: "#ffc1cc", color: "black", "&:hover": { bgcolor: "#ffb6c1" }, borderRadius: 10, px: 4, py: 1, textTransform: "none", fontWeight: 600, boxShadow: "none", fontSize: "1rem", width: "45%" }}>Sim</Button>
-            <Button variant="contained" onClick={handleCloseSellModal} sx={{ bgcolor: "#ffc1cc", color: "black", "&:hover": { bgcolor: "#ffb6c1" }, borderRadius: 10, px: 4, py: 1, textTransform: "none", fontWeight: 600, boxShadow: "none", fontSize: "1rem", width: "45%" }}>Não</Button>
-          </Box>
-        </DialogContent>
-      </Dialog>
+      <Dialog
+        open={openProductModal}
+        keepMounted
+        onClose={handleCloseProductModal}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "#F5F5F5",
+            boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+            overflow: "visible",
+            maxHeight: "90vh",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            pb: 2,
+            pt: 4,
+            position: "relative",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseProductModal}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: "#666",
+              "&:hover": {
+                backgroundColor: "rgba(0, 0, 0, 0.1)",
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
 
-      <Dialog open={openViewModal} onClose={handleCloseViewModal} maxWidth="md" fullWidth>
-        {selectedItem && (
-          <>
-            <DialogTitle sx={{ bgcolor: "#ffccd5", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>Detalhes do Produto</Typography>
-              <IconButton onClick={handleCloseViewModal}><CloseIcon /></IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ p: 4 }}>
-              {/* CORREÇÃO: Acessar propriedades diretamente de selectedItem */}
-              <Grid container spacing={4}>
-                <Grid item xs={12} md={4}>
-                  <Box sx={{ width: "100%", height: 250, bgcolor: "#f5f5f5", borderRadius: 2, display: "flex", justifyContent: "center", alignItems: "center" }}><Typography>Imagem</Typography></Box>
-                  <Chip icon={<CheckCircleIcon />} label={selectedItem.estadoConservacao} color="success" sx={{ mt: 3 }} />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                backgroundColor: "#9AE4FF",
+                boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
+              }}
+            >
+              <InventoryIcon sx={{ fontSize: 40, color: "white" }} />
+            </Avatar>
+
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: "bold",
+                color: "#333",
+                textAlign: "center",
+              }}
+            >
+              {produtoSelecionado?.descricao || "Produto"}
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 4, pb: 2 }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            centered
+            sx={{
+              mb: 3,
+              "& .MuiTab-root": {
+              fontWeight: "bold",
+              fontSize: "16px",
+              color: "#333", // cor padrão quando não selecionado
+            },
+            "& .MuiTab-root.Mui-selected": {
+              color: "#9AE4FF", // cor azul quando ativo
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
+              },
+            }}
+          >
+            <Tab label="Informações Básicas" />
+            <Tab label="Detalhes Adicionais" />
+          </Tabs>
+
+          {/* Tab 0: Informações Básicas */}
+          {tabValue === 0 && produtoSelecionado && (
+            <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Dados do Produto
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>ID:</strong> #{produtoSelecionado.id || "N/A"}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Descrição:</strong> {produtoSelecionado.descricao}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Estado:</strong>{" "}
+                      <Chip label={produtoSelecionado.estadoConservacao} color="success" size="small" />
+                    </Typography>
+                  </Paper>
                 </Grid>
-                <Grid item xs={12} md={8}>
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>{selectedItem.descricao}</Typography>
-                  <Typography variant="h6" color="primary" sx={{ fontWeight: 600 }}>R$ {formatarPreco(selectedItem.preco)}</Typography>
-                  <Grid container spacing={2} sx={{ my: 2 }}>
-                    <Grid item xs={6}><Typography><strong>Código:</strong> {selectedItem.id}</Typography></Grid>
-                    <Grid item xs={6}><Typography><strong>Lote:</strong> {selectedItem.lote || "-"}</Typography></Grid>
-                    <Grid item xs={6}><Typography><strong>Categoria:</strong> {selectedItem.categoria || "-"}</Typography></Grid>
-                    <Grid item xs={6}><Typography><strong>Marca:</strong> {selectedItem.marca}</Typography></Grid>
-                  </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Preço e Estoque
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1, fontSize: "18px", fontWeight: "bold", color: "#4CAF50" }}>
+                      <strong>Preço:</strong> R$ {formatarPreco(produtoSelecionado.preco)}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Quantidade:</strong> {produtoSelecionado.quantidade} unidades
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
+                    </Typography>
+                  </Paper>
                 </Grid>
               </Grid>
-            </DialogContent>
-            <DialogActions sx={{ p: 3 }}>
-              <Button onClick={handleCloseViewModal}>Fechar</Button>
-              <Button variant="contained" color="error" onClick={() => { handleConfirmDeleteItem(selectedItem.id); handleCloseViewModal(); }}>Remover do Carrinho</Button>
-            </DialogActions>
-          </>
-        )}
+            </Box>
+          )}
+
+          {/* Tab 1: Detalhes Adicionais */}
+          {tabValue === 1 && produtoSelecionado && (
+            <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Características
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                       <strong>Marca:</strong> {produtoSelecionado.marca}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Gênero:</strong> {produtoSelecionado.genero}
+                    </Typography>
+                  </Paper>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                      Controle
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Data de Adição:</strong>{" "}
+                      {produtoSelecionado.dataAdicao
+                        ? new Date(produtoSelecionado.dataAdicao).toLocaleDateString("pt-BR")
+                        : "Não informada"}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Status:</strong>{" "}
+                      <Chip
+                        label={produtoSelecionado.ativo ? "Ativo" : "Inativo"}
+                        color={produtoSelecionado.ativo ? "success" : "error"}
+                        size="small"
+                      />
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            justifyContent: "center",
+            gap: 2,
+            px: 4,
+            pb: 4,
+          }}
+        >
+          <Button
+            onClick={handleCloseProductModal}
+            sx={{
+              backgroundColor: "#FADADD",
+              color: "#333",
+              fontWeight: "bold",
+              fontSize: "16px",
+              borderRadius: "25px",
+              padding: "12px 32px",
+              minWidth: "120px",
+              textTransform: "none",
+              boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+              "&:hover": {
+                backgroundColor: "#FFB6C1",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+              },
+              transition: "all 0.3s ease",
+            }}
+          >
+            Fechar
+          </Button>
+
+        </DialogActions>
       </Dialog>
 
-      <Dialog open={openDeleteConfirmation} onClose={handleCancelDelete}>
-        <DialogTitle>Confirmar Remoção</DialogTitle>
+        <Dialog
+        open={openDeleteConfirmation}
+        onClose={handleCancelDelete}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "#FFE4E1",
+            boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+            overflow: "visible",
+            textAlign: "center",
+            p: 3,
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.5rem", color: "#000" }}>
+          <WarningIcon sx={{ fontSize: 50, color: "orange", mb: 2 }} />
+          <br />
+          Confirmar Remoção
+        </DialogTitle>
+
         <DialogContent>
-          <DialogContentText>
-            {/* CORREÇÃO: Acessar a descrição diretamente */}
-            Tem certeza que deseja remover <strong>{itemToDelete?.descricao}</strong> do carrinho?
-          </DialogContentText>
+          <Typography sx={{ fontSize: "1.2rem", mb: 2 }}>
+            Tem certeza que deseja remover{" "}
+            <strong>{itemToDelete?.descricao}</strong> do carrinho?
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelDelete}>Cancelar</Button>
-          <Button onClick={handleDeleteItem} color="error">Confirmar</Button>
+
+        <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 3 }}>
+          <Button
+            onClick={handleCancelDelete}
+            sx={{
+              backgroundColor: "#9AE4FF",
+              color: "#000",
+              borderRadius: "25px",
+              px: 4,
+              fontWeight: "bold",
+              "&:hover": { backgroundColor: "#7ed3f9" },
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleDeleteItem}
+            sx={{
+              backgroundColor: "#FF6347",
+              color: "white",
+              borderRadius: "25px",
+              px: 4,
+              fontWeight: "bold",
+              "&:hover": { backgroundColor: "#e5533d" },
+            }}
+          >
+            Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openSellModal}
+        onClose={handleCloseSellModal}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "#F5F5F5",
+            boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+            overflow: "visible",
+            maxHeight: "90vh",
+          },
+        }}
+      >
+        {/* Cabeçalho */}
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            pb: 2,
+            pt: 4,
+            position: "relative",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseSellModal}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: "#666",
+              "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.1)" },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                backgroundColor: "#9AE4FF",
+                boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
+              }}
+            >
+              <CheckCircleIcon sx={{ fontSize: 40, color: "white" }} />
+            </Avatar>
+
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: "bold",
+                color: "#333",
+                textAlign: "center",
+              }}
+            >
+              Finalizar Venda
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        {/* Conteúdo */}
+        <DialogContent sx={{ px: 4, pb: 2 }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            centered
+            sx={{
+              mb: 3,
+              "& .MuiTab-root": { fontWeight: "bold", fontSize: "16px", color: "#333" },
+              "& .MuiTab-root.Mui-selected": { color: "#9AE4FF" },
+              "& .MuiTabs-indicator": { backgroundColor: "#9AE4FF" },
+            }}
+          >
+            <Tab label="Itens da Venda" />
+            <Tab label="Resumo e Total" />
+          </Tabs>
+
+          {/* Tab 0: Itens da Venda */}
+          {tabValue === 0 && (
+            <TableContainer
+              component={Paper}
+              sx={{
+                maxHeight: 300,
+                mb: 2,
+                borderRadius: 2,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                backgroundColor: "#fff", // fundo branco igual ao segundo modal
+              }}
+            >
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "#FADADD" }}>
+                    <TableCell sx={{ fontWeight: "bold" }}>Descrição</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                      Quantidade
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                      Preço Unitário
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                      Valor Total
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {cartItems.map((item) => (
+                    <TableRow key={item.id} sx={{ "&:hover": { bgcolor: "#E0E0E0" } }}>
+                      <TableCell>{item.descricao}</TableCell>
+                      <TableCell align="center">{item.quantidade || 1}</TableCell>
+                      <TableCell align="center">R$ {formatarPreco(item.preco)}</TableCell>
+                      <TableCell align="center">
+                        R$ {formatarPreco((item.preco || 0) * (item.quantidade || 1))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+
+          {/* Tab 1: Resumo e Total */}
+          {tabValue === 1 && (
+            <Box sx={{ textAlign: "right", mt: 2 }}>
+              <Typography sx={{ fontWeight: "bold", fontSize: "1.2rem", mb: 2 }}>
+                Valor Total: R$ {formatarPreco(totalValue)}
+              </Typography>
+              <Typography sx={{ fontSize: "1rem", color: "#555" }}>
+                Confirme os detalhes antes de finalizar a venda.
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+
+        {/* Ações */}
+        <DialogActions
+          sx={{
+            justifyContent: "center",
+            gap: 2,
+            px: 4,
+            pb: 4,
+          }}
+        >
+          <Button
+            onClick={handleCloseSellModal}
+            sx={{
+              backgroundColor: "#FADADD",
+              color: "#333",
+              fontWeight: "bold",
+              fontSize: "16px",
+              borderRadius: "25px",
+              padding: "12px 32px",
+              minWidth: "120px",
+              textTransform: "none",
+              boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+              "&:hover": {
+                backgroundColor: "#FFB6C1",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+              },
+              transition: "all 0.3s ease",
+            }}
+          >
+            Fechar
+          </Button>
+
+          <Button
+            onClick={handleFinalizarVenda}
+            sx={{
+              backgroundColor: "#4caf50",
+              color: "#fff",
+              fontWeight: "bold",
+              fontSize: "16px",
+              borderRadius: "25px",
+              padding: "12px 32px",
+              minWidth: "120px",
+              textTransform: "none",
+              boxShadow: "0px 4px 12px rgba(76, 175, 80, 0.4)",
+              "&:hover": {
+                backgroundColor: "#45a049",
+                transform: "translateY(-2px)",
+                boxShadow: "0px 6px 16px rgba(76, 175, 80, 0.6)",
+              },
+              transition: "all 0.3s ease",
+            }}
+          >
+            Confirmar
+          </Button>
         </DialogActions>
       </Dialog>
 
