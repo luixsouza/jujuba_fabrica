@@ -33,17 +33,13 @@ import {
 } from "@mui/material"
 import { ArrowBack, Home, Delete, Visibility, Add, BugReport } from "@mui/icons-material"
 import { createLote, getAllLotes, getFornecedoras, testApiConnection } from "../api/lotes"
-import { editarFornecedora } from "../api/fornecedores" // Assumindo o caminho correto para a função
 import Sidebar from "../../components/sidebar"
-
-// Importar Autocomplete do MUI
-//import Autocomplete from "@mui/material/Autocomplete"
 
 export default function CadastroLotePage() {
   const router = useRouter()
   const [loteId, setLoteId] = useState("")
   const [fornecedoraId, setFornecedoraId] = useState("")
-  const [fornecedoraSelecionada, setFornecedoraSelecionada] = useState(null) // Para controlar o objeto selecionado
+  const [fornecedoraSelecionada, setFornecedoraSelecionada] = useState(null)
   const [items, setItems] = useState([])
   const [lotesSidebar, setLotesSidebar] = useState([])
   const [fornecedoras, setFornecedoras] = useState([])
@@ -52,6 +48,11 @@ export default function CadastroLotePage() {
   const [success, setSuccess] = useState(null)
   const [debugDialog, setDebugDialog] = useState(false)
   const [debugInfo, setDebugInfo] = useState("")
+
+  const [creditModal, setCreditModal] = useState(false)
+  const [currentCredit, setCurrentCredit] = useState(0)
+  const [newCredit, setNewCredit] = useState("")
+  const [creditLoading, setCreditLoading] = useState(false)
 
   const [novoItem, setNovoItem] = useState({
     descricao: "",
@@ -62,10 +63,6 @@ export default function CadastroLotePage() {
     genero: "Unisex",
     quantidade: 1,
   })
-
-  const [confirmOpen, setConfirmOpen] = useState(false)
-  const [editCredit, setEditCredit] = useState(false)
-  const [newCreditValue, setNewCreditValue] = useState(0)
 
   useEffect(() => {
     // Gerar ID do lote
@@ -196,7 +193,66 @@ export default function CadastroLotePage() {
     }
   }
 
-  const handleOpenConfirm = () => {
+  const getFornecedoraCredit = async (fornecedoraId) => {
+    try {
+      const response = await fetch(`/api/fornecedores`)
+      const data = await response.json()
+      const fornecedora = data.find((f) => f.id === fornecedoraId)
+      return fornecedora ? fornecedora.creditoLoja || 0 : 0
+    } catch (error) {
+      console.error("Erro ao buscar crédito da fornecedora:", error)
+      return 0
+    }
+  }
+
+  const updateFornecedoraCredit = async (fornecedoraId, newCreditValue) => {
+    try {
+      console.log("[v0] === INICIANDO EDIÇÃO DE CRÉDITO ===")
+      console.log("[v0] ID:", fornecedoraId)
+      console.log("[v0] Novo valor de crédito:", newCreditValue)
+
+      const getFornecedoraResponse = await fetch(`http://localhost:8080/api/fornecedoras/${fornecedoraId}`)
+
+      if (!getFornecedoraResponse.ok) {
+        throw new Error(`Erro ao buscar fornecedora: ${getFornecedoraResponse.status}`)
+      }
+
+      const fornecedoraData = await getFornecedoraResponse.json()
+      console.log("[v0] Dados atuais da fornecedora:", fornecedoraData)
+
+      const updatedFornecedora = {
+        ...fornecedoraData,
+        creditoLoja: newCreditValue,
+      }
+
+      const formData = new FormData()
+      formData.append("fornecedora", JSON.stringify(updatedFornecedora))
+
+      const updateResponse = await fetch(`http://localhost:8080/api/fornecedoras/${fornecedoraId}`, {
+        method: "PUT",
+        body: formData,
+      })
+
+      console.log("[v0] === RESPOSTA DA API ===")
+      console.log("[v0] Status:", updateResponse.status)
+
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text()
+        console.error("[v0] Erro na resposta:", errorText)
+        throw new Error(`HTTP ${updateResponse.status}: ${errorText}`)
+      }
+
+      const result = await updateResponse.json()
+      console.log("[v0] Data:", result)
+
+      return result
+    } catch (error) {
+      console.error("[v0] === ERRO COMPLETO NA EDIÇÃO DE CRÉDITO ===", error)
+      throw error
+    }
+  }
+
+  const handleFinalizarLote = async () => {
     if (items.length === 0) {
       setError("Adicione pelo menos um item ao lote antes de finalizar.")
       return
@@ -207,48 +263,57 @@ export default function CadastroLotePage() {
       return
     }
 
-    const selected = fornecedoras.find((f) => f.id === fornecedoraId)
-    if (selected) {
-      setNewCreditValue(selected.creditoLoja || 0)
-      setEditCredit(false)
-      setConfirmOpen(true)
-    } else {
-      setError("Fornecedora selecionada não encontrada.")
+    // Get current credit and open modal
+    try {
+      setCreditLoading(true)
+      const credit = await getFornecedoraCredit(fornecedoraId)
+      setCurrentCredit(credit)
+      setCreditModal(true)
+    } catch (error) {
+      setError("Erro ao buscar crédito da fornecedora")
+    } finally {
+      setCreditLoading(false)
     }
   }
 
-  const handleFinalizarComConfirmacao = async () => {
+  const handleCreditConfirm = async () => {
     try {
-      setLoading(true)
+      setCreditLoading(true)
       setError(null)
 
-      const selected = fornecedoras.find((f) => f.id === fornecedoraId)
+      console.log("[v0] Starting credit confirmation process")
+      console.log("[v0] Current credit:", currentCredit)
+      console.log("[v0] New credit to add:", newCredit)
+      console.log("[v0] Fornecedora ID:", fornecedoraId)
 
-      if (editCredit) {
-        const updatedData = {
-          ...selected,
-          creditoLoja: newCreditValue,
-        }
-        await editarFornecedora(fornecedoraId, updatedData)
+      // Update credit if new value is provided
+      if (newCredit && Number.parseFloat(newCredit) > 0) {
+        const updatedCredit = currentCredit + Number.parseFloat(newCredit)
+        console.log("[v0] Calculated updated credit:", updatedCredit)
+        await updateFornecedoraCredit(fornecedoraId, updatedCredit)
+        console.log("[v0] Credit updated successfully")
       }
 
+      // Create the batch
+      console.log("[v0] Creating lote with items:", items.length)
       const result = await createLote(fornecedoraId, items)
+      console.log("[v0] Lote creation result:", result)
 
       if (result.success) {
         setSuccess(`Lote finalizado com sucesso! ${items.length} itens cadastrados.`)
+        setCreditModal(false)
+        setNewCredit("")
 
-        // Aguardar um pouco antes de redirecionar
+        // Redirect after success
         setTimeout(() => {
           router.push("./lotes_geral")
         }, 2000)
       }
     } catch (error) {
-      console.error("Erro ao finalizar lote:", error)
+      console.error("[v0] Erro ao finalizar lote:", error)
       setError(error.message || "Não foi possível finalizar o lote. Tente novamente.")
     } finally {
-      setLoading(false)
-      setConfirmOpen(false)
-      setEditCredit(false)
+      setCreditLoading(false)
     }
   }
 
@@ -328,8 +393,30 @@ export default function CadastroLotePage() {
           </Alert>
         )}
 
-        {/* Formulário */}
-        <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+        <Paper
+          sx={{
+            p: 4,
+            mb: 3,
+            borderRadius: 3,
+            boxShadow: "0px 8px 25px rgba(0, 0, 0, 0.15)",
+            border: "2px solid #e0e0e0",
+            background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
+          }}
+        >
+          <Typography
+            variant="h5"
+            sx={{
+              mb: 3,
+              fontWeight: 700,
+              color: "#333",
+              textAlign: "center",
+              pb: 2,
+              borderBottom: "2px solid #FADADD",
+            }}
+          >
+            Adicionar Novo Item
+          </Typography>
+
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
               <TextField
@@ -340,6 +427,23 @@ export default function CadastroLotePage() {
                 onChange={handleInputChange}
                 variant="outlined"
                 required
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    backgroundColor: "#fafafa",
+                    "& fieldset": {
+                      borderColor: "#d0d0d0",
+                      borderWidth: 2,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#FADADD",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#FADADD",
+                      borderWidth: 2,
+                    },
+                  },
+                }}
               />
             </Grid>
 
@@ -351,6 +455,23 @@ export default function CadastroLotePage() {
                 value={novoItem.marca}
                 onChange={handleInputChange}
                 variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    backgroundColor: "#fafafa",
+                    "& fieldset": {
+                      borderColor: "#d0d0d0",
+                      borderWidth: 2,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#FADADD",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#FADADD",
+                      borderWidth: 2,
+                    },
+                  },
+                }}
               />
             </Grid>
 
@@ -362,6 +483,23 @@ export default function CadastroLotePage() {
                 value={novoItem.tamanho}
                 onChange={handleInputChange}
                 variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    backgroundColor: "#fafafa",
+                    "& fieldset": {
+                      borderColor: "#d0d0d0",
+                      borderWidth: 2,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#FADADD",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#FADADD",
+                      borderWidth: 2,
+                    },
+                  },
+                }}
               />
             </Grid>
 
@@ -373,6 +511,21 @@ export default function CadastroLotePage() {
                   value={novoItem.estadoConservacao}
                   onChange={handleInputChange}
                   label="Estado de Conservação"
+                  sx={{
+                    borderRadius: 2,
+                    backgroundColor: "#fafafa",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#d0d0d0",
+                      borderWidth: 2,
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#FADADD",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#FADADD",
+                      borderWidth: 2,
+                    },
+                  }}
                 >
                   <MenuItem value="Ótimo">Ótimo</MenuItem>
                   <MenuItem value="Excelente">Excelente</MenuItem>
@@ -393,6 +546,23 @@ export default function CadastroLotePage() {
                 variant="outlined"
                 inputProps={{ step: 0.01, min: 0.01 }}
                 required
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    backgroundColor: "#fafafa",
+                    "& fieldset": {
+                      borderColor: "#d0d0d0",
+                      borderWidth: 2,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#FADADD",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#FADADD",
+                      borderWidth: 2,
+                    },
+                  },
+                }}
               />
             </Grid>
 
@@ -407,13 +577,50 @@ export default function CadastroLotePage() {
                 variant="outlined"
                 inputProps={{ min: 1 }}
                 required
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    backgroundColor: "#fafafa",
+                    "& fieldset": {
+                      borderColor: "#d0d0d0",
+                      borderWidth: 2,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#FADADD",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#FADADD",
+                      borderWidth: 2,
+                    },
+                  },
+                }}
               />
             </Grid>
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Gênero</InputLabel>
-                <Select name="genero" value={novoItem.genero} onChange={handleInputChange} label="Gênero">
+                <Select
+                  name="genero"
+                  value={novoItem.genero}
+                  onChange={handleInputChange}
+                  label="Gênero"
+                  sx={{
+                    borderRadius: 2,
+                    backgroundColor: "#fafafa",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#d0d0d0",
+                      borderWidth: 2,
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#FADADD",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#FADADD",
+                      borderWidth: 2,
+                    },
+                  }}
+                >
                   <MenuItem value="Masculino">Masculino</MenuItem>
                   <MenuItem value="Feminino">Feminino</MenuItem>
                   <MenuItem value="Unisex">Unisex</MenuItem>
@@ -421,7 +628,6 @@ export default function CadastroLotePage() {
               </FormControl>
             </Grid>
 
-            {/* ALTERAÇÃO AQUI: Autocomplete para Fornecedora */}
             <Grid item xs={12} md={6}>
               <Autocomplete
                 fullWidth
@@ -433,9 +639,31 @@ export default function CadastroLotePage() {
                 value={fornecedoras.find((f) => f.id === fornecedoraId) || null}
                 onChange={(event, newValue) => {
                   setFornecedoraId(newValue ? newValue.id : "")
+                  setFornecedoraSelecionada(newValue)
                 }}
                 renderInput={(params) => (
-                  <TextField {...params} label="Fornecedora" variant="outlined" />
+                  <TextField
+                    {...params}
+                    label="Fornecedora"
+                    variant="outlined"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                        backgroundColor: "#fafafa",
+                        "& fieldset": {
+                          borderColor: "#d0d0d0",
+                          borderWidth: 2,
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "#FADADD",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#FADADD",
+                          borderWidth: 2,
+                        },
+                      },
+                    }}
+                  />
                 )}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
                 noOptionsText="Nenhuma fornecedora encontrada"
@@ -444,7 +672,7 @@ export default function CadastroLotePage() {
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 3, textAlign: "center" }}>
+          <Box sx={{ mt: 4, textAlign: "center" }}>
             <Button
               variant="contained"
               startIcon={<Add />}
@@ -454,11 +682,17 @@ export default function CadastroLotePage() {
                 backgroundColor: "#FADADD",
                 color: "#333",
                 "&:hover": {
-                  backgroundColor: "#FADADD",
+                  backgroundColor: "#f8a8c8",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 20px rgba(250, 218, 221, 0.4)",
                 },
-                px: 4,
-                py: 1.5,
+                px: 6,
+                py: 2,
                 borderRadius: 25,
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                boxShadow: "0px 4px 15px rgba(250, 218, 221, 0.3)",
+                transition: "all 0.3s ease",
               }}
             >
               Adicionar Item
@@ -468,26 +702,26 @@ export default function CadastroLotePage() {
 
         <Card
           sx={{
-            padding: "20px",
+            padding: "25px",
             bgcolor: "white",
-            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-            borderRadius: "25px",
-            backgroundColor: "#F5F5F5",
+            boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.15)",
+            borderRadius: "20px",
+            backgroundColor: "#ffffff",
             width: "100%",
             margin: "0 auto",
-            border: "2px solid #B0B0B0",
+            border: "3px solid #e0e0e0",
+            background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
           }}
         >
-          {/*titulo novo*/}
           <Typography
-            variant="h6"
+            variant="h4"
             sx={{
-              mb: 2,
+              mb: 3,
               fontWeight: 700,
               color: "#333",
-              fontSize: "2rem", // Ajuste o tamanho da fonte conforme desejar
-              textAlign: "left", // Alinhe à esquerda ou ao centro
-              pl: 1, // Adicione um pouco de padding à esquerda se necessário
+              textAlign: "center",
+              pb: 2,
+              borderBottom: "3px solid #FADADD",
             }}
           >
             Itens do Lote
@@ -496,10 +730,11 @@ export default function CadastroLotePage() {
           <TableContainer
             sx={{
               maxHeight: "600px",
-              borderRadius: "10px",
+              borderRadius: "15px",
               overflow: "auto",
-              backgroundColor: "#F5F5F5",
+              backgroundColor: "#ffffff",
               width: "100%",
+              border: "2px solid #f0f0f0",
             }}
           >
             <Table>
@@ -512,6 +747,7 @@ export default function CadastroLotePage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: 600,
                     }}
                   >
                     Descrição
@@ -523,6 +759,7 @@ export default function CadastroLotePage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: 600,
                     }}
                   >
                     Estado
@@ -534,6 +771,7 @@ export default function CadastroLotePage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: 600,
                     }}
                   >
                     Valor
@@ -545,6 +783,7 @@ export default function CadastroLotePage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: 600,
                     }}
                   >
                     Quantidade
@@ -556,6 +795,7 @@ export default function CadastroLotePage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: 600,
                     }}
                   >
                     Marca
@@ -567,6 +807,7 @@ export default function CadastroLotePage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: 600,
                     }}
                   >
                     Tamanho
@@ -578,6 +819,7 @@ export default function CadastroLotePage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: 600,
                     }}
                   >
                     Gênero
@@ -589,6 +831,7 @@ export default function CadastroLotePage() {
                       textAlign: "center",
                       backgroundColor: "#FADADD",
                       borderRight: "2px solid #F5F5F5",
+                      fontWeight: 600,
                     }}
                   >
                     Ações
@@ -598,20 +841,22 @@ export default function CadastroLotePage() {
               <TableBody>
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
+                    <TableCell colSpan={8} align="center" sx={{ py: 4, fontSize: "1.1rem", color: "#666" }}>
                       Nenhum item adicionado ao lote
                     </TableCell>
                   </TableRow>
                 ) : (
                   items.map((item) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>{item.descricao}</TableCell>
-                      <TableCell>{item.estadoConservacao}</TableCell>
-                      <TableCell>R$ {item.preco.toFixed(2).replace(".", ",")}</TableCell>
-                      <TableCell>{item.quantidade}</TableCell>
-                      <TableCell>{item.marca || "-"}</TableCell>
-                      <TableCell>{item.tamanho || "-"}</TableCell>
-                      <TableCell>{item.genero}</TableCell>
+                    <TableRow key={item.id} hover sx={{ "&:hover": { backgroundColor: "#f8f9fa" } }}>
+                      <TableCell sx={{ fontSize: "16px" }}>{item.descricao}</TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>{item.estadoConservacao}</TableCell>
+                      <TableCell sx={{ fontSize: "16px", fontWeight: 600 }}>
+                        R$ {item.preco.toFixed(2).replace(".", ",")}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>{item.quantidade}</TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>{item.marca || "-"}</TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>{item.tamanho || "-"}</TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>{item.genero}</TableCell>
                       <TableCell align="center">
                         <IconButton onClick={() => handleViewItem(item.id)} color="primary">
                           <Visibility />
@@ -624,11 +869,11 @@ export default function CadastroLotePage() {
                   ))
                 )}
                 {items.length > 0 && (
-                  <TableRow>
-                    <TableCell colSpan={2} align="right" sx={{ fontWeight: "bold" }}>
+                  <TableRow sx={{ backgroundColor: "#f0f8ff" }}>
+                    <TableCell colSpan={2} align="right" sx={{ fontWeight: "bold", fontSize: "18px" }}>
                       Total:
                     </TableCell>
-                    <TableCell colSpan={6} sx={{ fontWeight: "bold" }}>
+                    <TableCell colSpan={6} sx={{ fontWeight: "bold", fontSize: "18px", color: "#2e7d32" }}>
                       R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
                     </TableCell>
                   </TableRow>
@@ -638,26 +883,35 @@ export default function CadastroLotePage() {
           </TableContainer>
         </Card>
 
-        {/* Botão Finalizar */}
-        <Box sx={{ textAlign: "center" }}>
+        <Box sx={{ textAlign: "center", mt: 4 }}>
           <Button
             variant="contained"
-            onClick={handleOpenConfirm}
+            onClick={handleFinalizarLote}
             disabled={loading || items.length === 0 || !fornecedoraId}
             sx={{
               backgroundColor: "#ffd0e8",
               color: "#333",
               "&:hover": {
                 backgroundColor: "#ffb0d8",
+                transform: "translateY(-3px)",
+                boxShadow: "0px 8px 25px rgba(255, 208, 232, 0.4)",
               },
-              px: 6,
-              py: 2,
-              borderRadius: 25,
+              "&:disabled": {
+                backgroundColor: "#e0e0e0",
+                color: "#999",
+              },
+              px: 8,
+              py: 2.5,
+              borderRadius: 30,
+              fontSize: "1.2rem",
+              fontWeight: 700,
+              boxShadow: "0px 6px 20px rgba(255, 208, 232, 0.3)",
+              transition: "all 0.3s ease",
             }}
           >
             {loading ? (
               <>
-                <CircularProgress size={20} sx={{ mr: 1 }} />
+                <CircularProgress size={24} sx={{ mr: 2, color: "#333" }} />
                 Processando...
               </>
             ) : (
@@ -666,118 +920,106 @@ export default function CadastroLotePage() {
           </Button>
         </Box>
 
-        {/* Modal de Confirmação */}
         <Dialog
-          open={confirmOpen}
-          onClose={() => {
-            setConfirmOpen(false)
-            setEditCredit(false)
-          }}
+          open={creditModal}
+          onClose={() => !creditLoading && setCreditModal(false)}
           maxWidth="sm"
           fullWidth
-          sx={{
-            "& .MuiDialog-paper": {
-              borderRadius: "20px",
-              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.2)",
-              backgroundColor: "#F5F5F5",
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+              boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.2)",
             },
           }}
         >
           <DialogTitle
             sx={{
               textAlign: "center",
-              fontWeight: "bold",
+              fontSize: "1.5rem",
+              fontWeight: 700,
               color: "#333",
-              backgroundColor: "#FADADD",
-              borderTopLeftRadius: "20px",
-              borderTopRightRadius: "20px",
+              borderBottom: "2px solid #FADADD",
+              pb: 2,
             }}
           >
-            Confirmação de Cadastro do Lote
+            Gerenciar Crédito do Fornecedor
           </DialogTitle>
-          <DialogContent sx={{ p: 4 }}>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              Valor total do lote: R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              Crédito atual da fornecedora: R${" "}
-              {fornecedoras.find((f) => f.id === fornecedoraId)?.creditoLoja?.toFixed(2).replace(".", ",") || "0,00"}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2, fontWeight: "bold" }}>
-              Deseja alterar o valor do crédito?
-            </Typography>
-            {!editCredit ? (
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
-                <Button
-                  variant="contained"
-                  onClick={() => setEditCredit(true)}
-                  sx={{
-                    backgroundColor: "#ffd0e8",
-                    color: "#333",
-                    "&:hover": { backgroundColor: "#ffb0d8" },
-                    borderRadius: "20px",
-                  }}
-                >
-                  Sim
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleFinalizarComConfirmacao}
-                  sx={{
-                    backgroundColor: "#FADADD",
-                    color: "#333",
-                    "&:hover": { backgroundColor: "#FADADD" },
-                    borderRadius: "20px",
-                  }}
-                >
-                  Não
-                </Button>
-              </Box>
-            ) : (
-              <TextField
-                fullWidth
-                label="Novo valor do crédito (R$)"
-                type="number"
-                value={newCreditValue}
-                onChange={(e) => setNewCreditValue(parseFloat(e.target.value))}
-                variant="outlined"
-                inputProps={{ step: 0.01, min: 0 }}
-                sx={{ mt: 2 }}
-              />
+          <DialogContent sx={{ pt: 3 }}>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 1, color: "#333" }}>
+                Fornecedor: {fornecedoraSelecionada?.nome}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 2, color: "#666" }}>
+                Crédito atual: <strong>R$ {currentCredit.toFixed(2).replace(".", ",")}</strong>
+              </Typography>
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Novo crédito a receber (R$)"
+              type="number"
+              value={newCredit}
+              onChange={(e) => setNewCredit(e.target.value)}
+              inputProps={{ step: 0.01, min: 0 }}
+              sx={{
+                mb: 2,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  "& fieldset": {
+                    borderColor: "#d0d0d0",
+                    borderWidth: 2,
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#FADADD",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#FADADD",
+                    borderWidth: 2,
+                  },
+                },
+              }}
+              helperText="Deixe em branco se não houver crédito adicional"
+            />
+
+            {newCredit && Number.parseFloat(newCredit) > 0 && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Novo total será: R$ {(currentCredit + Number.parseFloat(newCredit)).toFixed(2).replace(".", ",")}
+              </Alert>
             )}
           </DialogContent>
-          <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
-            {editCredit && (
-              <Button
-                variant="contained"
-                onClick={handleFinalizarComConfirmacao}
-                disabled={loading || isNaN(newCreditValue) || newCreditValue < 0}
-                sx={{
-                  backgroundColor: "#ffd0e8",
-                  color: "#333",
-                  "&:hover": { backgroundColor: "#ffb0d8" },
-                  borderRadius: "20px",
-                  px: 4,
-                }}
-              >
-                Confirmar Alteração
-              </Button>
-            )}
+          <DialogActions sx={{ p: 3, pt: 1 }}>
             <Button
-              variant="outlined"
-              onClick={() => {
-                setConfirmOpen(false)
-                setEditCredit(false)
-              }}
+              onClick={() => setCreditModal(false)}
+              disabled={creditLoading}
               sx={{
-                color: "#333",
-                borderColor: "#ffd0e8",
-                "&:hover": { borderColor: "#ffb0d8" },
-                borderRadius: "20px",
-                px: 4,
+                color: "#666",
+                "&:hover": { backgroundColor: "#f5f5f5" },
               }}
             >
               Cancelar
+            </Button>
+            <Button
+              onClick={handleCreditConfirm}
+              variant="contained"
+              disabled={creditLoading}
+              sx={{
+                backgroundColor: "#FADADD",
+                color: "#333",
+                "&:hover": {
+                  backgroundColor: "#f8a8c8",
+                },
+                px: 4,
+                borderRadius: 2,
+              }}
+            >
+              {creditLoading ? (
+                <>
+                  <CircularProgress size={20} sx={{ mr: 1, color: "#333" }} />
+                  Processando...
+                </>
+              ) : (
+                "Confirmar e Finalizar"
+              )}
             </Button>
           </DialogActions>
         </Dialog>

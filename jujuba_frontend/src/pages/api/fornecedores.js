@@ -1,86 +1,79 @@
-import formidable from 'formidable';
-import axios from 'axios';
+import axios from "axios"
 
-const BASE_URL = 'http://localhost:8080/api/fornecedoras';
+const BASE_URL = "http://localhost:8080/api/fornecedoras"
 
 export const config = {
   api: {
-    bodyParser: false, // desabilita o body parser para aceitar multipart/form-data
+    bodyParser: true, // habilitando bodyParser padrão
   },
-};
+}
 
 export default async function handler(req, res) {
-  const { method } = req;
+  const { method } = req
 
-  
-  const form = new formidable.IncomingForm();
+  try {
+    if (method === "GET") {
+      const response = await axios.get(BASE_URL)
+      return res.status(200).json(response.data)
+    } else if (method === "POST") {
+      const response = await axios.post(BASE_URL, req.body)
+      return res.status(201).json(response.data)
+    } else if (method === "PUT") {
+      const { id, ...data } = req.body
 
- 
-  form.uploadDir = './tmp';
-  form.keepExtensions = true; 
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error('Erro ao processar os dados do formulário:', err);
-      return res.status(500).json({ message: 'Erro ao processar os dados' });
-    }
-
-    try {
-      
-      if (method === 'GET') {
-        const response = await axios.get(BASE_URL);
-        return res.status(200).json(response.data);
-
-      
-      } else if (method === 'POST') {
-        const fornecedorData = JSON.parse(fields.fornecedora[0]); 
-        const contratoUrl = files.contratoUrl ? files.contratoUrl[0].filepath : null;
-
-        
-        const data = {
-          ...fornecedorData,
-          contratoUrl, // aqui você pode usar o caminho ou URL do arquivo
-        };
-
-        const response = await axios.post(BASE_URL, data);
-        return res.status(201).json(response.data); 
-
-      } else if (method === 'PUT') {
-        const { id, ...data } = fields; 
-        const response = await axios.put(`${BASE_URL}/${id}`, data);
-        return res.status(200).json(response.data); 
-
-      } else if (method === 'DELETE') {
-        const { id } = req.query; 
-        await axios.delete(`${BASE_URL}/${id}`);
-        return res.status(204).end(); 
-
-      } else {
-       
-        return res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']).status(405).end();
+      if (!id) {
+        return res.status(400).json({
+          message: "ID da fornecedora é obrigatório para atualização",
+          success: false,
+        })
       }
-    } catch (error) {
-      
-      console.error(error);
-      return res.status(error.response?.status || 500).json({ message: error.message });
+
+      console.log("[v0] Updating fornecedora:", { id, data })
+      const response = await axios.put(`${BASE_URL}/${id}`, data)
+      return res.status(200).json(response.data)
+    } else if (method === "DELETE") {
+      const { id } = req.query
+      await axios.delete(`${BASE_URL}/${id}`)
+      return res.status(204).end()
+    } else {
+      return res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]).status(405).end()
     }
-  });
+  } catch (error) {
+    console.error("[v0] Erro na API de fornecedores:", error)
+    console.error("[v0] Error details:", error.response?.data)
+    return res.status(error.response?.status || 500).json({
+      message: error.response?.data?.message || error.message,
+      success: false,
+    })
+  }
 }
+
 export const editarFornecedora = async (id, fornecedoraData) => {
   try {
-    const response = await fetch(`${BASE_URL}/${id}`, {   //// aqui pode mudar, depende do nome da rota
-      method: 'PUT',
+    console.log("[v0] editarFornecedora called with:", { id, fornecedoraData })
+
+    const response = await fetch(`/api/fornecedores`, {
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(fornecedoraData),
-    });
+      body: JSON.stringify({
+        id: id,
+        ...fornecedoraData,
+      }),
+    })
+
+    console.log("[v0] Response status:", response.status)
+    console.log("[v0] Response ok:", response.ok)
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Erro ao atualizar fornecedora.');
+      const errorData = await response.json()
+      console.log("[v0] Error response data:", errorData)
+      throw new Error(errorData.message || "Erro ao atualizar fornecedora.")
     }
 
-    const data = await response.json();
+    const data = await response.json()
+    console.log("[v0] Success response data:", data)
 
     return {
       id: data.id,
@@ -91,36 +84,35 @@ export const editarFornecedora = async (id, fornecedoraData) => {
       contratoUrl: data.contratoUrl,
       dataNascimento: data.dataNascimento,
       creditoLoja: data.creditoLoja,
-      
-    };
+    }
   } catch (error) {
-    console.error('Erro ao editar fornecedora:', error);
-    throw error;
+    console.error("[v0] Erro ao editar fornecedora:", error)
+    throw error
   }
-};
+}
 
 export const buscarFornecedoras = async () => {
   try {
-    const response = await axios.get(BASE_URL);
+    const response = await axios.get(BASE_URL)
     return {
       sucesso: true,
-      mensagem: 'Fornecedoras buscadas com sucesso.',
+      mensagem: "Fornecedoras buscadas com sucesso.",
       quantidade: response.data.length,
-      fornecedoras: response.data.map(f => ({
+      fornecedoras: response.data.map((f) => ({
         id: f.id,
         nome: f.nome,
         contato: f.contato,
         endereco: f.endereco,
         chavePix: f.chavePix,
         contratoUrl: f.contratoUrl,
-        dataNascimento: f.dataNascimento
-      }))
-    };
+        dataNascimento: f.dataNascimento,
+      })),
+    }
   } catch (error) {
     return {
       sucesso: false,
-      mensagem: 'Erro ao buscar fornecedoras.',
-      erro: error.response?.data || error.message
-    };
+      mensagem: "Erro ao buscar fornecedoras.",
+      erro: error.response?.data || error.message,
+    }
   }
-};///
+}
