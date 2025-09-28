@@ -3,6 +3,8 @@
 import { Autocomplete } from "@mui/material"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
+import CloseIcon from "@mui/icons-material/Close"
+import InventoryIcon from "@mui/icons-material/Inventory"
 import {
   Box,
   Typography,
@@ -31,6 +33,8 @@ import {
   DialogActions,
   Card,
 } from "@mui/material"
+import { Tabs, Tab, Chip, Avatar } from "@mui/material"
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { ArrowBack, Home, Delete, Visibility, Add, BugReport } from "@mui/icons-material"
 import { createLote, getAllLotes, getFornecedoras, testApiConnection } from "../api/lotes"
 import Sidebar from "../../components/sidebar"
@@ -54,6 +58,14 @@ export default function CadastroLotePage() {
   const [newCredit, setNewCredit] = useState("")
   const [creditLoading, setCreditLoading] = useState(false)
 
+    // Estados para o modal de visualização de produto
+  const [openProductModal, setOpenProductModal] = useState(false)
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null)
+  const [tabValue, setTabValue] = useState(0)
+
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
   const [novoItem, setNovoItem] = useState({
     descricao: "",
     marca: "",
@@ -63,6 +75,7 @@ export default function CadastroLotePage() {
     genero: "Unisex",
     quantidade: 1,
   })
+  
 
   useEffect(() => {
     // Gerar ID do lote
@@ -110,6 +123,23 @@ export default function CadastroLotePage() {
       [name]: value,
     }))
   }
+  // Handlers para o modal de visualização
+  const handleOpenProductModal = (item) => {
+    setProdutoSelecionado(item)
+    setOpenProductModal(true)
+  }
+
+  const handleCloseProductModal = () => {
+    setOpenProductModal(false)
+    setProdutoSelecionado(null)
+    setTabValue(0)
+  }
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue)
+  }
+
+  const formatarPreco = (preco) => Number(preco).toFixed(2)
 
   const handleAddItem = () => {
     // Validação
@@ -164,20 +194,21 @@ export default function CadastroLotePage() {
     setTimeout(() => setSuccess(null), 3000)
   }
 
-  const handleViewItem = (id) => {
-    const item = items.find((item) => item.id === id)
-    if (item) {
-      alert(
-        `Detalhes do item:\n` +
-          `Descrição: ${item.descricao}\n` +
-          `Valor: R$ ${item.preco.toFixed(2)}\n` +
-          `Marca: ${item.marca || "Não informado"}\n` +
-          `Tamanho: ${item.tamanho || "Não informado"}\n` +
-          `Gênero: ${item.genero}\n` +
-          `Quantidade: ${item.quantidade}`,
-      )
-    }
+  const confirmDeleteItem = () => {
+  if (itemToDelete) {
+    handleDeleteItem(itemToDelete.id);  // Chama a deleção original
+    setOpenDeleteDialog(false);         // Fecha o modal
+    setItemToDelete(null);              // Limpa o item selecionado
   }
+};
+
+  // Handler atualizado para visualização (agora abre o modal em vez de alert)
+const handleViewItem = (id) => {
+  const item = items.find((item) => item.id === id)
+  if (item) {
+    handleOpenProductModal(item)
+  }
+}
 
   const handleTestApi = async () => {
     try {
@@ -858,13 +889,19 @@ export default function CadastroLotePage() {
                       <TableCell sx={{ fontSize: "16px" }}>{item.tamanho || "-"}</TableCell>
                       <TableCell sx={{ fontSize: "16px" }}>{item.genero}</TableCell>
                       <TableCell align="center">
-                        <IconButton onClick={() => handleViewItem(item.id)} color="primary">
-                          <Visibility />
-                        </IconButton>
-                        <IconButton onClick={() => handleDeleteItem(item.id)} color="error">
-                          <Delete />
-                        </IconButton>
-                      </TableCell>
+                      <IconButton onClick={() => handleOpenProductModal(item)} color="primary">
+                        <Visibility />
+                      </IconButton>
+                      <IconButton 
+                        onClick={() => {
+                          setItemToDelete(item);  // Armazena o item para exibir no modal
+                          setOpenDeleteDialog(true);  // Abre o modal de confirmação
+                        }} 
+                        color="error"
+                      >
+                        <Delete />
+                      </IconButton>
+                    </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -1023,7 +1060,338 @@ export default function CadastroLotePage() {
             </Button>
           </DialogActions>
         </Dialog>
+                {/* Modal de Visualização de Produto */}
+                  <Dialog
+                    open={openProductModal}
+                    onClose={handleCloseProductModal}
+                    maxWidth="md"
+                    fullWidth
+                    PaperProps={{
+                      sx: {
+                        borderRadius: "20px",
+                        background: "#F5F5F5",
+                        boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+                        overflow: "visible",
+                        maxHeight: "90vh",
+                      },
+                    }}
+                  >
+                    <DialogTitle
+                      sx={{
+                        textAlign: "center",
+                        pb: 2,
+                        pt: 4,
+                        position: "relative",
+                      }}
+                    >
+                      <IconButton
+                        onClick={handleCloseProductModal}
+                        sx={{
+                          position: "absolute",
+                          right: 8,
+                          top: 8,
+                          color: "#666",
+                          "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.1)" },
+                        }}
+                      >
+                        <CloseIcon />
+                      </IconButton>
 
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 2,
+                        }}
+                      >
+                        <Avatar
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            backgroundColor: "#9AE4FF",
+                            boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
+                          }}
+                        >
+                          <InventoryIcon sx={{ fontSize: 40, color: "white" }} />
+                        </Avatar>
+
+                        <Typography
+                          variant="h5"
+                          sx={{ fontWeight: "bold", color: "#333", textAlign: "center" }}
+                        >
+                          {produtoSelecionado?.descricao || "Produto"}
+                        </Typography>
+                      </Box>
+                    </DialogTitle>
+
+                    <DialogContent sx={{ px: 4, pb: 2 }}>
+                      <Tabs
+                        value={tabValue}
+                        onChange={handleTabChange}
+                        centered
+                        sx={{
+                          mb: 3,
+                          "& .MuiTab-root": { fontWeight: "bold", fontSize: "16px", color: "#333" },
+                          "& .MuiTab-root.Mui-selected": { color: "#9AE4FF" },
+                          "& .MuiTabs-indicator": { backgroundColor: "#9AE4FF" },
+                        }}
+                      >
+                        <Tab label="Informações Básicas" />
+                        <Tab label="Detalhes Adicionais" />
+                      </Tabs>
+
+                      {tabValue === 0 && produtoSelecionado && (
+                        <Box>
+                          <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                              <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                                  Dados do Produto
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                  <strong>ID:</strong> #{produtoSelecionado.id || "N/A"}
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                  <strong>Descrição:</strong> {produtoSelecionado.descricao}
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                  <strong>Estado:</strong>{" "}
+                                  <Chip label={produtoSelecionado.estadoConservacao} color="success" size="small" />
+                                </Typography>
+                              </Paper>
+                            </Grid>
+
+                            <Grid item xs={12} md={6}>
+                              <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                                  Preço e Estoque
+                                </Typography>
+                                <Typography
+                                  variant="body1"
+                                  sx={{ mb: 1, fontSize: "18px", fontWeight: "bold", color: "#4CAF50" }}
+                                >
+                                  <strong>Preço:</strong> R$ {formatarPreco(produtoSelecionado.preco)}
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                  <strong>Quantidade:</strong> {produtoSelecionado.quantidade} unidades
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                  <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
+                                </Typography>
+                              </Paper>
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      )}
+
+                      {tabValue === 1 && produtoSelecionado && (
+                        <Box>
+                          <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                              <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                                  Características
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                  <strong>Marca:</strong> {produtoSelecionado.marca}
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                  <strong>Gênero:</strong> {produtoSelecionado.genero}
+                                </Typography>
+                              </Paper>
+                            </Grid>
+
+                            <Grid item xs={12} md={6}>
+                              <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                                  Controle
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                  <strong>Data de Adição:</strong>{" "}
+                                  {produtoSelecionado.dataAdicao
+                                    ? new Date(produtoSelecionado.dataAdicao).toLocaleDateString("pt-BR")
+                                    : "Não informada"}
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                  <strong>Status:</strong>{" "}
+                                  <Chip
+                                    label={produtoSelecionado.ativo ? "Ativo" : "Inativo"}
+                                    color={produtoSelecionado.ativo ? "success" : "error"}
+                                    size="small"
+                                  />
+                                </Typography>
+                              </Paper>
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      )}
+                    </DialogContent>
+
+                    <DialogActions sx={{ justifyContent: "center", gap: 2, px: 4, pb: 4 }}>
+                      <Button
+                        onClick={handleCloseProductModal}
+                        sx={{
+                          backgroundColor: "#FADADD",
+                          color: "#333",
+                          fontWeight: "bold",
+                          fontSize: "16px",
+                          borderRadius: "25px",
+                          padding: "12px 32px",
+                          minWidth: "120px",
+                          textTransform: "none",
+                          boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+                          "&:hover": {
+                            backgroundColor: "#FFB6C1",
+                            transform: "translateY(-2px)",
+                            boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+                          },
+                        }}
+                      >
+                        Fechar
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+                  {/* Modal de Confirmação de Exclusão de Produto */}
+                    <Dialog
+                      open={openDeleteDialog}
+                      onClose={() => setOpenDeleteDialog(false)}
+                      maxWidth="sm"
+                      fullWidth
+                      PaperProps={{
+                        sx: {
+                          borderRadius: "20px",
+                          background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+                          boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+                          overflow: "visible",
+                        },
+                      }}
+                    >
+                      <DialogTitle
+                        sx={{
+                          textAlign: "center",
+                          pb: 2,
+                          pt: 4,
+                          position: "relative",
+                        }}
+                      >
+                        <IconButton
+                          onClick={() => setOpenDeleteDialog(false)}
+                          sx={{
+                            position: "absolute",
+                            right: 8,
+                            top: 8,
+                            color: "#666",
+                            "&:hover": {
+                              backgroundColor: "rgba(0, 0, 0, 0.1)",
+                            },
+                          }}
+                        >
+                          <CloseIcon />
+                        </IconButton>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Avatar
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              backgroundColor: "#ff5722",
+                              boxShadow: "0px 8px 20px rgba(255, 87, 34, 0.3)",
+                            }}
+                          >
+                            <WarningAmberIcon sx={{ fontSize: 40, color: "white" }} />
+                          </Avatar>
+
+                          <Typography
+                            variant="h5"
+                            sx={{
+                              fontWeight: "bold",
+                              color: "#333",
+                              textAlign: "center",
+                            }}
+                          >
+                            Confirmar Exclusão
+                          </Typography>
+                        </Box>
+                      </DialogTitle>
+
+                      <DialogContent sx={{ textAlign: "center", px: 4, pb: 2 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            color: "#555",
+                            fontSize: "18px",
+                            lineHeight: 1.6,
+                            maxWidth: "400px",
+                            mx: "auto",
+                          }}
+                        >
+                          Tem certeza que deseja remover o produto "<strong>{itemToDelete?.descricao}</strong>" do lote?
+                          <br />
+                          <strong>Esta ação não pode ser desfeita.</strong>
+                        </Typography>
+                      </DialogContent>
+
+                      <DialogActions
+                        sx={{
+                          justifyContent: "center",
+                          gap: 2,
+                          px: 4,
+                          pb: 4,
+                        }}
+                      >
+                        <Button
+                          onClick={() => setOpenDeleteDialog(false)}
+                          sx={{
+                            backgroundColor: "#9AE4FF",
+                            color: "#333",
+                            fontWeight: "bold",
+                            fontSize: "16px",
+                            borderRadius: "25px",
+                            padding: "12px 32px",
+                            minWidth: "120px",
+                            textTransform: "none",
+                            boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+                            "&:hover": {
+                              backgroundColor: "#7DD3FC",
+                              transform: "translateY(-2px)",
+                              boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+                            },
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+
+                        <Button
+                          onClick={confirmDeleteItem}
+                          sx={{
+                            backgroundColor: "#ff5722",
+                            color: "white",
+                            fontWeight: "bold",
+                            fontSize: "16px",
+                            borderRadius: "25px",
+                            padding: "12px 32px",
+                            minWidth: "120px",
+                            textTransform: "none",
+                            boxShadow: "0px 4px 12px rgba(255, 87, 34, 0.4)",
+                            "&:hover": {
+                              backgroundColor: "#e64a19",
+                              transform: "translateY(-2px)",
+                              boxShadow: "0px 6px 16px rgba(255, 87, 34, 0.6)",
+                            },
+                          }}
+                        >
+                          Excluir
+                        </Button>
+                      </DialogActions>
+                    </Dialog>
         <Dialog open={debugDialog} onClose={() => setDebugDialog(false)} maxWidth="md" fullWidth>
           <DialogTitle>Informações de Debug da API</DialogTitle>
           <DialogContent>
@@ -1035,5 +1403,6 @@ export default function CadastroLotePage() {
         </Dialog>
       </Box>
     </Box>
+    
   )
 }

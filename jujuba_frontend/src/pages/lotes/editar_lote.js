@@ -1090,9 +1090,10 @@ const formatarPreco = (preco) => Number(preco).toFixed(2)
   fullWidth
   PaperProps={{
     sx: {
-      borderRadius: "20px",
-      background: "#F5F5F5",
-      boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+      borderRadius: 3,
+      background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
+      boxShadow: "0px 8px 25px rgba(0, 0, 0, 0.15)",
+      border: "2px solid #e0e0e0",
       overflow: "visible",
       maxHeight: "90vh",
     },
@@ -1104,6 +1105,7 @@ const formatarPreco = (preco) => Number(preco).toFixed(2)
       pb: 2,
       pt: 4,
       position: "relative",
+      borderBottom: "2px solid #FADADD",
     }}
   >
     <IconButton
@@ -1131,16 +1133,16 @@ const formatarPreco = (preco) => Number(preco).toFixed(2)
         sx={{
           width: 80,
           height: 80,
-          backgroundColor: "#9AE4FF",
-          boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
+          backgroundColor: "#FADADD",
+          boxShadow: "0px 8px 20px rgba(250, 218, 221, 0.3)",
         }}
       >
-        <AddIcon sx={{ fontSize: 40, color: "white" }} />
+        <AddIcon sx={{ fontSize: 40, color: "#333" }} />
       </Avatar>
 
       <Typography
         variant="h5"
-        sx={{ fontWeight: "bold", color: "#333", textAlign: "center" }}
+        sx={{ fontWeight: 700, color: "#333", textAlign: "center" }}
       >
         Adicionar Novo Produto
       </Typography>
@@ -1148,153 +1150,289 @@ const formatarPreco = (preco) => Number(preco).toFixed(2)
   </DialogTitle>
 
   <DialogContent sx={{ px: 4, pb: 2 }}>
-    <Grid container spacing={2} sx={{ mt: 1 }}>
-      {/* Descrição - Mantido como xs={12} */}
-      <Grid item xs={12}>
-        <TextField
-          fullWidth
-          label="Descrição *"
-          name="descricao"
-          value={newItem.descricao}
-          onChange={handleNewItemChange}
-          variant="outlined"
-          required
-        />
-      </Grid>
+    <Paper
+      sx={{
+        p: 4,
+        mb: 3,
+        borderRadius: 3,
+        boxShadow: "0px 8px 25px rgba(0, 0, 0, 0.15)",
+        border: "2px solid #e0e0e0",
+        background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
+      }}
+    >
 
-      {/* Preço - Mantido como xs={6} com InputAdornment */}
-      <Grid item xs={6}>
-        <TextField
-          fullWidth
-          label="Preço *"
-          name="preco"
-          type="number"
-          value={newItem.preco}
-          onChange={handleNewItemChange}
-          variant="outlined"
-          required
-          InputProps={{
-            startAdornment: <InputAdornment position="start">R$</InputAdornment>,
-          }}
-        />
-      </Grid>
-
-      {/* Quantidade - Mantido como xs={6} */}
-      <Grid item xs={6}>
-        <TextField
-          fullWidth
-          label="Quantidade *"
-          name="quantidade"
-          type="number"
-          value={newItem.quantidade}
-          onChange={handleNewItemChange}
-          variant="outlined"
-          required
-        />
-      </Grid>
-
-      {/* Estado de Conservação - Mantido como xs={6} */}
-      <Grid item xs={6}>
-        <FormControl fullWidth>
-          <InputLabel>Estado de Conservação</InputLabel>
-          <Select
-            name="estadoConservacao"
-            value={newItem.estadoConservacao}
+      <Grid container spacing={3}>
+        {/* Descrição - Mantido como xs={12} */}
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Descrição do item"
+            name="descricao"
+            value={newItem.descricao}
             onChange={handleNewItemChange}
-            label="Estado de Conservação"
-          >
-            {Object.entries(ESTADOS_CONSERVACAO).map(([label, value]) => (
-              <MenuItem key={value} value={value}>
-                {label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Grid>
+            variant="outlined"
+            required
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "#fafafa",
+                "& fieldset": {
+                  borderColor: "#d0d0d0",
+                  borderWidth: 2,
+                },
+                "&:hover fieldset": {
+                  borderColor: "#FADADD",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#FADADD",
+                  borderWidth: 2,
+                },
+              },
+            }}
+          />
+        </Grid>
 
-      {/* Gênero - Mantido como xs={6} */}
-      <Grid item xs={6}>
-        <FormControl fullWidth>
-          <InputLabel>Gênero</InputLabel>
-          <Select name="genero" value={newItem.genero} onChange={handleNewItemChange} label="Gênero">
-            {Object.entries(GENEROS).map(([label, value]) => (
-              <MenuItem key={value} value={value}>
-                {label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Grid>
+        {/* Preço - Mantido como xs={6} com InputAdornment */}
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Valor (R$)"
+            name="preco"
+            type="number"
+            value={newItem.preco}
+            onChange={handleNewItemChange}
+            variant="outlined"
+            inputProps={{ step: 0.01, min: 0.01 }}
+            required
+            InputProps={{
+              startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "#fafafa",
+                "& fieldset": {
+                  borderColor: "#d0d0d0",
+                  borderWidth: 2,
+                },
+                "&:hover fieldset": {
+                  borderColor: "#FADADD",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#FADADD",
+                  borderWidth: 2,
+                },
+              },
+            }}
+          />
+        </Grid>
 
-      {/* Marca - Mantido como xs={6} */}
-      <Grid item xs={6}>
-        <TextField
-          fullWidth
-          label="Marca"
-          name="marca"
-          value={newItem.marca}
-          onChange={handleNewItemChange}
-          variant="outlined"
-        />
-      </Grid>
+        {/* Quantidade - Mantido como xs={6} */}
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Quantidade"
+            name="quantidade"
+            type="number"
+            value={newItem.quantidade}
+            onChange={handleNewItemChange}
+            variant="outlined"
+            inputProps={{ min: 1 }}
+            required
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "#fafafa",
+                "& fieldset": {
+                  borderColor: "#d0d0d0",
+                  borderWidth: 2,
+                },
+                "&:hover fieldset": {
+                  borderColor: "#FADADD",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#FADADD",
+                  borderWidth: 2,
+                },
+              },
+            }}
+          />
+        </Grid>
 
-      {/* Tamanho - Mantido como xs={6} */}
-      <Grid item xs={6}>
-        <TextField
-          fullWidth
-          label="Tamanho"
-          name="tamanho"
-          value={newItem.tamanho}
-          onChange={handleNewItemChange}
-          variant="outlined"
-        />
+        {/* Estado de Conservação - Mantido como xs={6} */}
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth>
+            <InputLabel>Estado de Conservação</InputLabel>
+            <Select
+              name="estadoConservacao"
+              value={newItem.estadoConservacao}
+              onChange={handleNewItemChange}
+              label="Estado de Conservação"
+              sx={{
+                borderRadius: 2,
+                backgroundColor: "#fafafa",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#d0d0d0",
+                  borderWidth: 2,
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#FADADD",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#FADADD",
+                  borderWidth: 2,
+                },
+              }}
+            >
+              {Object.entries(ESTADOS_CONSERVACAO).map(([label, value]) => (
+                <MenuItem key={value} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Gênero - Mantido como xs={6} */}
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth>
+            <InputLabel>Gênero</InputLabel>
+            <Select
+              name="genero"
+              value={newItem.genero}
+              onChange={handleNewItemChange}
+              label="Gênero"
+              sx={{
+                borderRadius: 2,
+                backgroundColor: "#fafafa",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#d0d0d0",
+                  borderWidth: 2,
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#FADADD",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#FADADD",
+                  borderWidth: 2,
+                },
+              }}
+            >
+              {Object.entries(GENEROS).map(([label, value]) => (
+                <MenuItem key={value} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Marca - Mantido como xs={6} */}
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Marca"
+            name="marca"
+            value={newItem.marca}
+            onChange={handleNewItemChange}
+            variant="outlined"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "#fafafa",
+                "& fieldset": {
+                  borderColor: "#d0d0d0",
+                  borderWidth: 2,
+                },
+                "&:hover fieldset": {
+                  borderColor: "#FADADD",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#FADADD",
+                  borderWidth: 2,
+                },
+              },
+            }}
+          />
+        </Grid>
+
+        {/* Tamanho - Mantido como xs={6} */}
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Tamanho"
+            name="tamanho"
+            value={newItem.tamanho}
+            onChange={handleNewItemChange}
+            variant="outlined"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "#fafafa",
+                "& fieldset": {
+                  borderColor: "#d0d0d0",
+                  borderWidth: 2,
+                },
+                "&:hover fieldset": {
+                  borderColor: "#FADADD",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#FADADD",
+                  borderWidth: 2,
+                },
+              },
+            }}
+          />
+        </Grid>
       </Grid>
-    </Grid>
+    </Paper>
   </DialogContent>
 
   <DialogActions sx={{ justifyContent: "center", gap: 2, px: 4, pb: 4 }}>
     <Button
       onClick={handleCloseNewItemDialog}
       sx={{
-        backgroundColor: "#9AE4FF",
+        backgroundColor: "#FADADD",
         color: "#333",
-        fontWeight: "bold",
-        fontSize: "16px",
-        borderRadius: "25px",
-        padding: "12px 32px",
+        fontWeight: 600,
+        fontSize: "1.1rem",
+        borderRadius: 25,
+        px: 6,
+        py: 2,
         minWidth: "120px",
         textTransform: "none",
-        boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+        boxShadow: "0px 4px 15px rgba(250, 218, 221, 0.3)",
+        transition: "all 0.3s ease",
         "&:hover": {
-          backgroundColor: "#7DD3FC",
+          backgroundColor: "#f8a8c8",
           transform: "translateY(-2px)",
-          boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+          boxShadow: "0px 6px 20px rgba(250, 218, 221, 0.4)",
         },
       }}
     >
       Cancelar
     </Button>
     <Button
-      onClick={handleAddNewItem}
       variant="contained"
+      onClick={handleAddNewItem}
       sx={{
         backgroundColor: "#FADADD",
         color: "#333",
-        fontWeight: "bold",
-        fontSize: "16px",
-        borderRadius: "25px",
-        padding: "12px 32px",
-        minWidth: "120px",
-        textTransform: "none",
-        boxShadow: "0px 4px 12px rgba(250, 218, 221, 0.4)",
         "&:hover": {
-          backgroundColor: "#FFB6C1",
+          backgroundColor: "#f8a8c8",
           transform: "translateY(-2px)",
-          boxShadow: "0px 6px 16px rgba(250, 218, 221, 0.6)",
+          boxShadow: "0px 6px 20px rgba(250, 218, 221, 0.4)",
         },
+        px: 6,
+        py: 2,
+        borderRadius: 25,
+        fontSize: "1.1rem",
+        fontWeight: 600,
+        boxShadow: "0px 4px 15px rgba(250, 218, 221, 0.3)",
+        transition: "all 0.3s ease",
       }}
     >
-      Adicionar
+      Adicionar Item
     </Button>
   </DialogActions>
 </Dialog>
