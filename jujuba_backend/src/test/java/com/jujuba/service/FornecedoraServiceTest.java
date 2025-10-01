@@ -3,10 +3,13 @@ package com.jujuba.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import com.jujuba.dto.FornecedoraCreateDTO;
 import com.jujuba.exception.FornecedoraNotFoundException;
 import com.jujuba.exception.InvalidDataException;
 import com.jujuba.model.Fornecedora;
@@ -28,12 +31,21 @@ class FornecedoraServiceTest {
     private FornecedoraRepository fornecedoraRepository;
 
     private Fornecedora fornecedora;
+    private FornecedoraCreateDTO fornecedoraDTO;
 
     @BeforeEach
     void setUp() {
         fornecedora = new Fornecedora();
         fornecedora.setId(1L);
         fornecedora.setNome("Fornecedor Teste");
+        
+        fornecedoraDTO = new FornecedoraCreateDTO();
+        fornecedoraDTO.setNome("Fornecedor Teste Atualizado");
+        fornecedoraDTO.setContato("11999999999");
+        fornecedoraDTO.setEndereco("Endereço Teste");
+        fornecedoraDTO.setChavePix("chave@teste.com");
+        fornecedoraDTO.setDataNascimento(LocalDate.of(1990, 1, 1));
+        fornecedoraDTO.setCreditoLoja(BigDecimal.valueOf(100.0));
     }
 
     @Test
@@ -64,20 +76,22 @@ class FornecedoraServiceTest {
 
     @Test
     void atualizar_ComIdExistente_DeveAtualizar() {
-        when(fornecedoraRepository.existsById(1L)).thenReturn(true);
-        when(fornecedoraRepository.save(fornecedora)).thenReturn(fornecedora);
+        when(fornecedoraRepository.findById(1L)).thenReturn(Optional.of(fornecedora));
+        when(fornecedoraRepository.save(any(Fornecedora.class))).thenReturn(fornecedora);
 
-        Fornecedora atualizada = fornecedoraService.atualizar(1L, fornecedora);
+        Fornecedora atualizada = fornecedoraService.atualizar(1L, fornecedoraDTO, "contrato-url.pdf");
 
         assertNotNull(atualizada);
         assertEquals(1L, atualizada.getId());
+        verify(fornecedoraRepository).findById(1L);
+        verify(fornecedoraRepository).save(any(Fornecedora.class));
     }
 
     @Test
     void atualizar_ComIdInexistente_DeveLancarExcecao() {
-        when(fornecedoraRepository.existsById(1L)).thenReturn(false);
+        when(fornecedoraRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(FornecedoraNotFoundException.class, () -> fornecedoraService.atualizar(1L, fornecedora));
+        assertThrows(FornecedoraNotFoundException.class, () -> fornecedoraService.atualizar(1L, fornecedoraDTO, "contrato-url.pdf"));
     }
 
     @Test
