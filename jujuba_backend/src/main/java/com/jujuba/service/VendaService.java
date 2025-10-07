@@ -13,6 +13,7 @@ import com.jujuba.repository.ProdutoRepository;
 import com.jujuba.repository.VendaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,6 +27,7 @@ public class VendaService {
     private final FornecedoraRepository fornecedoraRepository;
     private final ProdutoRepository produtoRepository;
 
+    @Transactional
     public Venda finalizarVendaSimples() {
         List<Produto> produtosCarrinho = carrinhoService.listarProdutos();
 
@@ -48,6 +50,7 @@ public class VendaService {
         return vendaRepository.save(venda);
     }
 
+    @Transactional
     public Venda finalizarVendaFornecedora(Long fornecedoraId) {
         List<Produto> produtosCarrinho = carrinhoService.listarProdutos();
 
@@ -84,7 +87,9 @@ public class VendaService {
 
     private void atualizarEstoque(List<Produto> produtos) {
         for (Produto produto : produtos) {
-            produto.setQuantidade(produto.getQuantidade() - 1);
+            Integer atual = produto.getQuantidade() != null ? produto.getQuantidade() : 0;
+            int novo = Math.max(0, atual - 1);
+            produto.setQuantidade(novo);
             produtoRepository.save(produto);
         }
     }

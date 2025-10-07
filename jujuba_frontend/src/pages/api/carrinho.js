@@ -6,12 +6,13 @@ const BASE_URL = "http://localhost:8080/api/carrinho";
  * @param {Error} error - O objeto de erro capturado.
  * @returns {object} - Um objeto de resposta de erro padronizado.
  */
-const tratarErro = (error ) => {
+const tratarErro = (error) => {
   // Erro de rede ou conexão (ex: backend desligado)
   if (error.name === "TypeError" && error.message.includes("fetch")) {
     return {
       sucesso: false,
-      mensagem: "Erro de conexão com o servidor. Verifique se o backend está rodando.",
+      mensagem:
+        "Erro de conexão com o servidor. Verifique se o backend está rodando.",
       detalhes: error.message,
     };
   }
@@ -42,21 +43,23 @@ export const listarCarrinho = async () => {
     // Faz duas chamadas em paralelo para os endpoints de itens e total
     const [itensResponse, totalResponse] = await Promise.all([
       fetch(BASE_URL, { method: "GET" }),
-      fetch(`${BASE_URL}/total`, { method: "GET" })
+      fetch(`${BASE_URL}/total`, { method: "GET" }),
     ]);
 
     // Processa a resposta dos itens do carrinho
     let itens = [];
     // O status 204 significa "No Content" (carrinho vazio), então a resposta não tem corpo
     if (itensResponse.status !== 204) {
-      if (!itensResponse.ok) throw new Error(`Erro ao buscar itens: ${itensResponse.status}`);
+      if (!itensResponse.ok)
+        throw new Error(`Erro ao buscar itens: ${itensResponse.status}`);
       itens = await itensResponse.json();
     }
 
     // Processa a resposta do valor total
     let valorTotal = 0;
     if (totalResponse.status !== 204) {
-      if (!totalResponse.ok) throw new Error(`Erro ao buscar total: ${totalResponse.status}`);
+      if (!totalResponse.ok)
+        throw new Error(`Erro ao buscar total: ${totalResponse.status}`);
       valorTotal = await totalResponse.json();
     }
 
@@ -64,7 +67,7 @@ export const listarCarrinho = async () => {
     const carrinhoCompleto = {
       itens: itens || [], // Garante que seja sempre um array
       valorTotal: Number(valorTotal) || 0, // Garante que seja sempre um número
-      totalItens: (itens || []).length
+      totalItens: (itens || []).length,
     };
 
     return {
@@ -72,7 +75,6 @@ export const listarCarrinho = async () => {
       carrinho: carrinhoCompleto,
       mensagem: "Carrinho carregado com sucesso!",
     };
-
   } catch (error) {
     console.error("Erro ao listar o carrinho:", error);
     return tratarErro(error);
@@ -87,6 +89,16 @@ export const listarCarrinho = async () => {
  */
 export const adicionarAoCarrinho = async (produto, quantidade) => {
   try {
+    // Verificação rápida no cliente: não adiciona produto sem estoque
+    if (
+      !produto ||
+      (typeof produto.quantidade === "number" && produto.quantidade <= 0)
+    ) {
+      return {
+        sucesso: false,
+        mensagem: "Não é possível adicionar ao carrinho: produto sem estoque.",
+      };
+    }
     // O backend espera o ID na URL e não espera um corpo na requisição.
     const response = await fetch(`${BASE_URL}/adicionar/${produto.id}`, {
       method: "POST",
@@ -99,7 +111,8 @@ export const adicionarAoCarrinho = async (produto, quantidade) => {
     if (!response.ok) {
       // Tenta extrair uma mensagem de erro mais clara do backend, se houver
       const erroData = await response.json().catch(() => null);
-      const mensagemErro = erroData?.mensagem || `Erro no servidor (status: ${response.status})`;
+      const mensagemErro =
+        erroData?.mensagem || `Erro no servidor (status: ${response.status})`;
       throw new Error(mensagemErro);
     }
 
@@ -107,7 +120,6 @@ export const adicionarAoCarrinho = async (produto, quantidade) => {
     // precisamos chamar listarCarrinho() novamente para obter o estado atualizado
     // e retorná-lo para o componente que fez a chamada.
     return await listarCarrinho();
-
   } catch (error) {
     console.error("Erro ao adicionar produto ao carrinho:", error);
     return tratarErro(error);
@@ -131,7 +143,6 @@ export const removerDoCarrinho = async (produtoId) => {
     // A resposta de remoção também é vazia, então buscamos o carrinho novamente
     // para que a interface do usuário seja atualizada corretamente.
     return await listarCarrinho();
-
   } catch (error) {
     console.error("Erro ao remover produto do carrinho:", error);
     return tratarErro(error);

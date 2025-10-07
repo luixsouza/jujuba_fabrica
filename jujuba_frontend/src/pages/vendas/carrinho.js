@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect, forwardRef } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, forwardRef } from "react";
+import { useRouter } from "next/navigation";
 
 // Material-UI
 import {
@@ -34,7 +34,7 @@ import {
   Alert,
   Avatar,
   Slide,
-} from "@mui/material"
+} from "@mui/material";
 
 // Ícones
 import {
@@ -50,15 +50,16 @@ import {
   Category as CategoryIcon,
   CalendarMonth as CalendarMonthIcon,
   Warning as WarningIcon,
-} from "@mui/icons-material"
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+} from "@mui/icons-material";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 
 // Componentes e APIs
-import Sidebar from "../../components/sidebar"
-import { removerDoCarrinho, listarCarrinho } from "../api/carrinho"
-import { finalizarVendaSimples } from "../api/vendas"
+import Sidebar from "../../components/sidebar";
+import { removerDoCarrinho, listarCarrinho } from "../api/carrinho";
+import { finalizarVendaSimples } from "../api/vendas";
+import { listarProdutos, buscarProdutoPorId } from "../api/produtos";
 
 // Função de formatação segura
 const formatarPreco = (valor) => {
@@ -69,18 +70,18 @@ const formatarPreco = (valor) => {
   return numero.toFixed(2).replace(".", ",");
 };
 export default function CarrinhoPage() {
-  const router = useRouter()
-  const [search, setSearch] = useState("")
-  const [openSellModal, setOpenSellModal] = useState(false)
-  const [openViewModal, setOpenViewModal] = useState(false)
-  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false)
-  const [selectedItem, setSelectedItem] = useState(null)
-  const [itemToDelete, setItemToDelete] = useState(null)
-  const [cartItems, setCartItems] = useState([])
-  const [totalValue, setTotalValue] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [searchOptions, setSearchOptions] = useState([])
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [openSellModal, setOpenSellModal] = useState(false);
+  const [openViewModal, setOpenViewModal] = useState(false);
+  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
+  const [totalValue, setTotalValue] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchOptions, setSearchOptions] = useState([]);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -92,10 +93,9 @@ export default function CarrinhoPage() {
     setTabValue(newValue);
   };
 
-const Transition = forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
-
+  const Transition = forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+  });
 
   const [openProductModal, setOpenProductModal] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
@@ -113,46 +113,56 @@ const Transition = forwardRef(function Transition(props, ref) {
   useEffect(() => {
     const fetchCartItems = async () => {
       try {
-        setLoading(true)
+        setLoading(true);
         setError(null);
-        const response = await listarCarrinho()
+        const response = await listarCarrinho();
         if (response.sucesso && response.carrinho) {
           setCartItems(response.carrinho.itens || []);
           setTotalValue(Number(response.carrinho.valorTotal) || 0);
 
           // CORREÇÃO: Acessar a descrição diretamente do item
-          const options = (response.carrinho.itens || []).map((item) => item.descricao);
+          const options = (response.carrinho.itens || []).map(
+            (item) => item.descricao
+          );
           setSearchOptions([...new Set(options)]);
-
         } else {
-          console.error("Erro ao carregar itens do carrinho:", response.mensagem)
-          setError("Não foi possível carregar os itens do carrinho: " + response.mensagem)
+          console.error(
+            "Erro ao carregar itens do carrinho:",
+            response.mensagem
+          );
+          setError(
+            "Não foi possível carregar os itens do carrinho: " +
+              response.mensagem
+          );
           setCartItems([]);
           setTotalValue(0);
         }
       } catch (error) {
-        console.error("Erro ao carregar itens do carrinho:", error)
-        setError("Não foi possível carregar os itens do carrinho. Verifique a conexão com o servidor.")
+        console.error("Erro ao carregar itens do carrinho:", error);
+        setError(
+          "Não foi possível carregar os itens do carrinho. Verifique a conexão com o servidor."
+        );
         setCartItems([]);
         setTotalValue(0);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchCartItems()
-  }, [])
+    fetchCartItems();
+  }, []);
 
   const handleOpenSellModal = () => setOpenSellModal(true);
   const handleCloseSellModal = () => setOpenSellModal(false);
-  const handleVenderParaFornecedor = () => router.push("/vendas/vender_fornecedor");
+  const handleVenderParaFornecedor = () =>
+    router.push("/vendas/vender_fornecedor");
 
   const handleConfirmDeleteItem = (id) => {
     // CORREÇÃO: Acessar o ID diretamente do item
     const item = cartItems.find((item) => item.id === id);
     setItemToDelete(item);
     setOpenDeleteConfirmation(true);
-  }
+  };
 
   const handleDeleteItem = async () => {
     if (itemToDelete) {
@@ -172,7 +182,11 @@ const Transition = forwardRef(function Transition(props, ref) {
           });
         } else {
           console.error("Erro ao remover item do carrinho:", result.mensagem);
-          setSnackbar({ open: true, message: `Erro ao remover item: ${result.mensagem}`, severity: "error" });
+          setSnackbar({
+            open: true,
+            message: `Erro ao remover item: ${result.mensagem}`,
+            severity: "error",
+          });
         }
 
         if (selectedItem && selectedItem.id === itemToDelete.id) {
@@ -180,24 +194,28 @@ const Transition = forwardRef(function Transition(props, ref) {
         }
       } catch (error) {
         console.error("Erro ao remover item do carrinho:", error);
-        setSnackbar({ open: true, message: "Erro ao remover item. Verifique a conexão.", severity: "error" });
+        setSnackbar({
+          open: true,
+          message: "Erro ao remover item. Verifique a conexão.",
+          severity: "error",
+        });
       } finally {
         setLoading(false);
       }
     }
     setOpenDeleteConfirmation(false);
     setItemToDelete(null);
-  }
+  };
 
   const handleCancelDelete = () => {
     setOpenDeleteConfirmation(false);
     setItemToDelete(null);
-  }
+  };
 
   const handleViewItem = (item) => {
     setSelectedItem(item);
     setOpenViewModal(true);
-  }
+  };
 
   const handleCloseViewModal = () => setOpenViewModal(false);
 
@@ -205,41 +223,125 @@ const Transition = forwardRef(function Transition(props, ref) {
     try {
       setLoading(true);
       setError(null);
+      // Valida estoque atual antes de finalizar: evita vender produto sem estoque
+      for (const item of cartItems) {
+        try {
+          const resp = await buscarProdutoPorId(item.id);
+          if (resp?.sucesso && resp.produto) {
+            const estoqueAtual = Number(resp.produto.quantidade) || 0;
+            const qtdNoCarrinho = Number(item.quantidade) || 1;
+            if (estoqueAtual < qtdNoCarrinho) {
+              setSnackbar({
+                open: true,
+                message: `Não é possível finalizar: "${item.descricao}" possui estoque insuficiente (${estoqueAtual}).`,
+                severity: "error",
+              });
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (e) {
+          // se falhar a checagem por qualquer motivo, continuar e deixar o backend validar
+          console.warn("Falha ao verificar estoque do produto", item.id, e);
+        }
+      }
+
       const result = await finalizarVendaSimples();
       if (result.sucesso) {
         setCartItems([]);
         setTotalValue(0);
         setOpenSellModal(false);
-        setSnackbar({ open: true, message: "Venda finalizada com sucesso!", severity: "success" });
+        setSnackbar({
+          open: true,
+          message: "Venda finalizada com sucesso!",
+          severity: "success",
+        });
+        // Recarrega o estoque no frontend (faz uma chamada ao backend) e notifica outras páginas
+        try {
+          await listarProdutos();
+        } catch (e) {
+          // Não crítico — apenas log
+          console.warn("Falha ao atualizar produtos após venda:", e);
+        }
+        // Dispara evento global para que a página de estoque possa escutar e recarregar
+        try {
+          window.dispatchEvent(new Event("estoque-atualizado"));
+        } catch (e) {
+          console.warn(
+            "Não foi possível disparar evento de estoque atualizado:",
+            e
+          );
+        }
         router.push("/vendas/vendas");
       } else {
         console.error("Erro ao finalizar venda:", result.mensagem);
-        setSnackbar({ open: true, message: `Erro ao finalizar venda: ${result.mensagem}`, severity: "error" });
+        setSnackbar({
+          open: true,
+          message: `Erro ao finalizar venda: ${result.mensagem}`,
+          severity: "error",
+        });
       }
     } catch (error) {
       console.error("Erro ao finalizar venda:", error);
-      setSnackbar({ open: true, message: "Erro ao finalizar venda. Verifique a conexão.", severity: "error" });
+      setSnackbar({
+        open: true,
+        message: "Erro ao finalizar venda. Verifique a conexão.",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const handleSearch = (event, newValue) => setSearch(newValue || "");
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
   // CORREÇÃO: Filtrar usando item.descricao diretamente
-  const filteredCartItems = (cartItems || []).filter(item =>
+  const filteredCartItems = (cartItems || []).filter((item) =>
     item?.descricao?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
+    <Box
+      sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
+    >
       <Sidebar />
-      <Box component="main" sx={{ flex: 1, marginLeft: { xs: 0, sm: "290px" }, maxHeight: "1000px", overflow: "auto", backgroundColor: "#9AE4FF", paddingTop: "3rem", paddingX: { xs: "1rem", sm: "2rem" } }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "80px" }}>
-          <Typography variant="h4" sx={{ fontWeight: "bold", fontSize: "50px", color: "#000000" }}>Carrinho</Typography>
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          marginLeft: { xs: 0, sm: "290px" },
+          maxHeight: "1000px",
+          overflow: "auto",
+          backgroundColor: "#9AE4FF",
+          paddingTop: "3rem",
+          paddingX: { xs: "1rem", sm: "2rem" },
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "80px",
+          }}
+        >
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: "bold", fontSize: "50px", color: "#000000" }}
+          >
+            Carrinho
+          </Typography>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "30px", width: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: "30px",
+            width: "100%",
+          }}
+        >
           <Autocomplete
             freeSolo
             options={searchOptions}
@@ -247,28 +349,109 @@ const Transition = forwardRef(function Transition(props, ref) {
             onChange={handleSearch}
             onInputChange={(event, newValue) => setSearch(newValue || "")}
             renderInput={(params) => (
-              <TextField {...params} placeholder="Pesquisar produto no carrinho" variant="outlined" size="medium"
-                InputProps={{ ...params.InputProps, startAdornment: (<InputAdornment position="start"><SearchIcon sx={{ color: "#000000" }} /></InputAdornment>), sx: { height: "60px" } }}
-                sx={{ width: "100%", maxWidth: "1800px", backgroundColor: "#F5F5F5", my: "50px", borderRadius: "10px", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+              <TextField
+                {...params}
+                placeholder="Pesquisar produto no carrinho"
+                variant="outlined"
+                size="medium"
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: "#000000" }} />
+                    </InputAdornment>
+                  ),
+                  sx: { height: "60px" },
+                }}
+                sx={{
+                  width: "100%",
+                  maxWidth: "1800px",
+                  backgroundColor: "#F5F5F5",
+                  my: "50px",
+                  borderRadius: "10px",
+                  "& .MuiOutlinedInput-root": { borderRadius: "10px" },
+                }}
               />
             )}
             sx={{ width: "100%", maxWidth: "1800px" }}
           />
         </Box>
-        <Card sx={{ padding: "20px", boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)", borderRadius: "25px", backgroundColor: "#F5F5F5", border: "2px solid #B0B0B0" }}>
+        <Card
+          sx={{
+            padding: "20px",
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            borderRadius: "25px",
+            backgroundColor: "#F5F5F5",
+            border: "2px solid #B0B0B0",
+          }}
+        >
           <CardContent sx={{ p: 1 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: "#333", fontSize: "2rem" }}>Itens no carrinho</Typography>
-            {loading && <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}><CircularProgress sx={{ color: "#ffccd5" }} /></Box>}
-            {error && <Box sx={{ bgcolor: "#ffebee", p: 2, borderRadius: 2, mb: 3 }}><Typography color="error">{error}</Typography></Box>}
+            <Typography
+              variant="h6"
+              sx={{ mb: 2, fontWeight: 700, color: "#333", fontSize: "2rem" }}
+            >
+              Itens no carrinho
+            </Typography>
+            {loading && (
+              <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+                <CircularProgress sx={{ color: "#ffccd5" }} />
+              </Box>
+            )}
+            {error && (
+              <Box sx={{ bgcolor: "#ffebee", p: 2, borderRadius: 2, mb: 3 }}>
+                <Typography color="error">{error}</Typography>
+              </Box>
+            )}
             {!loading && !error && (
               <Table sx={{ mb: 3 }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell align="center" sx={{ fontSize: "18px", backgroundColor: "#FADADD", borderRight: "2px solid #F5F5F5" }}>Descrição</TableCell>
-                    <TableCell align="center" sx={{ fontSize: "18px", backgroundColor: "#FADADD", borderRight: "2px solid #F5F5F5" }}>Estado de conservação</TableCell>
-                    <TableCell align="center" sx={{ fontSize: "18px", backgroundColor: "#FADADD", borderRight: "2px solid #F5F5F5" }}>Valor</TableCell>
-                    <TableCell align="center" sx={{ fontSize: "18px", backgroundColor: "#FADADD", borderRight: "2px solid #F5F5F5" }}>Lote</TableCell>
-                    <TableCell align="center" sx={{ fontSize: "18px", backgroundColor: "#FADADD" }}>Ações</TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontSize: "18px",
+                        backgroundColor: "#FADADD",
+                        borderRight: "2px solid #F5F5F5",
+                      }}
+                    >
+                      Descrição
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontSize: "18px",
+                        backgroundColor: "#FADADD",
+                        borderRight: "2px solid #F5F5F5",
+                      }}
+                    >
+                      Estado de conservação
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontSize: "18px",
+                        backgroundColor: "#FADADD",
+                        borderRight: "2px solid #F5F5F5",
+                      }}
+                    >
+                      Valor
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontSize: "18px",
+                        backgroundColor: "#FADADD",
+                        borderRight: "2px solid #F5F5F5",
+                      }}
+                    >
+                      Lote
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{ fontSize: "18px", backgroundColor: "#FADADD" }}
+                    >
+                      Ações
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -277,33 +460,94 @@ const Transition = forwardRef(function Transition(props, ref) {
                       // CORREÇÃO: Usar item.id e acessar propriedades diretamente
                       <TableRow key={item.id}>
                         <TableCell>{item.descricao}</TableCell>
-                        <TableCell align="center">{item.estadoConservacao}</TableCell>
-                        <TableCell align="center">R$ {formatarPreco(item.preco)}</TableCell>
+                        <TableCell align="center">
+                          {item.estadoConservacao}
+                        </TableCell>
+                        <TableCell align="center">
+                          R$ {formatarPreco(item.preco)}
+                        </TableCell>
                         <TableCell align="center">{item.lote || "-"}</TableCell>
                         <TableCell align="center">
-                          <IconButton size="small" onClick={() => handleOpenProductModal(item)} sx={{ color: "#00509E" }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenProductModal(item)}
+                            sx={{ color: "#00509E" }}
+                          >
                             <VisibilityIcon fontSize="small" />
                           </IconButton>
-                          <IconButton size="small" onClick={() => handleConfirmDeleteItem(item.id)} sx={{ color: "#00509E" }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleConfirmDeleteItem(item.id)}
+                            sx={{ color: "#00509E" }}
+                          >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>Nenhum item no carrinho</TableCell></TableRow>
+                    <TableRow>
+                      <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                        Nenhum item no carrinho
+                      </TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>
             )}
             {!loading && !error && (
-              <Box sx={{ display: "inline-block", bgcolor: "#b3e5fc", px: 2, py: 0.5, borderRadius: 1, mb: 3 }}>
-                <Typography sx={{ fontWeight: 500, fontSize: "0.9rem", color: "#333" }}>Valor Total: R$ {formatarPreco(totalValue)}</Typography>
+              <Box
+                sx={{
+                  display: "inline-block",
+                  bgcolor: "#b3e5fc",
+                  px: 2,
+                  py: 0.5,
+                  borderRadius: 1,
+                  mb: 3,
+                }}
+              >
+                <Typography
+                  sx={{ fontWeight: 500, fontSize: "0.9rem", color: "#333" }}
+                >
+                  Valor Total: R$ {formatarPreco(totalValue)}
+                </Typography>
               </Box>
             )}
-            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-              <Button variant="contained" onClick={handleVenderParaFornecedor} sx={{ bgcolor: "#ffc1cc", color: "black", "&:hover": { bgcolor: "#ffb6c1" }, borderRadius: 10, px: 4, py: 1.5, fontSize: "1rem" }}>Vender para fornecedor</Button>
-              <Button variant="contained" onClick={handleOpenSellModal} disabled={cartItems.length === 0 || loading} sx={{ bgcolor: "#ffc1cc", color: "black", "&:hover": { bgcolor: "#ffb6c1" }, borderRadius: 10, px: 5, py: 1.5, fontSize: "1rem", "&.Mui-disabled": { bgcolor: "#f5f5f5", color: "#999" } }}>Vender</Button>
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}
+            >
+              <Button
+                variant="contained"
+                onClick={handleVenderParaFornecedor}
+                sx={{
+                  bgcolor: "#ffc1cc",
+                  color: "black",
+                  "&:hover": { bgcolor: "#ffb6c1" },
+                  borderRadius: 10,
+                  px: 4,
+                  py: 1.5,
+                  fontSize: "1rem",
+                }}
+              >
+                Vender para fornecedor
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleOpenSellModal}
+                disabled={cartItems.length === 0 || loading}
+                sx={{
+                  bgcolor: "#ffc1cc",
+                  color: "black",
+                  "&:hover": { bgcolor: "#ffb6c1" },
+                  borderRadius: 10,
+                  px: 5,
+                  py: 1.5,
+                  fontSize: "1rem",
+                  "&.Mui-disabled": { bgcolor: "#f5f5f5", color: "#999" },
+                }}
+              >
+                Vender
+              </Button>
             </Box>
           </CardContent>
         </Card>
@@ -389,15 +633,15 @@ const Transition = forwardRef(function Transition(props, ref) {
             sx={{
               mb: 3,
               "& .MuiTab-root": {
-              fontWeight: "bold",
-              fontSize: "16px",
-              color: "#333", // cor padrão quando não selecionado
-            },
-            "& .MuiTab-root.Mui-selected": {
-              color: "#9AE4FF", // cor azul quando ativo
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
+                fontWeight: "bold",
+                fontSize: "16px",
+                color: "#333", // cor padrão quando não selecionado
+              },
+              "& .MuiTab-root.Mui-selected": {
+                color: "#9AE4FF", // cor azul quando ativo
+              },
+              "& .MuiTabs-indicator": {
+                backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
               },
             }}
           >
@@ -411,7 +655,10 @@ const Transition = forwardRef(function Transition(props, ref) {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
+                    >
                       Dados do Produto
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
@@ -422,21 +669,38 @@ const Transition = forwardRef(function Transition(props, ref) {
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Estado:</strong>{" "}
-                      <Chip label={produtoSelecionado.estadoConservacao} color="success" size="small" />
+                      <Chip
+                        label={produtoSelecionado.estadoConservacao}
+                        color="success"
+                        size="small"
+                      />
                     </Typography>
                   </Paper>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
+                    >
                       Preço e Estoque
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 1, fontSize: "18px", fontWeight: "bold", color: "#4CAF50" }}>
-                      <strong>Preço:</strong> R$ {formatarPreco(produtoSelecionado.preco)}
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 1,
+                        fontSize: "18px",
+                        fontWeight: "bold",
+                        color: "#4CAF50",
+                      }}
+                    >
+                      <strong>Preço:</strong> R${" "}
+                      {formatarPreco(produtoSelecionado.preco)}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Quantidade:</strong> {produtoSelecionado.quantidade} unidades
+                      <strong>Quantidade:</strong>{" "}
+                      {produtoSelecionado.quantidade} unidades
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
@@ -453,11 +717,14 @@ const Transition = forwardRef(function Transition(props, ref) {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
+                    >
                       Características
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                       <strong>Marca:</strong> {produtoSelecionado.marca}
+                      <strong>Marca:</strong> {produtoSelecionado.marca}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Gênero:</strong> {produtoSelecionado.genero}
@@ -467,13 +734,18 @@ const Transition = forwardRef(function Transition(props, ref) {
 
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
+                    >
                       Controle
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Data de Adição:</strong>{" "}
                       {produtoSelecionado.dataAdicao
-                        ? new Date(produtoSelecionado.dataAdicao).toLocaleDateString("pt-BR")
+                        ? new Date(
+                            produtoSelecionado.dataAdicao
+                          ).toLocaleDateString("pt-BR")
                         : "Não informada"}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
@@ -521,11 +793,10 @@ const Transition = forwardRef(function Transition(props, ref) {
           >
             Fechar
           </Button>
-
         </DialogActions>
       </Dialog>
 
-        <Dialog
+      <Dialog
         open={openDeleteConfirmation}
         onClose={handleCancelDelete}
         maxWidth="sm"
@@ -541,7 +812,9 @@ const Transition = forwardRef(function Transition(props, ref) {
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.5rem", color: "#000" }}>
+        <DialogTitle
+          sx={{ fontWeight: "bold", fontSize: "1.5rem", color: "#000" }}
+        >
           <WarningIcon sx={{ fontSize: 50, color: "orange", mb: 2 }} />
           <br />
           Confirmar Remoção
@@ -660,7 +933,11 @@ const Transition = forwardRef(function Transition(props, ref) {
             centered
             sx={{
               mb: 3,
-              "& .MuiTab-root": { fontWeight: "bold", fontSize: "16px", color: "#333" },
+              "& .MuiTab-root": {
+                fontWeight: "bold",
+                fontSize: "16px",
+                color: "#333",
+              },
               "& .MuiTab-root.Mui-selected": { color: "#9AE4FF" },
               "& .MuiTabs-indicator": { backgroundColor: "#9AE4FF" },
             }}
@@ -698,12 +975,23 @@ const Transition = forwardRef(function Transition(props, ref) {
                 </TableHead>
                 <TableBody>
                   {cartItems.map((item) => (
-                    <TableRow key={item.id} sx={{ "&:hover": { bgcolor: "#E0E0E0" } }}>
+                    <TableRow
+                      key={item.id}
+                      sx={{ "&:hover": { bgcolor: "#E0E0E0" } }}
+                    >
                       <TableCell>{item.descricao}</TableCell>
-                      <TableCell align="center">{item.quantidade || 1}</TableCell>
-                      <TableCell align="center">R$ {formatarPreco(item.preco)}</TableCell>
                       <TableCell align="center">
-                        R$ {formatarPreco((item.preco || 0) * (item.quantidade || 1))}
+                        {item.quantidade != null ? item.quantidade : 1}
+                      </TableCell>
+                      <TableCell align="center">
+                        R$ {formatarPreco(item.preco)}
+                      </TableCell>
+                      <TableCell align="center">
+                        R${" "}
+                        {formatarPreco(
+                          (item.preco || 0) *
+                            (item.quantidade != null ? item.quantidade : 1)
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -715,7 +1003,9 @@ const Transition = forwardRef(function Transition(props, ref) {
           {/* Tab 1: Resumo e Total */}
           {tabValue === 1 && (
             <Box sx={{ textAlign: "right", mt: 2 }}>
-              <Typography sx={{ fontWeight: "bold", fontSize: "1.2rem", mb: 2 }}>
+              <Typography
+                sx={{ fontWeight: "bold", fontSize: "1.2rem", mb: 2 }}
+              >
                 Valor Total: R$ {formatarPreco(totalValue)}
               </Typography>
               <Typography sx={{ fontSize: "1rem", color: "#555" }}>
@@ -782,11 +1072,22 @@ const Transition = forwardRef(function Transition(props, ref) {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }} variant="filled" elevation={6}>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+          variant="filled"
+          elevation={6}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>
-  )
+  );
 }

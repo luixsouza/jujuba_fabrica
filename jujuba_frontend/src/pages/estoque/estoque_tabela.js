@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Card,
@@ -32,27 +32,27 @@ import {
   Tabs,
   Tab,
   Slide,
-} from "@mui/material"
-import CloseIcon from "@mui/icons-material/Close"
-import Sidebar from "../../components/sidebar"
-import VisibilityIcon from "@mui/icons-material/Visibility"
-import SearchIcon from "@mui/icons-material/Search"
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"
-import InventoryIcon from "@mui/icons-material/Inventory"
-import { forwardRef } from "react"
-import { useRouter } from "next/navigation"
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import Sidebar from "../../components/sidebar";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import SearchIcon from "@mui/icons-material/Search";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import { forwardRef } from "react";
+import { useRouter } from "next/navigation";
 
 // Importações da API corrigidas
-import { listarProdutos } from "../api/produtos"
-import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho" // Agora aponta para o arquivo correto
+import { listarProdutos } from "../api/produtos";
+import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho"; // Agora aponta para o arquivo correto
 
 const Transition = forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />
-})
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 const normalizarProduto = (produto) => {
   if (!produto || typeof produto !== "object") {
-    return null
+    return null;
   }
 
   return {
@@ -62,53 +62,63 @@ const normalizarProduto = (produto) => {
     tamanho: produto.tamanho || "Tamanho não informado",
     genero: produto.genero || "Não especificado",
     estadoConservacao: produto.estadoConservacao || "Não informado",
-    quantidade: Number(produto.quantidade) || 1,
+    quantidade: produto.quantidade != null ? Number(produto.quantidade) : 1,
     preco: Number(produto.preco) || 0,
     categoria: produto.categoria || "Sem categoria",
     cor: produto.cor || "Não informada",
     material: produto.material || "Não informado",
     dataAdicao: produto.dataAdicao || new Date().toISOString(),
     ativo: produto.ativo !== false,
-  }
-}
+  };
+};
 
 const criarOpcoesBusca = (produtos) => {
   if (!Array.isArray(produtos) || produtos.length === 0) {
-    return []
+    return [];
   }
 
-  const opcoes = new Set()
+  const opcoes = new Set();
 
   produtos.forEach((produto) => {
-    const produtoNormalizado = normalizarProduto(produto)
+    const produtoNormalizado = normalizarProduto(produto);
     if (produtoNormalizado) {
-      if (produtoNormalizado.id) opcoes.add(produtoNormalizado.id.toString())
-      if (produtoNormalizado.descricao) opcoes.add(produtoNormalizado.descricao)
-      if (produtoNormalizado.marca && produtoNormalizado.marca !== "Marca não informada") {
-        opcoes.add(produtoNormalizado.marca)
+      if (produtoNormalizado.id) opcoes.add(produtoNormalizado.id.toString());
+      if (produtoNormalizado.descricao)
+        opcoes.add(produtoNormalizado.descricao);
+      if (
+        produtoNormalizado.marca &&
+        produtoNormalizado.marca !== "Marca não informada"
+      ) {
+        opcoes.add(produtoNormalizado.marca);
       }
-      if (produtoNormalizado.genero && produtoNormalizado.genero !== "Não especificado") {
-        opcoes.add(produtoNormalizado.genero)
+      if (
+        produtoNormalizado.genero &&
+        produtoNormalizado.genero !== "Não especificado"
+      ) {
+        opcoes.add(produtoNormalizado.genero);
       }
-      if (produtoNormalizado.categoria && produtoNormalizado.categoria !== "Sem categoria") {
-        opcoes.add(produtoNormalizado.categoria)
+      if (
+        produtoNormalizado.categoria &&
+        produtoNormalizado.categoria !== "Sem categoria"
+      ) {
+        opcoes.add(produtoNormalizado.categoria);
       }
     }
-  })
+  });
 
-  return Array.from(opcoes).sort()
-}
+  return Array.from(opcoes).sort();
+};
 
 const filtrarProdutos = (produtos, query) => {
   if (!Array.isArray(produtos) || !query || typeof query !== "string") {
-    return produtos
+    return produtos;
   }
 
-  const queryLower = query.toLowerCase().trim()
+  const queryLower = query.toLowerCase().trim();
 
   return produtos.filter((produto) => {
-    const produtoNormalizado = normalizarProduto(produto)
-    if (!produtoNormalizado) return false
+    const produtoNormalizado = normalizarProduto(produto);
+    if (!produtoNormalizado) return false;
 
     const campos = [
       produtoNormalizado.id?.toString(),
@@ -118,157 +128,181 @@ const filtrarProdutos = (produtos, query) => {
       produtoNormalizado.categoria,
       produtoNormalizado.tamanho,
       produtoNormalizado.cor,
-    ]
+    ];
 
-    return campos.some((campo) => campo && campo.toLowerCase().includes(queryLower))
-  })
-}
+    return campos.some(
+      (campo) => campo && campo.toLowerCase().includes(queryLower)
+    );
+  });
+};
 
 const formatarPreco = (preco) => {
-  const precoNumerico = Number(preco) || 0
-  return precoNumerico.toFixed(2).replace(".", ",")
-}
+  const precoNumerico = Number(preco) || 0;
+  return precoNumerico.toFixed(2).replace(".", ",");
+};
 
 export default function EstoquePage() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const [searchQuery, setSearchQuery] = useState("")
-  const [produtos, setProdutos] = useState([])
-  const [produtoSelecionado, setProdutoSelecionado] = useState(null)
-  const [searchOptions, setSearchOptions] = useState([])
-  const [cartItemCount, setCartItemCount] = useState(0)
-  const [tabValue, setTabValue] = useState(0)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [produtos, setProdutos] = useState([]);
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  const [searchOptions, setSearchOptions] = useState([]);
+  const [cartItemCount, setCartItemCount] = useState(0);
+  const [tabValue, setTabValue] = useState(0);
 
-  const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  const [openProductModal, setOpenProductModal] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [openProductModal, setOpenProductModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
-  })
+  });
 
   const mostrarSnackbar = (message, severity = "success") => {
     setSnackbar({
       open: true,
       message,
       severity,
-    })
-  }
+    });
+  };
 
   const buscarDadosIniciais = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
 
-      const produtosResponse = await listarProdutos()
-      if (produtosResponse?.sucesso && Array.isArray(produtosResponse.produtos)) {
+      const produtosResponse = await listarProdutos();
+      if (
+        produtosResponse?.sucesso &&
+        Array.isArray(produtosResponse.produtos)
+      ) {
         const produtosNormalizados = produtosResponse.produtos
           .map(normalizarProduto)
-          .filter((produto) => produto !== null && produto.ativo)
-        setProdutos(produtosNormalizados)
-        setSearchOptions(criarOpcoesBusca(produtosNormalizados))
+          .filter((produto) => produto !== null && produto.ativo);
+        setProdutos(produtosNormalizados);
+        setSearchOptions(criarOpcoesBusca(produtosNormalizados));
       } else {
-        console.error("Erro ao buscar produtos:", produtosResponse?.mensagem)
-        mostrarSnackbar(produtosResponse?.mensagem || "Erro ao carregar produtos", "error")
+        console.error("Erro ao buscar produtos:", produtosResponse?.mensagem);
+        mostrarSnackbar(
+          produtosResponse?.mensagem || "Erro ao carregar produtos",
+          "error"
+        );
       }
 
       // Esta chamada agora deve funcionar corretamente
-      const carrinhoResponse = await listarCarrinho()
+      const carrinhoResponse = await listarCarrinho();
       if (carrinhoResponse?.sucesso && carrinhoResponse.carrinho) {
-        const totalItens = Number(carrinhoResponse.carrinho.totalItens) || 0
-        setCartItemCount(totalItens)
+        const totalItens = Number(carrinhoResponse.carrinho.totalItens) || 0;
+        setCartItemCount(totalItens);
       } else {
-        console.error("Erro ao buscar carrinho:", carrinhoResponse?.mensagem)
+        console.error("Erro ao buscar carrinho:", carrinhoResponse?.mensagem);
         // Opcional: mostrar snackbar se o carrinho falhar, mas pode não ser crítico
         // mostrarSnackbar(carrinhoResponse?.mensagem || "Não foi possível carregar o carrinho", "warning");
       }
     } catch (error) {
-      console.error("Erro ao carregar dados iniciais:", error)
-      mostrarSnackbar("Erro fatal ao carregar dados. Verifique a conexão.", "error")
+      console.error("Erro ao carregar dados iniciais:", error);
+      mostrarSnackbar(
+        "Erro fatal ao carregar dados. Verifique a conexão.",
+        "error"
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    buscarDadosIniciais()
-  }, [])
+    buscarDadosIniciais();
+    // Ouve eventos disparados por outras páginas para recarregar o estoque
+    const handler = () => {
+      buscarDadosIniciais();
+    };
+    window.addEventListener("estoque-atualizado", handler);
+    return () => window.removeEventListener("estoque-atualizado", handler);
+  }, []);
 
   const handleOpenProductModal = (produto) => {
-    const produtoNormalizado = normalizarProduto(produto)
+    const produtoNormalizado = normalizarProduto(produto);
     if (produtoNormalizado) {
-      setProdutoSelecionado(produtoNormalizado)
-      setOpenProductModal(true)
-      setTabValue(0)
+      setProdutoSelecionado(produtoNormalizado);
+      setOpenProductModal(true);
+      setTabValue(0);
     }
-  }
+  };
 
   const handleCloseProductModal = () => {
-    setOpenProductModal(false)
-    setProdutoSelecionado(null)
-    setTabValue(0)
-  }
+    setOpenProductModal(false);
+    setProdutoSelecionado(null);
+    setTabValue(0);
+  };
 
   const handleTabChange = (event, newValue) => {
-    setTabValue(newValue)
-  }
+    setTabValue(newValue);
+  };
 
   const handleAddToCart = async (produto) => {
     try {
-      const produtoNormalizado = normalizarProduto(produto)
+      const produtoNormalizado = normalizarProduto(produto);
       if (!produtoNormalizado) {
-        mostrarSnackbar("Produto inválido", "error")
-        return
+        mostrarSnackbar("Produto inválido", "error");
+        return;
       }
 
-      const resultado = await adicionarAoCarrinho(produtoNormalizado, 1)
+      const resultado = await adicionarAoCarrinho(produtoNormalizado, 1);
 
       if (resultado?.sucesso) {
-        const novoTotal = Number(resultado.carrinho?.totalItens) || cartItemCount + 1
-        setCartItemCount(novoTotal)
-        mostrarSnackbar(`"${produtoNormalizado.descricao}" adicionado ao carrinho!`, "success")
-        handleCloseProductModal() // Fecha o modal após adicionar
+        const novoTotal =
+          Number(resultado.carrinho?.totalItens) || cartItemCount + 1;
+        setCartItemCount(novoTotal);
+        mostrarSnackbar(
+          `"${produtoNormalizado.descricao}" adicionado ao carrinho!`,
+          "success"
+        );
+        handleCloseProductModal(); // Fecha o modal após adicionar
       } else {
-        const mensagemErro = resultado?.mensagem || "Erro desconhecido ao adicionar"
-        mostrarSnackbar(`Erro: ${mensagemErro}`, "error")
+        const mensagemErro =
+          resultado?.mensagem || "Erro desconhecido ao adicionar";
+        mostrarSnackbar(`Erro: ${mensagemErro}`, "error");
       }
     } catch (error) {
-      console.error("Erro ao adicionar produto ao carrinho:", error)
-      mostrarSnackbar("Erro inesperado ao adicionar produto", "error")
+      console.error("Erro ao adicionar produto ao carrinho:", error);
+      mostrarSnackbar("Erro inesperado ao adicionar produto", "error");
     }
-  }
+  };
 
   const handleNavigateToCart = () => {
-    router.push("/vendas/carrinho")
-  }
+    router.push("/vendas/carrinho");
+  };
 
   const handleChangePage = (event, newPage) => {
-    setPage(newPage)
-  }
+    setPage(newPage);
+  };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(Number.parseInt(event.target.value, 10))
-    setPage(0)
-  }
+    setRowsPerPage(Number.parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const handleCloseSnackbar = () => {
-    setSnackbar((prev) => ({ ...prev, open: false }))
-  }
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
 
   const produtosFiltrados = useMemo(() => {
-    return filtrarProdutos(produtos, searchQuery)
-  }, [produtos, searchQuery])
+    return filtrarProdutos(produtos, searchQuery);
+  }, [produtos, searchQuery]);
 
   const produtosPaginados = useMemo(() => {
-    const inicio = page * rowsPerPage
-    const fim = inicio + rowsPerPage
-    return produtosFiltrados.slice(inicio, fim)
-  }, [produtosFiltrados, page, rowsPerPage])
+    const inicio = page * rowsPerPage;
+    const fim = inicio + rowsPerPage;
+    return produtosFiltrados.slice(inicio, fim);
+  }, [produtosFiltrados, page, rowsPerPage]);
 
   return (
-    <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
+    <Box
+      sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
+    >
       <Sidebar />
       <Box
         component="main"
@@ -350,10 +384,10 @@ export default function EstoquePage() {
             options={searchOptions}
             value={searchQuery}
             onChange={(event, newValue) => {
-              setSearchQuery(newValue || "")
+              setSearchQuery(newValue || "");
             }}
             onInputChange={(event, newInputValue) => {
-              setSearchQuery(newInputValue || "")
+              setSearchQuery(newInputValue || "");
             }}
             renderInput={(params) => (
               <TextField
@@ -449,30 +483,40 @@ export default function EstoquePage() {
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                  {["ID", "Descrição", "Marca", "Tamanho", "Gênero", "Estado", "Quantidade", "Valor", "Ações"].map(
-                    (header, index) => (
-                      <TableCell
-                        key={header}
-                        align="center"
-                        sx={{
-                          fontSize: "18px",
-                          textAlign: "center",
-                          backgroundColor: "#FADADD",
-                          borderRight: index < 8 ? "2px solid #F5F5F5" : "none",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {header}
-                      </TableCell>
-                    ),
-                  )}
+                  {[
+                    "ID",
+                    "Descrição",
+                    "Marca",
+                    "Tamanho",
+                    "Gênero",
+                    "Estado",
+                    "Quantidade",
+                    "Valor",
+                    "Ações",
+                  ].map((header, index) => (
+                    <TableCell
+                      key={header}
+                      align="center"
+                      sx={{
+                        fontSize: "18px",
+                        textAlign: "center",
+                        backgroundColor: "#FADADD",
+                        borderRight: index < 8 ? "2px solid #F5F5F5" : "none",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {header}
+                    </TableCell>
+                  ))}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={9} align="center">
-                      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                      <Box
+                        sx={{ display: "flex", justifyContent: "center", p: 4 }}
+                      >
                         <CircularProgress size={40} sx={{ color: "#FADADD" }} />
                       </Box>
                     </TableCell>
@@ -480,13 +524,27 @@ export default function EstoquePage() {
                 ) : produtosPaginados.length > 0 ? (
                   produtosPaginados.map((produto, index) => (
                     <TableRow key={produto.id || index} hover>
-                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.id || "-"}</TableCell>
-                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.descricao}</TableCell>
-                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.marca}</TableCell>
-                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.tamanho}</TableCell>
-                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.genero}</TableCell>
-                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.estadoConservacao}</TableCell>
-                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>{produto.quantidade}</TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
+                        {produto.id || "-"}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
+                        {produto.descricao}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
+                        {produto.marca}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
+                        {produto.tamanho}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
+                        {produto.genero}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
+                        {produto.estadoConservacao}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
+                        {produto.quantidade}
+                      </TableCell>
                       <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
                         R$ {formatarPreco(produto.preco)}
                       </TableCell>
@@ -510,7 +568,12 @@ export default function EstoquePage() {
                         <IconButton
                           onClick={() => handleAddToCart(produto)}
                           sx={{ color: "#00509E" }}
-                          title="Adicionar ao carrinho"
+                          title={
+                            produto.quantidade > 0
+                              ? "Adicionar ao carrinho"
+                              : "Sem estoque"
+                          }
+                          disabled={!(produto.quantidade > 0)}
                         >
                           <ShoppingCartIcon />
                         </IconButton>
@@ -519,7 +582,10 @@ export default function EstoquePage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} sx={{ textAlign: "center", py: 4, fontSize: "1.1rem" }}>
+                    <TableCell
+                      colSpan={9}
+                      sx={{ textAlign: "center", py: 4, fontSize: "1.1rem" }}
+                    >
                       {searchQuery
                         ? `Nenhum produto encontrado para "${searchQuery}"`
                         : "Nenhum produto encontrado no estoque"}
@@ -539,7 +605,9 @@ export default function EstoquePage() {
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25, 50]}
             labelRowsPerPage="Linhas por página:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+            labelDisplayedRows={({ from, to, count }) =>
+              `${from}-${to} de ${count}`
+            }
           />
         </Card>
       </Box>
@@ -624,15 +692,15 @@ export default function EstoquePage() {
             sx={{
               mb: 3,
               "& .MuiTab-root": {
-              fontWeight: "bold",
-              fontSize: "16px",
-              color: "#333", // cor padrão quando não selecionado
-            },
-            "& .MuiTab-root.Mui-selected": {
-              color: "#9AE4FF", // cor azul quando ativo
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
+                fontWeight: "bold",
+                fontSize: "16px",
+                color: "#333", // cor padrão quando não selecionado
+              },
+              "& .MuiTab-root.Mui-selected": {
+                color: "#9AE4FF", // cor azul quando ativo
+              },
+              "& .MuiTabs-indicator": {
+                backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
               },
             }}
           >
@@ -646,7 +714,10 @@ export default function EstoquePage() {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
+                    >
                       Dados do Produto
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
@@ -657,21 +728,38 @@ export default function EstoquePage() {
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Estado:</strong>{" "}
-                      <Chip label={produtoSelecionado.estadoConservacao} color="success" size="small" />
+                      <Chip
+                        label={produtoSelecionado.estadoConservacao}
+                        color="success"
+                        size="small"
+                      />
                     </Typography>
                   </Paper>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
+                    >
                       Preço e Estoque
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 1, fontSize: "18px", fontWeight: "bold", color: "#4CAF50" }}>
-                      <strong>Preço:</strong> R$ {formatarPreco(produtoSelecionado.preco)}
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 1,
+                        fontSize: "18px",
+                        fontWeight: "bold",
+                        color: "#4CAF50",
+                      }}
+                    >
+                      <strong>Preço:</strong> R${" "}
+                      {formatarPreco(produtoSelecionado.preco)}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Quantidade:</strong> {produtoSelecionado.quantidade} unidades
+                      <strong>Quantidade:</strong>{" "}
+                      {produtoSelecionado.quantidade} unidades
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
@@ -688,11 +776,14 @@ export default function EstoquePage() {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
+                    >
                       Características
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                       <strong>Marca:</strong> {produtoSelecionado.marca}
+                      <strong>Marca:</strong> {produtoSelecionado.marca}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Gênero:</strong> {produtoSelecionado.genero}
@@ -702,13 +793,18 @@ export default function EstoquePage() {
 
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
+                    >
                       Controle
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Data de Adição:</strong>{" "}
                       {produtoSelecionado.dataAdicao
-                        ? new Date(produtoSelecionado.dataAdicao).toLocaleDateString("pt-BR")
+                        ? new Date(
+                            produtoSelecionado.dataAdicao
+                          ).toLocaleDateString("pt-BR")
                         : "Não informada"}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
@@ -804,5 +900,5 @@ export default function EstoquePage() {
         </Alert>
       </Snackbar>
     </Box>
-  )
+  );
 }
