@@ -33,7 +33,7 @@ import {
   DialogActions,
   Card,
 } from "@mui/material"
-import { Tabs, Tab, Chip, Avatar } from "@mui/material"
+import { Tabs, Tab, Chip, Avatar, Slider } from "@mui/material"
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { ArrowBack, Home, Delete, Visibility, Add, BugReport } from "@mui/icons-material"
 import { createLote, getAllLotes, getFornecedoras, testApiConnection } from "../api/lotes"
@@ -57,6 +57,30 @@ export default function CadastroLotePage() {
   const [currentCredit, setCurrentCredit] = useState(0)
   const [newCredit, setNewCredit] = useState("")
   const [creditLoading, setCreditLoading] = useState(false)
+  const [percentBrecho, setPercentBrecho] = useState(60)
+  const [percentFornecedor, setPercentFornecedor] = useState(40)
+
+  // Handlers that keep the two percent fields in sync (bidirectional)
+  const clampPercent = (v) => {
+    let n = Number(v)
+    if (Number.isNaN(n)) return 0
+    n = Math.round(n)
+    if (n < 0) n = 0
+    if (n > 100) n = 100
+    return n
+  }
+
+  const handlePercentBrechoChange = (value) => {
+    const v = clampPercent(value)
+    setPercentBrecho(v)
+    setPercentFornecedor(100 - v)
+  }
+
+  const handlePercentFornecedorChange = (value) => {
+    const v = clampPercent(value)
+    setPercentFornecedor(v)
+    setPercentBrecho(100 - v)
+  }
 
     // Estados para o modal de visualização de produto
   const [openProductModal, setOpenProductModal] = useState(false)
@@ -314,12 +338,21 @@ const handleViewItem = (id) => {
 
       console.log("[v0] Starting credit confirmation process")
       console.log("[v0] Current credit:", currentCredit)
-      console.log("[v0] New credit to add:", newCredit)
+      console.log("[v0] PercentFornecedor:", percentFornecedor)
       console.log("[v0] Fornecedora ID:", fornecedoraId)
 
       // Update credit if new value is provided
-      if (newCredit && Number.parseFloat(newCredit) > 0) {
-        const updatedCredit = currentCredit + Number.parseFloat(newCredit)
+      // Validate percentage split
+      if (percentBrecho + percentFornecedor !== 100) {
+        setError("A soma dos percentuais deve ser 100% antes de confirmar.")
+        return
+      }
+
+      const valorTotal = calcularValorTotal()
+      const creditoParaFornecedor = Number.parseFloat((valorTotal * (percentFornecedor / 100)).toFixed(2))
+
+      if (creditoParaFornecedor > 0) {
+        const updatedCredit = currentCredit + creditoParaFornecedor
         console.log("[v0] Calculated updated credit:", updatedCredit)
         await updateFornecedoraCredit(fornecedoraId, updatedCredit)
         console.log("[v0] Credit updated successfully")
@@ -334,6 +367,8 @@ const handleViewItem = (id) => {
         setSuccess(`Lote finalizado com sucesso! ${items.length} itens cadastrados.`)
         setCreditModal(false)
         setNewCredit("")
+        setPercentBrecho(60)
+        setPercentFornecedor(40)
 
         // Redirect after success
         setTimeout(() => {
@@ -991,38 +1026,62 @@ const handleViewItem = (id) => {
               </Typography>
             </Box>
 
-            <TextField
-              fullWidth
-              label="Novo crédito a receber (R$)"
-              type="number"
-              value={newCredit}
-              onChange={(e) => setNewCredit(e.target.value)}
-              inputProps={{ step: 0.01, min: 0 }}
-              sx={{
-                mb: 2,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  "& fieldset": {
-                    borderColor: "#d0d0d0",
-                    borderWidth: 2,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#FADADD",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#FADADD",
-                    borderWidth: 2,
-                  },
-                },
-              }}
-              helperText="Deixe em branco se não houver crédito adicional"
-            />
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Percentual Brechó (%)"
+                  type="number"
+                  value={percentBrecho}
+                  onChange={(e) => handlePercentBrechoChange(e.target.value)}
+                  inputProps={{ step: 1, min: 0, max: 100 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Percentual Fornecedora (%)"
+                  type="number"
+                  value={percentFornecedor}
+                  onChange={(e) => handlePercentFornecedorChange(e.target.value)}
+                  inputProps={{ step: 1, min: 0, max: 100 }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Box sx={{ px: 2 }}>
+                  <Slider
+                    value={percentBrecho}
+                    onChange={(_, v) => handlePercentBrechoChange(v)}
+                    aria-label="percentual-brechó"
+                    valueLabelDisplay="auto"
+                    min={0}
+                    max={100}
+                    sx={{ color: "#f48fb1" }}
+                  />
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+                    <Typography variant="caption">0%</Typography>
+                    <Typography variant="caption">100%</Typography>
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
 
-            {newCredit && Number.parseFloat(newCredit) > 0 && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Novo total será: R$ {(currentCredit + Number.parseFloat(newCredit)).toFixed(2).replace(".", ",")}
+            {/* Mostrar cálculo automático do crédito para a fornecedora */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
+                Valor total do lote: <strong>R$ {calcularValorTotal().toFixed(2).replace('.', ',')}</strong>
+              </Typography>
+
+              {percentBrecho + percentFornecedor !== 100 ? (
+                <Alert severity="warning" sx={{ mb: 1 }}>
+                  A soma dos percentuais deve ser 100% (atualmente {percentBrecho + percentFornecedor}%).
+                </Alert>
+              ) : null}
+
+              <Alert severity="info">
+                Crédito calculado para a fornecedora: <strong>R$ {(calcularValorTotal() * (percentFornecedor / 100)).toFixed(2).replace('.', ',')}</strong>
               </Alert>
-            )}
+            </Box>
           </DialogContent>
           <DialogActions sx={{ p: 3, pt: 1 }}>
             <Button

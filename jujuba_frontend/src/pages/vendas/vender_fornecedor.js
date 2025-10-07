@@ -364,39 +364,26 @@ export default function FornecedoresPage() {
         </Box>
 
         {selectedFornecedorForSale && (
-          <Box
-            sx={{
-              bgcolor: "#e8f5e8",
-              border: "2px solid #4caf50",
-              borderRadius: 2,
-              p: 2,
-              mb: 3,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box sx={{ color: "#4caf50", fontSize: "1.2rem" }}>✓</Box>
-              <Box>
-                <Typography sx={{ fontWeight: "bold", color: "#2e7d32" }}>
-                  Fornecedor Selecionado: {selectedFornecedorForSale.nome}
-                </Typography>
-                <Typography sx={{ fontSize: "0.9rem", color: "#555" }}>
-                  Crédito disponível: R${" "}
-                  {formatarValor(selectedFornecedorForSale.valorCredito)}
-                </Typography>
+          <Card sx={{ mb: 3, maxWidth: "1200px", mx: "auto", backgroundColor: "#F5F5F5", borderRadius: 3 }}>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Avatar sx={{ bgcolor: "#9AE4FF", width: 44, height: 44 }}>
+                    <PersonIcon sx={{ color: "#fff" }} />
+                  </Avatar>
+                  <Box>
+                    <Typography sx={{ fontWeight: "bold", color: "#333" }}>{selectedFornecedorForSale.nome}</Typography>
+                    <Typography sx={{ fontSize: "0.9rem", color: "#555" }}>
+                      Crédito disponível: R$ {formatarValor(selectedFornecedorForSale.creditoLoja ?? selectedFornecedorForSale.valorCredito ?? 0)}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Button variant="outlined" size="small" onClick={() => setSelectedFornecedorForSale(null)} sx={{ color: "#666", borderColor: "#666" }}>
+                  Desselecionar
+                </Button>
               </Box>
-            </Box>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setSelectedFornecedorForSale(null)}
-              sx={{ color: "#666", borderColor: "#666" }}
-            >
-              Desselecionar
-            </Button>
-          </Box>
+            </CardContent>
+          </Card>
         )}
 
         <Box
