@@ -322,12 +322,29 @@ export default function FornecedoresPage() {
 
   const calcularCreditoFinal = () => {
     if (!selectedFornecedorForSale) return 0;
-    const credito = obterValorSeguro(selectedFornecedorForSale.valorCredito);
+    const credito = obterValorSeguro(
+      selectedFornecedorForSale.creditoLoja ??
+        selectedFornecedorForSale.valorCredito
+    );
     return credito - totalVenda;
   };
 
-  const handleSelectFornecedorForSale = (fornecedor) => {
-    setSelectedFornecedorForSale(fornecedor);
+  const handleSelectFornecedorForSale = async (fornecedorOrId) => {
+    try {
+      const id =
+        typeof fornecedorOrId === "object" ? fornecedorOrId.id : fornecedorOrId;
+      if (!id) return;
+      // fetch detailed fornecedor data (includes creditoLoja)
+      const resp = await fetch(`http://localhost:8080/api/fornecedoras/${id}`);
+      if (!resp.ok) throw new Error("Falha ao buscar dados da fornecedora");
+      const data = await resp.json();
+      setSelectedFornecedorForSale(data);
+    } catch (e) {
+      console.error("Erro ao selecionar fornecedora:", e);
+      // fallback: if an object was passed, use it
+      if (typeof fornecedorOrId === "object")
+        setSelectedFornecedorForSale(fornecedorOrId);
+    }
   };
 
   return (
@@ -364,21 +381,47 @@ export default function FornecedoresPage() {
         </Box>
 
         {selectedFornecedorForSale && (
-          <Card sx={{ mb: 3, maxWidth: "1200px", mx: "auto", backgroundColor: "#F5F5F5", borderRadius: 3 }}>
+          <Card
+            sx={{
+              mb: 3,
+              maxWidth: "1200px",
+              mx: "auto",
+              backgroundColor: "#F5F5F5",
+              borderRadius: 3,
+            }}
+          >
             <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Avatar sx={{ bgcolor: "#9AE4FF", width: 44, height: 44 }}>
                     <PersonIcon sx={{ color: "#fff" }} />
                   </Avatar>
                   <Box>
-                    <Typography sx={{ fontWeight: "bold", color: "#333" }}>{selectedFornecedorForSale.nome}</Typography>
+                    <Typography sx={{ fontWeight: "bold", color: "#333" }}>
+                      {selectedFornecedorForSale.nome}
+                    </Typography>
                     <Typography sx={{ fontSize: "0.9rem", color: "#555" }}>
-                      Crédito disponível: R$ {formatarValor(selectedFornecedorForSale.creditoLoja ?? selectedFornecedorForSale.valorCredito ?? 0)}
+                      Crédito disponível: R${" "}
+                      {formatarValor(
+                        selectedFornecedorForSale.creditoLoja ??
+                          selectedFornecedorForSale.valorCredito ??
+                          0
+                      )}
                     </Typography>
                   </Box>
                 </Box>
-                <Button variant="outlined" size="small" onClick={() => setSelectedFornecedorForSale(null)} sx={{ color: "#666", borderColor: "#666" }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setSelectedFornecedorForSale(null)}
+                  sx={{ color: "#666", borderColor: "#666" }}
+                >
                   Desselecionar
                 </Button>
               </Box>
@@ -629,7 +672,10 @@ export default function FornecedoresPage() {
                           color: "#555",
                         }}
                       >
-                        R$ {formatarValor(fornecedor.valorCredito)}
+                        R${" "}
+                        {formatarValor(
+                          fornecedor.creditoLoja ?? fornecedor.valorCredito ?? 0
+                        )}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -993,7 +1039,11 @@ export default function FornecedoresPage() {
               </Typography>
               <Typography variant="body1" sx={{ mb: 1 }}>
                 <strong>Crédito disponível:</strong> R${" "}
-                {formatarValor(selectedFornecedorForSale.valorCredito)}
+                {formatarValor(
+                  selectedFornecedorForSale.creditoLoja ??
+                    selectedFornecedorForSale.valorCredito ??
+                    0
+                )}
               </Typography>
               <Typography variant="body1">
                 <strong>Chave Pix:</strong>{" "}
