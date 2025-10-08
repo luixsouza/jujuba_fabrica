@@ -696,6 +696,8 @@ const handleViewItem = (id) => {
 
             <Grid item xs={12} md={6}>
               <Autocomplete
+                open={false}
+                disableOpenOnFocus
                 fullWidth
                 options={fornecedoras
                   .slice()

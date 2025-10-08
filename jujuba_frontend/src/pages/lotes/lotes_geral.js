@@ -147,15 +147,19 @@ const LotePage = () => {
   }
 
   const lotesFiltrados = useMemo(() => {
+    if (!search || typeof search !== "string" || search.trim() === "") {
+      return lotes
+    }
+    const s = search.toLowerCase()
     return lotes.filter(
       (lote) =>
-        lote.numero.toLowerCase().includes(search.toLowerCase()) ||
-        lote.fornecedora.toLowerCase().includes(search.toLowerCase()),
+        lote.numero.toLowerCase().includes(s) ||
+        lote.fornecedora.toLowerCase().includes(s),
     )
   }, [lotes, search])
 
   const searchOptions = useMemo(() => {
-    return [...new Set(lotes.map((lote) => lote.numero))]
+    return [...new Set(lotes.flatMap((lote) => [lote.numero, lote.fornecedora]).filter(Boolean))]
   }, [lotes])
 
   return (
@@ -202,6 +206,8 @@ const LotePage = () => {
         >
           <Autocomplete
             freeSolo
+            open={false}
+            disableOpenOnFocus
             options={searchOptions}
             value={search}
             onChange={(event, newValue) => {

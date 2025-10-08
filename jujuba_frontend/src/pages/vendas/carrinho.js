@@ -343,6 +343,8 @@ export default function CarrinhoPage() {
           }}
         >
           <Autocomplete
+            open={false}
+            disableOpenOnFocus
             freeSolo
             options={searchOptions}
             value={search}

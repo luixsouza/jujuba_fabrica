@@ -154,30 +154,10 @@ export default function FornecedoresPage() {
     router.back();
   };
 
-  const handleSearch = async (event, newValue) => {
+  // Apenas atualiza os estados de pesquisa; a filtragem é feita localmente via fornecedoresFiltrados
+  const handleSearch = (event, newValue) => {
     setSearch(newValue || "");
     setSearchTerm(newValue || "");
-
-    try {
-      setLoading(true);
-      let url = "http://localhost:8080/api/fornecedoras";
-      if (newValue) {
-        url += `?nome=${encodeURIComponent(newValue)}`;
-      }
-
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Falha ao buscar fornecedores");
-      }
-
-      const data = await response.json();
-      setFornecedores(data);
-    } catch (error) {
-      console.error("Erro ao buscar fornecedores:", error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleViewFornecedor = async (id) => {
@@ -347,6 +327,28 @@ export default function FornecedoresPage() {
     }
   };
 
+  const fornecedoresFiltrados = (searchTerm && typeof searchTerm === "string" && searchTerm.trim() !== "")
+    ? fornecedores.filter((f) => {
+        if (!f) return false
+        const s = searchTerm.toLowerCase()
+        const id = f.id ? String(f.id).toLowerCase() : ""
+        const nome = f.nome ? f.nome.toLowerCase() : ""
+        const contato = f.contato ? f.contato.toLowerCase() : ""
+        const endereco = f.endereco ? f.endereco.toLowerCase() : ""
+        const chavePix = f.chavePix ? f.chavePix.toLowerCase() : ""
+        const credito = (f.creditoLoja ?? f.valorCredito) ? String(f.creditoLoja ?? f.valorCredito).toLowerCase() : ""
+
+        return (
+          id.includes(s) ||
+          nome.includes(s) ||
+          contato.includes(s) ||
+          endereco.includes(s) ||
+          chavePix.includes(s) ||
+          credito.includes(s)
+        )
+      })
+    : fornecedores
+
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#a8e1ff" }}>
       {/* Sidebar */}
@@ -439,7 +441,15 @@ export default function FornecedoresPage() {
         >
           <Autocomplete
             freeSolo
-            options={fornecedores.map((f) => f.nome || "")}
+            open={false}
+            disableOpenOnFocus
+            options={[...new Set(fornecedores.flatMap((f) => [
+              f?.nome || "",
+              f?.contato || "",
+              f?.endereco || "",
+              f?.chavePix || "",
+              f?.id ? String(f.id) : "",
+            ]).filter(Boolean))]}
             value={search}
             onChange={handleSearch}
             onInputChange={(event, newValue) => {
@@ -616,8 +626,8 @@ export default function FornecedoresPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {fornecedores.length > 0 ? (
-                  fornecedores.map((fornecedor) => (
+                {fornecedoresFiltrados.length > 0 ? (
+                  fornecedoresFiltrados.map((fornecedor) => (
                     <TableRow
                       key={fornecedor.id}
                       onClick={() => handleSelectFornecedorForSale(fornecedor)}

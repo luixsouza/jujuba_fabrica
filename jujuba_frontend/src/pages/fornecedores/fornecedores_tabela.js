@@ -151,10 +151,30 @@ const FornecedoresPage = () => {
     setPage(0)
   }
 
-  const filteredFornecedores = useMemo(
-    () => fornecedores.filter((fornecedora) => fornecedora.nome.toLowerCase().includes(searchTerm.toLowerCase())),
-    [fornecedores, searchTerm],
-  )
+  const filteredFornecedores = useMemo(() => {
+    if (!searchTerm || typeof searchTerm !== "string" || searchTerm.trim() === "") return fornecedores
+    const s = searchTerm.toLowerCase()
+    return fornecedores.filter((fornecedora) => {
+      if (!fornecedora) return false
+      const id = fornecedora.id ? String(fornecedora.id).toLowerCase() : ""
+      const nome = fornecedora.nome ? fornecedora.nome.toLowerCase() : ""
+      const contato = fornecedora.contato ? fornecedora.contato.toLowerCase() : ""
+      const endereco = fornecedora.endereco ? fornecedora.endereco.toLowerCase() : ""
+      const chavePix = fornecedora.chavePix ? fornecedora.chavePix.toLowerCase() : ""
+      const credito = (fornecedora.creditoLoja || fornecedora.valorCredito || "")
+        ? String(fornecedora.creditoLoja ?? fornecedora.valorCredito).toLowerCase()
+        : ""
+
+      return (
+        id.includes(s) ||
+        nome.includes(s) ||
+        contato.includes(s) ||
+        endereco.includes(s) ||
+        chavePix.includes(s) ||
+        credito.includes(s)
+      )
+    })
+  }, [fornecedores, searchTerm])
 
   return (
     <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
@@ -202,9 +222,17 @@ const FornecedoresPage = () => {
             marginBottom: "30px",
           }}
         >
-          <Autocomplete
-            freeSolo
-            options={fornecedores.map((option) => option.nome)}
+            <Autocomplete
+              freeSolo
+              open={false}
+              disableOpenOnFocus
+            options={[...new Set(fornecedores.flatMap((f) => [
+              f?.nome || "",
+              f?.contato || "",
+              f?.endereco || "",
+              f?.chavePix || "",
+              f?.id ? String(f.id) : "",
+            ]).filter(Boolean))]}
             value={search}
             onChange={(event, newValue) => {
               setSearch(newValue || "")

@@ -152,11 +152,14 @@ const VendasPage = () => {
   }
 
   const filteredVendas = useMemo(() => {
+    if (!searchTerm || typeof searchTerm !== "string" || searchTerm.trim() === "") {
+      return vendas
+    }
+    const searchLower = searchTerm.toLowerCase()
     return vendas.filter((venda) => {
-      const searchLower = searchTerm.toLowerCase()
       return (
         venda.id.toString().includes(searchLower) ||
-        venda.tipoVenda.toLowerCase().includes(searchLower) ||
+        (venda.tipoVenda && venda.tipoVenda.toLowerCase().includes(searchLower)) ||
         (venda.fornecedora && venda.fornecedora.nome.toLowerCase().includes(searchLower))
       )
     })
@@ -255,7 +258,12 @@ const VendasPage = () => {
         >
           <Autocomplete
             freeSolo
-            options={vendas.map((venda) => `#${venda.id} - ${venda.tipoVenda}`)}
+            open={false}
+            disableOpenOnFocus
+            options={[...new Set(vendas.flatMap((v) => [
+              `#${v.id} - ${v.tipoVenda}`,
+              v.fornecedora ? v.fornecedora.nome : "",
+            ]).filter(Boolean))]}
             value={search}
             onChange={(event, newValue) => {
               setSearch(newValue || "")

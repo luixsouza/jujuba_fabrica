@@ -86,6 +86,24 @@ const criarOpcoesBusca = (produtos) => {
       if (produtoNormalizado.descricao)
         opcoes.add(produtoNormalizado.descricao);
       if (
+        produtoNormalizado.tamanho &&
+        produtoNormalizado.tamanho !== "Tamanho não informado"
+      ) {
+        opcoes.add(produtoNormalizado.tamanho);
+      }
+      if (
+        produtoNormalizado.cor &&
+        produtoNormalizado.cor !== "Não informada"
+      ) {
+        opcoes.add(produtoNormalizado.cor);
+      }
+      if (
+        produtoNormalizado.material &&
+        produtoNormalizado.material !== "Não informado"
+      ) {
+        opcoes.add(produtoNormalizado.material);
+      }
+      if (
         produtoNormalizado.marca &&
         produtoNormalizado.marca !== "Marca não informada"
       ) {
@@ -110,7 +128,12 @@ const criarOpcoesBusca = (produtos) => {
 };
 
 const filtrarProdutos = (produtos, query) => {
-  if (!Array.isArray(produtos) || !query || typeof query !== "string") {
+  if (!Array.isArray(produtos) || typeof query !== "string") {
+    return produtos;
+  }
+
+  // Se a query estiver vazia ou apenas espaços, retorna todos os produtos (mostrar tudo)
+  if (!query || query.trim() === "") {
     return produtos;
   }
 
@@ -381,6 +404,8 @@ export default function EstoquePage() {
         >
           <Autocomplete
             freeSolo
+            open={false}
+            disableOpenOnFocus
             options={searchOptions}
             value={searchQuery}
             onChange={(event, newValue) => {
