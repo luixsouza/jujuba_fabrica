@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Box,
   Button,
@@ -16,18 +16,26 @@ import {
   DialogActions,
   Avatar,
   Slide,
-} from "@mui/material"
-import Sidebar from "../../components/sidebar"
-import axios from "axios"
-const BASE_URL = "http://localhost:8080/api/fornecedoras"
-import { ArrowBack, Home, AttachFile, CheckCircle, CheckCircleOutline, PersonAdd, Close } from "@mui/icons-material"
-import { useRouter } from "next/router"
-import { forwardRef } from "react"
+} from "@mui/material";
+import Sidebar from "../../components/sidebar";
+import axios from "axios";
+const BASE_URL = "http://localhost:8080/api/fornecedoras";
+import {
+  ArrowBack,
+  Home,
+  AttachFile,
+  CheckCircle,
+  CheckCircleOutline,
+  PersonAdd,
+  Close,
+} from "@mui/icons-material";
+import { useRouter } from "next/router";
+import { forwardRef } from "react";
 
 // Transição personalizada para o modal
 const Transition = forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />
-})
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 export default function FornecedoresCadastro() {
   const [fornecedora, setFornecedora] = useState({
@@ -37,49 +45,111 @@ export default function FornecedoresCadastro() {
     endereco: "",
     chavePix: "",
     contratoUrl: "",
-  })
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [selectedFile, setSelectedFile] = useState(null)
+  });
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [successModal, setSuccessModal] = useState({
     open: false,
     fornecedorData: null,
-  })
+  });
 
   const handleChange = (event) => {
-    const { name, value } = event.target
-    setFornecedora((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = event.target;
+
+    const formatPhone = (digits) => {
+      if (!digits) return "";
+      const ddd = digits.slice(0, 2);
+      const rest = digits.slice(2);
+      return `(${ddd})${rest}`;
+    };
+
+    if (name === "contato") {
+      const digits = (value || "").replace(/\D/g, "").slice(0, 11); // limita a 11 dígitos
+      const formatted = formatPhone(digits);
+      setFornecedora((prev) => ({ ...prev, contato: formatted }));
+      return;
+    }
+
+    if (name === "dataNascimento") {
+      const digits = (value || "").replace(/\D/g, "").slice(0, 8); // até 8 dígitos (ddmmyyyy)
+      const d = digits.slice(0, 2);
+      const m = digits.slice(2, 4);
+      const y = digits.slice(4, 8);
+
+      let masked = d;
+      if (m.length) masked += "/" + m;
+      if (y.length) masked += "/" + y;
+
+      if (y.length === 4) {
+        const parsedYear = parseInt(y, 10);
+        const currentYear = new Date().getFullYear();
+        let safeYear = parsedYear;
+        if (isNaN(safeYear) || safeYear < 1900) safeYear = 1900;
+        if (safeYear > currentYear) safeYear = currentYear;
+        const yStr = String(safeYear).padStart(4, "0");
+        masked = `${d}/${m}/${yStr}`;
+      }
+
+      setFornecedora((prev) => ({ ...prev, dataNascimento: masked }));
+      return;
+    }
+
+    setFornecedora((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleFileChange = (event) => {
-    const file = event.target.files[0]
+    const file = event.target.files[0];
     if (file) {
-      setSelectedFile(file)
+      setSelectedFile(file);
       setFornecedora((prev) => ({
         ...prev,
         contratoUrl: file || "",
-      }))
+      }));
     }
-  }
+  };
 
   // Função para formatar a data no padrão "dd/MM/yyyy"
   function formatDateToDDMMYYYY(dateString) {
-    if (!dateString) return "N/A"
-    const date = new Date(dateString)
-    if (isNaN(date)) return "N/A"
+    if (!dateString) return "N/A";
 
-    const day = String(date.getDate()).padStart(2, "0")
-    const month = String(date.getMonth() + 1).padStart(2, "0")
-    const year = date.getFullYear()
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+      return dateString;
+    }
 
-    return `${day}/${month}/${year}`
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [y, m, d] = dateString.split("-");
+      return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+    }
+
+    const date = new Date(dateString);
+    if (isNaN(date)) return "N/A";
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  }
+
+  // Função para formatar telefone armazenado como (DD)NUMERO para exibição
+  function formatContatoDisplay(contato) {
+    if (!contato) return "N/A";
+    // remove não dígitos e tenta reconstruir
+    const digits = (contato || "").replace(/\D/g, "");
+    if (digits.length <= 2) return `(${digits})`;
+    const ddd = digits.slice(0, 2);
+    const rest = digits.slice(2);
+    return `(${ddd}) ${rest}`;
   }
 
   const createFornecedora = async (values) => {
     try {
-      const formData = new FormData()
+      const formData = new FormData();
 
-      const dataNascimentoFormatted = formatDateToDDMMYYYY(values.dataNascimento)
+      const dataNascimentoFormatted = formatDateToDDMMYYYY(
+        values.dataNascimento
+      );
 
       const fornecedoraObj = {
         nome: values.nome || "N/A",
@@ -87,48 +157,49 @@ export default function FornecedoresCadastro() {
         contato: values.contato || "N/A",
         endereco: values.endereco || "N/A",
         chavePix: values.chavePix || "N/A",
-      }
+      };
 
-      formData.append("fornecedora", JSON.stringify(fornecedoraObj))
+      formData.append("fornecedora", JSON.stringify(fornecedoraObj));
 
-      const contrato = document.querySelector('input[name="contrato"]')?.files[0]
+      const contrato = document.querySelector('input[name="contrato"]')
+        ?.files[0];
 
       if (contrato) {
-        formData.append("contrato", contrato)
+        formData.append("contrato", contrato);
       } else {
-        throw new Error("O arquivo do contrato é obrigatório!")
+        throw new Error("O arquivo do contrato é obrigatório!");
       }
 
       const response = await axios.post(BASE_URL, formData, {
         headers: { "Content-Type": "multipart/form-data" },
-      })
+      });
 
-      return response.data
+      return response.data;
     } catch (error) {
-      console.error("Erro ao criar fornecedora:", error)
-      throw error
+      console.error("Erro ao criar fornecedora:", error);
+      throw error;
     }
-  }
+  };
 
   const handleCloseSuccessModal = () => {
     setSuccessModal({
       open: false,
       fornecedorData: null,
-    })
-  }
+    });
+  };
 
   const handleCreateAnother = () => {
-    handleCloseSuccessModal()
+    handleCloseSuccessModal();
     // O formulário já foi resetado, então não precisa fazer nada mais
-  }
+  };
 
   // envia os dados para a API
   const handleSubmit = async (event) => {
-    event.preventDefault()
-    setLoading(true)
+    event.preventDefault();
+    setLoading(true);
     try {
-      const data = await createFornecedora(fornecedora)
-      console.log("Fornecedor criado com sucesso:", data)
+      const data = await createFornecedora(fornecedora);
+      console.log("Fornecedor criado com sucesso:", data);
 
       // Mostrar modal de sucesso em vez de alert
       setSuccessModal({
@@ -137,7 +208,7 @@ export default function FornecedoresCadastro() {
           ...fornecedora,
           id: data.id || "N/A",
         },
-      })
+      });
 
       // Resetar formulário
       setFornecedora({
@@ -147,15 +218,15 @@ export default function FornecedoresCadastro() {
         endereco: "",
         chavePix: "",
         contratoUrl: "",
-      })
-      setSelectedFile(null)
+      });
+      setSelectedFile(null);
     } catch (error) {
-      console.error("Erro ao criar fornecedor:", error)
-      alert("Erro ao criar fornecedor.")
+      console.error("Erro ao criar fornecedor:", error);
+      alert("Erro ao criar fornecedor.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Box
@@ -174,7 +245,11 @@ export default function FornecedoresCadastro() {
         <Box sx={{ mb: 1, textAlign: "center", mt: { xs: 4, md: 8 } }}>
           <Typography
             variant="h4"
-            sx={{ fontWeight: "bold", marginBottom: "20px", fontSize: { xs: "30px", md: "40px" } }}
+            sx={{
+              fontWeight: "bold",
+              marginBottom: "20px",
+              fontSize: { xs: "30px", md: "40px" },
+            }}
           ></Typography>
         </Box>
 
@@ -192,13 +267,27 @@ export default function FornecedoresCadastro() {
             }}
           >
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", mb: 2 }}></Typography>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ fontWeight: "bold", mb: 2 }}
+              ></Typography>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Grid container direction="column" alignItems="center" spacing={1}>
+                  <Grid
+                    container
+                    direction="column"
+                    alignItems="center"
+                    spacing={1}
+                  >
                     {/* Ícones de navegação */}
                     <Grid item xs={12} width="100%">
-                      <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        width="100%"
+                      >
                         <ArrowBack
                           sx={{
                             fontSize: "30px",
@@ -240,7 +329,8 @@ export default function FornecedoresCadastro() {
                           mb: 3,
                         }}
                       >
-                        Campos com <span style={{ color: "red" }}>*</span> são obrigatórios
+                        Campos com <span style={{ color: "red" }}>*</span> são
+                        obrigatórios
                       </Typography>
                     </Grid>
                   </Grid>
@@ -253,7 +343,12 @@ export default function FornecedoresCadastro() {
                     <Grid item xs={12} sm={10} md={8}>
                       <Typography
                         variant="body2"
-                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                        sx={{
+                          fontWeight: "normal",
+                          fontSize: "18px",
+                          marginBottom: "4px",
+                          color: "gray",
+                        }}
                       >
                         Nome <span style={{ color: "red" }}>*</span>
                       </Typography>
@@ -280,9 +375,15 @@ export default function FornecedoresCadastro() {
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                       <Typography
                         variant="body2"
-                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                        sx={{
+                          fontWeight: "normal",
+                          fontSize: "18px",
+                          marginBottom: "4px",
+                          color: "gray",
+                        }}
                       >
-                        Data de Nascimento <span style={{ color: "red" }}>*</span>
+                        Data de Nascimento{" "}
+                        <span style={{ color: "red" }}>*</span>
                       </Typography>
                       <TextField
                         fullWidth
@@ -291,10 +392,9 @@ export default function FornecedoresCadastro() {
                         required
                         value={fornecedora.dataNascimento}
                         variant="outlined"
-                        type="date"
-                        InputLabelProps={{
-                          shrink: true,
-                        }}
+                        type="text"
+                        placeholder="dd/mm/yyyy"
+                        inputProps={{ maxLength: 10 }}
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#FFFFFF",
@@ -311,7 +411,12 @@ export default function FornecedoresCadastro() {
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                       <Typography
                         variant="body2"
-                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                        sx={{
+                          fontWeight: "normal",
+                          fontSize: "18px",
+                          marginBottom: "4px",
+                          color: "gray",
+                        }}
                       >
                         Contato <span style={{ color: "red" }}>*</span>
                       </Typography>
@@ -338,7 +443,12 @@ export default function FornecedoresCadastro() {
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                       <Typography
                         variant="body2"
-                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                        sx={{
+                          fontWeight: "normal",
+                          fontSize: "18px",
+                          marginBottom: "4px",
+                          color: "gray",
+                        }}
                       >
                         Endereço <span style={{ color: "red" }}>*</span>
                       </Typography>
@@ -365,7 +475,12 @@ export default function FornecedoresCadastro() {
                     <Grid item xs={12} sm={10} md={8} sx={{ mt: 3 }}>
                       <Typography
                         variant="body2"
-                        sx={{ fontWeight: "normal", fontSize: "18px", marginBottom: "4px", color: "gray" }}
+                        sx={{
+                          fontWeight: "normal",
+                          fontSize: "18px",
+                          marginBottom: "4px",
+                          color: "gray",
+                        }}
                       >
                         Chave Pix
                       </Typography>
@@ -402,11 +517,18 @@ export default function FornecedoresCadastro() {
                         {selectedFile ? (
                           <>
                             Arquivo selecionado:{" "}
-                            <span style={{ color: "green", fontWeight: "bold" }}>{selectedFile.name}</span>
+                            <span
+                              style={{ color: "green", fontWeight: "bold" }}
+                            >
+                              {selectedFile.name}
+                            </span>
                           </>
                         ) : (
                           <>
-                            O upload do contrato é <span style={{ color: "red", fontWeight: "bold" }}>obrigatório</span>
+                            O upload do contrato é{" "}
+                            <span style={{ color: "red", fontWeight: "bold" }}>
+                              obrigatório
+                            </span>
                           </>
                         )}
                       </Typography>
@@ -472,7 +594,9 @@ export default function FornecedoresCadastro() {
                         }}
                       />
                     ) : (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
                         {selectedFile ? (
                           <>
                             <CheckCircle
@@ -495,7 +619,9 @@ export default function FornecedoresCadastro() {
                                 fontSize: 20,
                                 animation: "bounce 2s infinite",
                                 "@keyframes bounce": {
-                                  "0%, 20%, 50%, 80%, 100%": { transform: "translateY(0)" },
+                                  "0%, 20%, 50%, 80%, 100%": {
+                                    transform: "translateY(0)",
+                                  },
                                   "40%": { transform: "translateY(-5px)" },
                                   "60%": { transform: "translateY(-3px)" },
                                 },
@@ -552,44 +678,6 @@ export default function FornecedoresCadastro() {
                       "Cadastrar fornecedor"
                     )}
                   </Button>
-
-                  <Button
-                    type="button"
-                    disabled={loading}
-                    sx={{
-                      color: "Black",
-                      backgroundColor: "#50abe4",
-                      textTransform: "none",
-                      width: { xs: "100%", sm: "200px" },
-                      fontWeight: "bold",
-                      fontSize: { xs: "14px", md: "16px" },
-                      borderRadius: "50px",
-                      padding: "8px 16px",
-                      height: "48px",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      "&:hover": {
-                        backgroundColor: "#003B6F",
-                      },
-                      "&:disabled": {
-                        backgroundColor: "#cccccc",
-                        color: "#666666",
-                      },
-                    }}
-                  >
-                    {loading ? (
-                      <CircularProgress
-                        size={20}
-                        sx={{
-                          color: "#FFFFFF",
-                          marginRight: 1,
-                        }}
-                      />
-                    ) : (
-                      "Cadastrar Lote"
-                    )}
-                  </Button>
                 </Grid>
               </Grid>
             </CardContent>
@@ -608,7 +696,8 @@ export default function FornecedoresCadastro() {
         PaperProps={{
           sx: {
             borderRadius: "25px",
-            background: "linear-gradient(135deg, #2196f3 0%, #64b5f6 50%, #90caf9 100%)",
+            background:
+              "linear-gradient(135deg, #2196f3 0%, #64b5f6 50%, #90caf9 100%)",
             boxShadow: "0px 25px 50px rgba(33, 150, 243, 0.3)",
             overflow: "visible",
             position: "relative",
@@ -750,7 +839,20 @@ export default function FornecedoresCadastro() {
                     fontSize: "14px",
                   }}
                 >
-                  Contato: {successModal.fornecedorData?.contato}
+                  Contato:{" "}
+                  {formatContatoDisplay(successModal.fornecedorData?.contato)}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#666",
+                    fontSize: "14px",
+                  }}
+                >
+                  Nascimento:{" "}
+                  {formatDateToDDMMYYYY(
+                    successModal.fornecedorData?.dataNascimento
+                  )}
                 </Typography>
               </Box>
             </Box>
@@ -797,12 +899,12 @@ export default function FornecedoresCadastro() {
                 boxShadow: "0px 6px 16px rgba(255, 255, 255, 0.4)",
               },
               transition: "all 0.3s ease",
-            }}////
+            }}
           >
             Cadastrar Outro Fornecedor
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
-  )
+  );
 }
