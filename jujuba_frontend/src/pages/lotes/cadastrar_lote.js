@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { Autocomplete } from "@mui/material"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/router"
-import CloseIcon from "@mui/icons-material/Close"
-import InventoryIcon from "@mui/icons-material/Inventory"
+import { Autocomplete } from "@mui/material";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import CloseIcon from "@mui/icons-material/Close";
+import InventoryIcon from "@mui/icons-material/Inventory";
 import {
   Box,
   Typography,
@@ -32,60 +32,72 @@ import {
   DialogContent,
   DialogActions,
   Card,
-} from "@mui/material"
-import { Tabs, Tab, Chip, Avatar, Slider } from "@mui/material"
+} from "@mui/material";
+import { Tabs, Tab, Chip, Avatar, Slider } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { ArrowBack, Home, Delete, Visibility, Add, BugReport } from "@mui/icons-material"
-import { createLote, getAllLotes, getFornecedoras, testApiConnection } from "../api/lotes"
-import Sidebar from "../../components/sidebar"
+import {
+  ArrowBack,
+  Home,
+  Delete,
+  Visibility,
+  Add,
+  BugReport,
+} from "@mui/icons-material";
+import {
+  createLote,
+  getAllLotes,
+  getFornecedoras,
+  testApiConnection,
+} from "../api/lotes";
+import Sidebar from "../../components/sidebar";
 
 export default function CadastroLotePage() {
-  const router = useRouter()
-  const [loteId, setLoteId] = useState("")
-  const [fornecedoraId, setFornecedoraId] = useState("")
-  const [fornecedoraSelecionada, setFornecedoraSelecionada] = useState(null)
-  const [items, setItems] = useState([])
-  const [lotesSidebar, setLotesSidebar] = useState([])
-  const [fornecedoras, setFornecedoras] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
-  const [debugDialog, setDebugDialog] = useState(false)
-  const [debugInfo, setDebugInfo] = useState("")
+  const router = useRouter();
+  const [loteId, setLoteId] = useState("");
+  const [fornecedoraId, setFornecedoraId] = useState("");
+  const [fornecedoraSelecionada, setFornecedoraSelecionada] = useState(null);
+  const [items, setItems] = useState([]);
+  const [lotesSidebar, setLotesSidebar] = useState([]);
+  const [fornecedoras, setFornecedoras] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [debugDialog, setDebugDialog] = useState(false);
+  const [debugInfo, setDebugInfo] = useState("");
 
-  const [creditModal, setCreditModal] = useState(false)
-  const [currentCredit, setCurrentCredit] = useState(0)
-  const [newCredit, setNewCredit] = useState("")
-  const [creditLoading, setCreditLoading] = useState(false)
-  const [percentBrecho, setPercentBrecho] = useState(60)
-  const [percentFornecedor, setPercentFornecedor] = useState(40)
+  const [creditModal, setCreditModal] = useState(false);
+  const [currentCredit, setCurrentCredit] = useState(0);
+  const [newCredit, setNewCredit] = useState("");
+  const [creditLoading, setCreditLoading] = useState(false);
+  const [percentBrecho, setPercentBrecho] = useState(60);
+  const [percentFornecedor, setPercentFornecedor] = useState(40);
 
   // Handlers that keep the two percent fields in sync (bidirectional)
   const clampPercent = (v) => {
-    let n = Number(v)
-    if (Number.isNaN(n)) return 0
-    n = Math.round(n)
-    if (n < 0) n = 0
-    if (n > 100) n = 100
-    return n
-  }
+    let n = Number(v);
+    if (Number.isNaN(n)) return 0;
+    n = Math.round(n);
+    if (n < 0) n = 0;
+    if (n > 100) n = 100;
+    return n;
+  };
 
   const handlePercentBrechoChange = (value) => {
-    const v = clampPercent(value)
-    setPercentBrecho(v)
-    setPercentFornecedor(100 - v)
-  }
+    const v = clampPercent(value);
+    setPercentBrecho(v);
+    setPercentFornecedor(100 - v);
+  };
 
   const handlePercentFornecedorChange = (value) => {
-    const v = clampPercent(value)
-    setPercentFornecedor(v)
-    setPercentBrecho(100 - v)
-  }
+    const v = clampPercent(value);
+    setPercentFornecedor(v);
+    setPercentBrecho(100 - v);
+  };
 
-    // Estados para o modal de visualização de produto
-  const [openProductModal, setOpenProductModal] = useState(false)
-  const [produtoSelecionado, setProdutoSelecionado] = useState(null)
-  const [tabValue, setTabValue] = useState(0)
+  // Estados para o modal de visualização de produto
+  const [openProductModal, setOpenProductModal] = useState(false);
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -98,21 +110,20 @@ export default function CadastroLotePage() {
     preco: "",
     genero: "Unisex",
     quantidade: 1,
-  })
-  
+  });
 
   useEffect(() => {
     // Gerar ID do lote
-    setLoteId(`L${String(Math.floor(Math.random() * 900) + 100)}`)
+    setLoteId(`L${String(Math.floor(Math.random() * 900) + 100)}`);
 
     // Carregar dados iniciais
-    fetchLotes()
-    fetchFornecedoras()
-  }, [])
+    fetchLotes();
+    fetchFornecedoras();
+  }, []);
 
   const fetchLotes = async () => {
     try {
-      const response = await getAllLotes()
+      const response = await getAllLotes();
       if (response.data) {
         const lotesFormatados = response.data
           .map((lote) => ({
@@ -120,66 +131,66 @@ export default function CadastroLotePage() {
             codigo: `L${lote.id}`,
             data: new Date(lote.dataCriacao).toLocaleDateString("pt-BR"),
           }))
-          .slice(0, 5)
+          .slice(0, 5);
 
-        setLotesSidebar(lotesFormatados)
+        setLotesSidebar(lotesFormatados);
       }
     } catch (error) {
-      console.error("Erro ao buscar lotes:", error)
-      setError("Não foi possível carregar os lotes.")
+      console.error("Erro ao buscar lotes:", error);
+      setError("Não foi possível carregar os lotes.");
     }
-  }
+  };
 
   const fetchFornecedoras = async () => {
     try {
-      const data = await getFornecedoras()
-      setFornecedoras(data)
+      const data = await getFornecedoras();
+      setFornecedoras(data);
     } catch (error) {
-      console.error("Erro ao buscar fornecedoras:", error)
-      setError("Não foi possível carregar as fornecedoras.")
+      console.error("Erro ao buscar fornecedoras:", error);
+      setError("Não foi possível carregar as fornecedoras.");
     }
-  }
+  };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setNovoItem((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
   // Handlers para o modal de visualização
   const handleOpenProductModal = (item) => {
-    setProdutoSelecionado(item)
-    setOpenProductModal(true)
-  }
+    setProdutoSelecionado(item);
+    setOpenProductModal(true);
+  };
 
   const handleCloseProductModal = () => {
-    setOpenProductModal(false)
-    setProdutoSelecionado(null)
-    setTabValue(0)
-  }
+    setOpenProductModal(false);
+    setProdutoSelecionado(null);
+    setTabValue(0);
+  };
 
   const handleTabChange = (event, newValue) => {
-    setTabValue(newValue)
-  }
+    setTabValue(newValue);
+  };
 
-  const formatarPreco = (preco) => Number(preco).toFixed(2)
+  const formatarPreco = (preco) => Number(preco).toFixed(2);
 
   const handleAddItem = () => {
     // Validação
     if (!novoItem.descricao || !novoItem.preco) {
-      setError("Por favor, preencha pelo menos a descrição e o valor")
-      return
+      setError("Por favor, preencha pelo menos a descrição e o valor");
+      return;
     }
 
     if (Number.parseFloat(novoItem.preco) <= 0) {
-      setError("O valor deve ser maior que zero")
-      return
+      setError("O valor deve ser maior que zero");
+      return;
     }
 
     if (Number.parseInt(novoItem.quantidade) <= 0) {
-      setError("A quantidade deve ser maior que zero")
-      return
+      setError("A quantidade deve ser maior que zero");
+      return;
     }
 
     const newItem = {
@@ -191,11 +202,11 @@ export default function CadastroLotePage() {
       preco: Number.parseFloat(novoItem.preco),
       genero: novoItem.genero || "Unisex",
       quantidade: Number.parseInt(novoItem.quantidade) || 1,
-    }
+    };
 
-    setItems((prev) => [...prev, newItem])
-    setError(null)
-    setSuccess("Item adicionado com sucesso!")
+    setItems((prev) => [...prev, newItem]);
+    setError(null);
+    setSuccess("Item adicionado com sucesso!");
 
     // Limpar formulário
     setNovoItem({
@@ -206,189 +217,205 @@ export default function CadastroLotePage() {
       preco: "",
       genero: "Unisex",
       quantidade: 1,
-    })
+    });
 
     // Limpar mensagem de sucesso após 3 segundos
-    setTimeout(() => setSuccess(null), 3000)
-  }
+    setTimeout(() => setSuccess(null), 3000);
+  };
 
   const handleDeleteItem = (id) => {
-    setItems((prev) => prev.filter((item) => item.id !== id))
-    setSuccess("Item removido com sucesso!")
-    setTimeout(() => setSuccess(null), 3000)
-  }
+    setItems((prev) => prev.filter((item) => item.id !== id));
+    setSuccess("Item removido com sucesso!");
+    setTimeout(() => setSuccess(null), 3000);
+  };
 
   const confirmDeleteItem = () => {
-  if (itemToDelete) {
-    handleDeleteItem(itemToDelete.id);  // Chama a deleção original
-    setOpenDeleteDialog(false);         // Fecha o modal
-    setItemToDelete(null);              // Limpa o item selecionado
-  }
-};
+    if (itemToDelete) {
+      handleDeleteItem(itemToDelete.id); // Chama a deleção original
+      setOpenDeleteDialog(false); // Fecha o modal
+      setItemToDelete(null); // Limpa o item selecionado
+    }
+  };
 
   // Handler atualizado para visualização (agora abre o modal em vez de alert)
-const handleViewItem = (id) => {
-  const item = items.find((item) => item.id === id)
-  if (item) {
-    handleOpenProductModal(item)
-  }
-}
+  const handleViewItem = (id) => {
+    const item = items.find((item) => item.id === id);
+    if (item) {
+      handleOpenProductModal(item);
+    }
+  };
 
   const handleTestApi = async () => {
     try {
-      setLoading(true)
-      const result = await testApiConnection()
-      setDebugInfo(JSON.stringify(result, null, 2))
-      setDebugDialog(true)
+      setLoading(true);
+      const result = await testApiConnection();
+      setDebugInfo(JSON.stringify(result, null, 2));
+      setDebugDialog(true);
     } catch (error) {
-      setDebugInfo(`Erro ao testar API: ${error.message}`)
-      setDebugDialog(true)
+      setDebugInfo(`Erro ao testar API: ${error.message}`);
+      setDebugDialog(true);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const getFornecedoraCredit = async (fornecedoraId) => {
     try {
-      const response = await fetch(`/api/fornecedores`)
-      const data = await response.json()
-      const fornecedora = data.find((f) => f.id === fornecedoraId)
-      return fornecedora ? fornecedora.creditoLoja || 0 : 0
+      const response = await fetch(`/api/fornecedores`);
+      const data = await response.json();
+      const fornecedora = data.find((f) => f.id === fornecedoraId);
+      return fornecedora ? fornecedora.creditoLoja || 0 : 0;
     } catch (error) {
-      console.error("Erro ao buscar crédito da fornecedora:", error)
-      return 0
+      console.error("Erro ao buscar crédito da fornecedora:", error);
+      return 0;
     }
-  }
+  };
 
   const updateFornecedoraCredit = async (fornecedoraId, newCreditValue) => {
     try {
-      console.log("[v0] === INICIANDO EDIÇÃO DE CRÉDITO ===")
-      console.log("[v0] ID:", fornecedoraId)
-      console.log("[v0] Novo valor de crédito:", newCreditValue)
+      console.log("[v0] === INICIANDO EDIÇÃO DE CRÉDITO ===");
+      console.log("[v0] ID:", fornecedoraId);
+      console.log("[v0] Novo valor de crédito:", newCreditValue);
 
-      const getFornecedoraResponse = await fetch(`http://localhost:8080/api/fornecedoras/${fornecedoraId}`)
+      const getFornecedoraResponse = await fetch(
+        `http://localhost:8080/api/fornecedoras/${fornecedoraId}`
+      );
 
       if (!getFornecedoraResponse.ok) {
-        throw new Error(`Erro ao buscar fornecedora: ${getFornecedoraResponse.status}`)
+        throw new Error(
+          `Erro ao buscar fornecedora: ${getFornecedoraResponse.status}`
+        );
       }
 
-      const fornecedoraData = await getFornecedoraResponse.json()
-      console.log("[v0] Dados atuais da fornecedora:", fornecedoraData)
+      const fornecedoraData = await getFornecedoraResponse.json();
+      console.log("[v0] Dados atuais da fornecedora:", fornecedoraData);
 
       const updatedFornecedora = {
         ...fornecedoraData,
         creditoLoja: newCreditValue,
-      }
+      };
 
-      const formData = new FormData()
-      formData.append("fornecedora", JSON.stringify(updatedFornecedora))
+      const formData = new FormData();
+      formData.append("fornecedora", JSON.stringify(updatedFornecedora));
 
-      const updateResponse = await fetch(`http://localhost:8080/api/fornecedoras/${fornecedoraId}`, {
-        method: "PUT",
-        body: formData,
-      })
+      const updateResponse = await fetch(
+        `http://localhost:8080/api/fornecedoras/${fornecedoraId}`,
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
 
-      console.log("[v0] === RESPOSTA DA API ===")
-      console.log("[v0] Status:", updateResponse.status)
+      console.log("[v0] === RESPOSTA DA API ===");
+      console.log("[v0] Status:", updateResponse.status);
 
       if (!updateResponse.ok) {
-        const errorText = await updateResponse.text()
-        console.error("[v0] Erro na resposta:", errorText)
-        throw new Error(`HTTP ${updateResponse.status}: ${errorText}`)
+        const errorText = await updateResponse.text();
+        console.error("[v0] Erro na resposta:", errorText);
+        throw new Error(`HTTP ${updateResponse.status}: ${errorText}`);
       }
 
-      const result = await updateResponse.json()
-      console.log("[v0] Data:", result)
+      const result = await updateResponse.json();
+      console.log("[v0] Data:", result);
 
-      return result
+      return result;
     } catch (error) {
-      console.error("[v0] === ERRO COMPLETO NA EDIÇÃO DE CRÉDITO ===", error)
-      throw error
+      console.error("[v0] === ERRO COMPLETO NA EDIÇÃO DE CRÉDITO ===", error);
+      throw error;
     }
-  }
+  };
 
   const handleFinalizarLote = async () => {
     if (items.length === 0) {
-      setError("Adicione pelo menos um item ao lote antes de finalizar.")
-      return
+      setError("Adicione pelo menos um item ao lote antes de finalizar.");
+      return;
     }
 
     if (!fornecedoraId) {
-      setError("Selecione uma fornecedora para o lote.")
-      return
+      setError("Selecione uma fornecedora para o lote.");
+      return;
     }
 
     // Get current credit and open modal
     try {
-      setCreditLoading(true)
-      const credit = await getFornecedoraCredit(fornecedoraId)
-      setCurrentCredit(credit)
-      setCreditModal(true)
+      setCreditLoading(true);
+      const credit = await getFornecedoraCredit(fornecedoraId);
+      setCurrentCredit(credit);
+      setCreditModal(true);
     } catch (error) {
-      setError("Erro ao buscar crédito da fornecedora")
+      setError("Erro ao buscar crédito da fornecedora");
     } finally {
-      setCreditLoading(false)
+      setCreditLoading(false);
     }
-  }
+  };
 
   const handleCreditConfirm = async () => {
     try {
-      setCreditLoading(true)
-      setError(null)
+      setCreditLoading(true);
+      setError(null);
 
-      console.log("[v0] Starting credit confirmation process")
-      console.log("[v0] Current credit:", currentCredit)
-      console.log("[v0] PercentFornecedor:", percentFornecedor)
-      console.log("[v0] Fornecedora ID:", fornecedoraId)
+      console.log("[v0] Starting credit confirmation process");
+      console.log("[v0] Current credit:", currentCredit);
+      console.log("[v0] PercentFornecedor:", percentFornecedor);
+      console.log("[v0] Fornecedora ID:", fornecedoraId);
 
       // Update credit if new value is provided
       // Validate percentage split
       if (percentBrecho + percentFornecedor !== 100) {
-        setError("A soma dos percentuais deve ser 100% antes de confirmar.")
-        return
+        setError("A soma dos percentuais deve ser 100% antes de confirmar.");
+        return;
       }
 
-      const valorTotal = calcularValorTotal()
-      const creditoParaFornecedor = Number.parseFloat((valorTotal * (percentFornecedor / 100)).toFixed(2))
+      const valorTotal = calcularValorTotal();
+      const creditoParaFornecedor = Number.parseFloat(
+        (valorTotal * (percentFornecedor / 100)).toFixed(2)
+      );
 
       if (creditoParaFornecedor > 0) {
-        const updatedCredit = currentCredit + creditoParaFornecedor
-        console.log("[v0] Calculated updated credit:", updatedCredit)
-        await updateFornecedoraCredit(fornecedoraId, updatedCredit)
-        console.log("[v0] Credit updated successfully")
+        const updatedCredit = currentCredit + creditoParaFornecedor;
+        console.log("[v0] Calculated updated credit:", updatedCredit);
+        await updateFornecedoraCredit(fornecedoraId, updatedCredit);
+        console.log("[v0] Credit updated successfully");
       }
 
       // Create the batch
-      console.log("[v0] Creating lote with items:", items.length)
-      const result = await createLote(fornecedoraId, items)
-      console.log("[v0] Lote creation result:", result)
+      console.log("[v0] Creating lote with items:", items.length);
+      const result = await createLote(fornecedoraId, items);
+      console.log("[v0] Lote creation result:", result);
 
       if (result.success) {
-        setSuccess(`Lote finalizado com sucesso! ${items.length} itens cadastrados.`)
-        setCreditModal(false)
-        setNewCredit("")
-        setPercentBrecho(60)
-        setPercentFornecedor(40)
+        setSuccess(
+          `Lote finalizado com sucesso! ${items.length} itens cadastrados.`
+        );
+        setCreditModal(false);
+        setNewCredit("");
+        setPercentBrecho(60);
+        setPercentFornecedor(40);
 
         // Redirect after success
         setTimeout(() => {
-          router.push("./lotes_geral")
-        }, 2000)
+          router.push("./lotes_geral");
+        }, 2000);
       }
     } catch (error) {
-      console.error("[v0] Erro ao finalizar lote:", error)
-      setError(error.message || "Não foi possível finalizar o lote. Tente novamente.")
+      console.error("[v0] Erro ao finalizar lote:", error);
+      setError(
+        error.message || "Não foi possível finalizar o lote. Tente novamente."
+      );
     } finally {
-      setCreditLoading(false)
+      setCreditLoading(false);
     }
-  }
+  };
 
   const calcularValorTotal = () => {
-    return items.reduce((total, item) => total + item.preco * item.quantidade, 0)
-  }
+    return items.reduce(
+      (total, item) => total + item.preco * item.quantidade,
+      0
+    );
+  };
 
   // Últimas 10 fornecedoras (supondo que fornecedoras já estejam ordenadas pela data desc)
-  const ultimasFornecedoras = fornecedoras.slice(0, 10)
+  const ultimasFornecedoras = fornecedoras.slice(0, 10);
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -414,7 +441,10 @@ const handleViewItem = (id) => {
           }}
         >
           <Toolbar sx={{ justifyContent: "space-between" }}>
-            <IconButton onClick={() => router.push("./lotes_geral")} sx={{ color: "#333" }}>
+            <IconButton
+              onClick={() => router.push("./lotes_geral")}
+              sx={{ color: "#333" }}
+            >
               <ArrowBack />
             </IconButton>
 
@@ -436,10 +466,19 @@ const handleViewItem = (id) => {
             </Box>
 
             <Box sx={{ display: "flex", gap: 1 }}>
-              <IconButton onClick={handleTestApi} sx={{ color: "#333" }} title="Testar API">
+              <IconButton
+                onClick={handleTestApi}
+                sx={{ color: "#333" }}
+                title="Testar API"
+              >
                 <BugReport />
               </IconButton>
-              <IconButton onClick={() => router.push("../fornecedores/fornecedores_tabela")} sx={{ color: "#333" }}>
+              <IconButton
+                onClick={() =>
+                  router.push("../fornecedores/fornecedores_tabela")
+                }
+                sx={{ color: "#333" }}
+              >
                 <Home />
               </IconButton>
             </Box>
@@ -454,7 +493,11 @@ const handleViewItem = (id) => {
         )}
 
         {success && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+          <Alert
+            severity="success"
+            sx={{ mb: 2 }}
+            onClose={() => setSuccess(null)}
+          >
             {success}
           </Alert>
         )}
@@ -696,18 +739,31 @@ const handleViewItem = (id) => {
 
             <Grid item xs={12} md={6}>
               <Autocomplete
-                open={false}
-                disableOpenOnFocus
                 fullWidth
                 options={fornecedoras
                   .slice()
-                  .sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao))
+                  .sort(
+                    (a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao)
+                  )
                   .slice(0, 10)}
-                getOptionLabel={(option) => option.nome}
-                value={fornecedoras.find((f) => f.id === fornecedoraId) || null}
+                getOptionLabel={(option) =>
+                  typeof option === "string" ? option : option?.nome || ""
+                }
+                value={
+                  // value can be stored as an id (string/number) or as the selected object
+                  // find matching object in fornecedoras when fornecedoraId is set
+                  fornecedoras.find(
+                    (f) => String(f.id) === String(fornecedoraId)
+                  ) ||
+                  fornecedoraSelecionada ||
+                  null
+                }
                 onChange={(event, newValue) => {
-                  setFornecedoraId(newValue ? newValue.id : "")
-                  setFornecedoraSelecionada(newValue)
+                  // newValue may be an object or null
+                  setFornecedoraId(
+                    newValue ? String(newValue.id ?? newValue) : ""
+                  );
+                  setFornecedoraSelecionada(newValue);
                 }}
                 renderInput={(params) => (
                   <TextField
@@ -733,7 +789,12 @@ const handleViewItem = (id) => {
                     }}
                   />
                 )}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
+                isOptionEqualToValue={(option, value) => {
+                  // value could be an object with id or the id itself (string/number)
+                  if (value == null) return false;
+                  const valueId = typeof value === "object" ? value.id : value;
+                  return String(option.id) === String(valueId);
+                }}
                 noOptionsText="Nenhuma fornecedora encontrada"
                 clearOnEscape
               />
@@ -909,45 +970,79 @@ const handleViewItem = (id) => {
               <TableBody>
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 4, fontSize: "1.1rem", color: "#666" }}>
+                    <TableCell
+                      colSpan={8}
+                      align="center"
+                      sx={{ py: 4, fontSize: "1.1rem", color: "#666" }}
+                    >
                       Nenhum item adicionado ao lote
                     </TableCell>
                   </TableRow>
                 ) : (
                   items.map((item) => (
-                    <TableRow key={item.id} hover sx={{ "&:hover": { backgroundColor: "#f8f9fa" } }}>
-                      <TableCell sx={{ fontSize: "16px" }}>{item.descricao}</TableCell>
-                      <TableCell sx={{ fontSize: "16px" }}>{item.estadoConservacao}</TableCell>
+                    <TableRow
+                      key={item.id}
+                      hover
+                      sx={{ "&:hover": { backgroundColor: "#f8f9fa" } }}
+                    >
+                      <TableCell sx={{ fontSize: "16px" }}>
+                        {item.descricao}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>
+                        {item.estadoConservacao}
+                      </TableCell>
                       <TableCell sx={{ fontSize: "16px", fontWeight: 600 }}>
                         R$ {item.preco.toFixed(2).replace(".", ",")}
                       </TableCell>
-                      <TableCell sx={{ fontSize: "16px" }}>{item.quantidade}</TableCell>
-                      <TableCell sx={{ fontSize: "16px" }}>{item.marca || "-"}</TableCell>
-                      <TableCell sx={{ fontSize: "16px" }}>{item.tamanho || "-"}</TableCell>
-                      <TableCell sx={{ fontSize: "16px" }}>{item.genero}</TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>
+                        {item.quantidade}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>
+                        {item.marca || "-"}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>
+                        {item.tamanho || "-"}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "16px" }}>
+                        {item.genero}
+                      </TableCell>
                       <TableCell align="center">
-                      <IconButton onClick={() => handleOpenProductModal(item)} color="primary">
-                        <Visibility />
-                      </IconButton>
-                      <IconButton 
-                        onClick={() => {
-                          setItemToDelete(item);  // Armazena o item para exibir no modal
-                          setOpenDeleteDialog(true);  // Abre o modal de confirmação
-                        }} 
-                        color="error"
-                      >
-                        <Delete />
-                      </IconButton>
-                    </TableCell>
+                        <IconButton
+                          onClick={() => handleOpenProductModal(item)}
+                          color="primary"
+                        >
+                          <Visibility />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => {
+                            setItemToDelete(item); // Armazena o item para exibir no modal
+                            setOpenDeleteDialog(true); // Abre o modal de confirmação
+                          }}
+                          color="error"
+                        >
+                          <Delete />
+                        </IconButton>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
                 {items.length > 0 && (
                   <TableRow sx={{ backgroundColor: "#f0f8ff" }}>
-                    <TableCell colSpan={2} align="right" sx={{ fontWeight: "bold", fontSize: "18px" }}>
+                    <TableCell
+                      colSpan={2}
+                      align="right"
+                      sx={{ fontWeight: "bold", fontSize: "18px" }}
+                    >
                       Total:
                     </TableCell>
-                    <TableCell colSpan={6} sx={{ fontWeight: "bold", fontSize: "18px", color: "#2e7d32" }}>
+                    <TableCell
+                      colSpan={6}
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "18px",
+                        color: "#2e7d32",
+                      }}
+                    >
                       R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
                     </TableCell>
                   </TableRow>
@@ -1024,7 +1119,8 @@ const handleViewItem = (id) => {
                 Fornecedor: {fornecedoraSelecionada?.nome}
               </Typography>
               <Typography variant="body1" sx={{ mb: 2, color: "#666" }}>
-                Crédito atual: <strong>R$ {currentCredit.toFixed(2).replace(".", ",")}</strong>
+                Crédito atual:{" "}
+                <strong>R$ {currentCredit.toFixed(2).replace(".", ",")}</strong>
               </Typography>
             </Box>
 
@@ -1045,7 +1141,9 @@ const handleViewItem = (id) => {
                   label="Percentual Fornecedora (%)"
                   type="number"
                   value={percentFornecedor}
-                  onChange={(e) => handlePercentFornecedorChange(e.target.value)}
+                  onChange={(e) =>
+                    handlePercentFornecedorChange(e.target.value)
+                  }
                   inputProps={{ step: 1, min: 0, max: 100 }}
                 />
               </Grid>
@@ -1060,7 +1158,13 @@ const handleViewItem = (id) => {
                     max={100}
                     sx={{ color: "#f48fb1" }}
                   />
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mt: 1,
+                    }}
+                  >
                     <Typography variant="caption">0%</Typography>
                     <Typography variant="caption">100%</Typography>
                   </Box>
@@ -1071,17 +1175,27 @@ const handleViewItem = (id) => {
             {/* Mostrar cálculo automático do crédito para a fornecedora */}
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                Valor total do lote: <strong>R$ {calcularValorTotal().toFixed(2).replace('.', ',')}</strong>
+                Valor total do lote:{" "}
+                <strong>
+                  R$ {calcularValorTotal().toFixed(2).replace(".", ",")}
+                </strong>
               </Typography>
 
               {percentBrecho + percentFornecedor !== 100 ? (
                 <Alert severity="warning" sx={{ mb: 1 }}>
-                  A soma dos percentuais deve ser 100% (atualmente {percentBrecho + percentFornecedor}%).
+                  A soma dos percentuais deve ser 100% (atualmente{" "}
+                  {percentBrecho + percentFornecedor}%).
                 </Alert>
               ) : null}
 
               <Alert severity="info">
-                Crédito calculado para a fornecedora: <strong>R$ {(calcularValorTotal() * (percentFornecedor / 100)).toFixed(2).replace('.', ',')}</strong>
+                Crédito calculado para a fornecedora:{" "}
+                <strong>
+                  R${" "}
+                  {(calcularValorTotal() * (percentFornecedor / 100))
+                    .toFixed(2)
+                    .replace(".", ",")}
+                </strong>
               </Alert>
             </Box>
           </DialogContent>
@@ -1121,342 +1235,382 @@ const handleViewItem = (id) => {
             </Button>
           </DialogActions>
         </Dialog>
-                {/* Modal de Visualização de Produto */}
-                  <Dialog
-                    open={openProductModal}
-                    onClose={handleCloseProductModal}
-                    maxWidth="md"
-                    fullWidth
-                    PaperProps={{
-                      sx: {
-                        borderRadius: "20px",
-                        background: "#F5F5F5",
-                        boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
-                        overflow: "visible",
-                        maxHeight: "90vh",
-                      },
-                    }}
-                  >
-                    <DialogTitle
-                      sx={{
-                        textAlign: "center",
-                        pb: 2,
-                        pt: 4,
-                        position: "relative",
-                      }}
-                    >
-                      <IconButton
-                        onClick={handleCloseProductModal}
-                        sx={{
-                          position: "absolute",
-                          right: 8,
-                          top: 8,
-                          color: "#666",
-                          "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.1)" },
-                        }}
+        {/* Modal de Visualização de Produto */}
+        <Dialog
+          open={openProductModal}
+          onClose={handleCloseProductModal}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: "20px",
+              background: "#F5F5F5",
+              boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+              overflow: "visible",
+              maxHeight: "90vh",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              textAlign: "center",
+              pb: 2,
+              pt: 4,
+              position: "relative",
+            }}
+          >
+            <IconButton
+              onClick={handleCloseProductModal}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                color: "#666",
+                "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.1)" },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 80,
+                  height: 80,
+                  backgroundColor: "#9AE4FF",
+                  boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
+                }}
+              >
+                <InventoryIcon sx={{ fontSize: 40, color: "white" }} />
+              </Avatar>
+
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: "bold", color: "#333", textAlign: "center" }}
+              >
+                {produtoSelecionado?.descricao || "Produto"}
+              </Typography>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ px: 4, pb: 2 }}>
+            <Tabs
+              value={tabValue}
+              onChange={handleTabChange}
+              centered
+              sx={{
+                mb: 3,
+                "& .MuiTab-root": {
+                  fontWeight: "bold",
+                  fontSize: "16px",
+                  color: "#333",
+                },
+                "& .MuiTab-root.Mui-selected": { color: "#9AE4FF" },
+                "& .MuiTabs-indicator": { backgroundColor: "#9AE4FF" },
+              }}
+            >
+              <Tab label="Informações Básicas" />
+              <Tab label="Detalhes Adicionais" />
+            </Tabs>
+
+            {tabValue === 0 && produtoSelecionado && (
+              <Box>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
                       >
-                        <CloseIcon />
-                      </IconButton>
+                        Dados do Produto
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>ID:</strong> #{produtoSelecionado.id || "N/A"}
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Descrição:</strong>{" "}
+                        {produtoSelecionado.descricao}
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Estado:</strong>{" "}
+                        <Chip
+                          label={produtoSelecionado.estadoConservacao}
+                          color="success"
+                          size="small"
+                        />
+                      </Typography>
+                    </Paper>
+                  </Grid>
 
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: 2,
-                        }}
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
                       >
-                        <Avatar
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            backgroundColor: "#9AE4FF",
-                            boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
-                          }}
-                        >
-                          <InventoryIcon sx={{ fontSize: 40, color: "white" }} />
-                        </Avatar>
-
-                        <Typography
-                          variant="h5"
-                          sx={{ fontWeight: "bold", color: "#333", textAlign: "center" }}
-                        >
-                          {produtoSelecionado?.descricao || "Produto"}
-                        </Typography>
-                      </Box>
-                    </DialogTitle>
-
-                    <DialogContent sx={{ px: 4, pb: 2 }}>
-                      <Tabs
-                        value={tabValue}
-                        onChange={handleTabChange}
-                        centered
+                        Preço e Estoque
+                      </Typography>
+                      <Typography
+                        variant="body1"
                         sx={{
-                          mb: 3,
-                          "& .MuiTab-root": { fontWeight: "bold", fontSize: "16px", color: "#333" },
-                          "& .MuiTab-root.Mui-selected": { color: "#9AE4FF" },
-                          "& .MuiTabs-indicator": { backgroundColor: "#9AE4FF" },
-                        }}
-                      >
-                        <Tab label="Informações Básicas" />
-                        <Tab label="Detalhes Adicionais" />
-                      </Tabs>
-
-                      {tabValue === 0 && produtoSelecionado && (
-                        <Box>
-                          <Grid container spacing={3}>
-                            <Grid item xs={12} md={6}>
-                              <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                                <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
-                                  Dados do Produto
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                  <strong>ID:</strong> #{produtoSelecionado.id || "N/A"}
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                  <strong>Descrição:</strong> {produtoSelecionado.descricao}
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                  <strong>Estado:</strong>{" "}
-                                  <Chip label={produtoSelecionado.estadoConservacao} color="success" size="small" />
-                                </Typography>
-                              </Paper>
-                            </Grid>
-
-                            <Grid item xs={12} md={6}>
-                              <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                                <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
-                                  Preço e Estoque
-                                </Typography>
-                                <Typography
-                                  variant="body1"
-                                  sx={{ mb: 1, fontSize: "18px", fontWeight: "bold", color: "#4CAF50" }}
-                                >
-                                  <strong>Preço:</strong> R$ {formatarPreco(produtoSelecionado.preco)}
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                  <strong>Quantidade:</strong> {produtoSelecionado.quantidade} unidades
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                  <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
-                                </Typography>
-                              </Paper>
-                            </Grid>
-                          </Grid>
-                        </Box>
-                      )}
-
-                      {tabValue === 1 && produtoSelecionado && (
-                        <Box>
-                          <Grid container spacing={3}>
-                            <Grid item xs={12} md={6}>
-                              <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
-                                <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
-                                  Características
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                  <strong>Marca:</strong> {produtoSelecionado.marca}
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                  <strong>Gênero:</strong> {produtoSelecionado.genero}
-                                </Typography>
-                              </Paper>
-                            </Grid>
-
-                            <Grid item xs={12} md={6}>
-                              <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
-                                <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: "#333" }}>
-                                  Controle
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                  <strong>Data de Adição:</strong>{" "}
-                                  {produtoSelecionado.dataAdicao
-                                    ? new Date(produtoSelecionado.dataAdicao).toLocaleDateString("pt-BR")
-                                    : "Não informada"}
-                                </Typography>
-                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                  <strong>Status:</strong>{" "}
-                                  <Chip
-                                    label={produtoSelecionado.ativo ? "Ativo" : "Inativo"}
-                                    color={produtoSelecionado.ativo ? "success" : "error"}
-                                    size="small"
-                                  />
-                                </Typography>
-                              </Paper>
-                            </Grid>
-                          </Grid>
-                        </Box>
-                      )}
-                    </DialogContent>
-
-                    <DialogActions sx={{ justifyContent: "center", gap: 2, px: 4, pb: 4 }}>
-                      <Button
-                        onClick={handleCloseProductModal}
-                        sx={{
-                          backgroundColor: "#FADADD",
-                          color: "#333",
+                          mb: 1,
+                          fontSize: "18px",
                           fontWeight: "bold",
-                          fontSize: "16px",
-                          borderRadius: "25px",
-                          padding: "12px 32px",
-                          minWidth: "120px",
-                          textTransform: "none",
-                          boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
-                          "&:hover": {
-                            backgroundColor: "#FFB6C1",
-                            transform: "translateY(-2px)",
-                            boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
-                          },
+                          color: "#4CAF50",
                         }}
                       >
-                        Fechar
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
-                  {/* Modal de Confirmação de Exclusão de Produto */}
-                    <Dialog
-                      open={openDeleteDialog}
-                      onClose={() => setOpenDeleteDialog(false)}
-                      maxWidth="sm"
-                      fullWidth
-                      PaperProps={{
-                        sx: {
-                          borderRadius: "20px",
-                          background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
-                          boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
-                          overflow: "visible",
-                        },
-                      }}
-                    >
-                      <DialogTitle
-                        sx={{
-                          textAlign: "center",
-                          pb: 2,
-                          pt: 4,
-                          position: "relative",
-                        }}
+                        <strong>Preço:</strong> R${" "}
+                        {formatarPreco(produtoSelecionado.preco)}
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Quantidade:</strong>{" "}
+                        {produtoSelecionado.quantidade} unidades
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+
+            {tabValue === 1 && produtoSelecionado && (
+              <Box>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
                       >
-                        <IconButton
-                          onClick={() => setOpenDeleteDialog(false)}
-                          sx={{
-                            position: "absolute",
-                            right: 8,
-                            top: 8,
-                            color: "#666",
-                            "&:hover": {
-                              backgroundColor: "rgba(0, 0, 0, 0.1)",
-                            },
-                          }}
-                        >
-                          <CloseIcon />
-                        </IconButton>
+                        Características
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Marca:</strong> {produtoSelecionado.marca}
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Gênero:</strong> {produtoSelecionado.genero}
+                      </Typography>
+                    </Paper>
+                  </Grid>
 
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: 2,
-                          }}
-                        >
-                          <Avatar
-                            sx={{
-                              width: 80,
-                              height: 80,
-                              backgroundColor: "#ff5722",
-                              boxShadow: "0px 8px 20px rgba(255, 87, 34, 0.3)",
-                            }}
-                          >
-                            <WarningAmberIcon sx={{ fontSize: 40, color: "white" }} />
-                          </Avatar>
-
-                          <Typography
-                            variant="h5"
-                            sx={{
-                              fontWeight: "bold",
-                              color: "#333",
-                              textAlign: "center",
-                            }}
-                          >
-                            Confirmar Exclusão
-                          </Typography>
-                        </Box>
-                      </DialogTitle>
-
-                      <DialogContent sx={{ textAlign: "center", px: 4, pb: 2 }}>
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            color: "#555",
-                            fontSize: "18px",
-                            lineHeight: 1.6,
-                            maxWidth: "400px",
-                            mx: "auto",
-                          }}
-                        >
-                          Tem certeza que deseja remover o produto "<strong>{itemToDelete?.descricao}</strong>" do lote?
-                          <br />
-                          <strong>Esta ação não pode ser desfeita.</strong>
-                        </Typography>
-                      </DialogContent>
-
-                      <DialogActions
-                        sx={{
-                          justifyContent: "center",
-                          gap: 2,
-                          px: 4,
-                          pb: 4,
-                        }}
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
                       >
-                        <Button
-                          onClick={() => setOpenDeleteDialog(false)}
-                          sx={{
-                            backgroundColor: "#9AE4FF",
-                            color: "#333",
-                            fontWeight: "bold",
-                            fontSize: "16px",
-                            borderRadius: "25px",
-                            padding: "12px 32px",
-                            minWidth: "120px",
-                            textTransform: "none",
-                            boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
-                            "&:hover": {
-                              backgroundColor: "#7DD3FC",
-                              transform: "translateY(-2px)",
-                              boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
-                            },
-                          }}
-                        >
-                          Cancelar
-                        </Button>
+                        Controle
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Data de Adição:</strong>{" "}
+                        {produtoSelecionado.dataAdicao
+                          ? new Date(
+                              produtoSelecionado.dataAdicao
+                            ).toLocaleDateString("pt-BR")
+                          : "Não informada"}
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Status:</strong>{" "}
+                        <Chip
+                          label={produtoSelecionado.ativo ? "Ativo" : "Inativo"}
+                          color={produtoSelecionado.ativo ? "success" : "error"}
+                          size="small"
+                        />
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+          </DialogContent>
 
-                        <Button
-                          onClick={confirmDeleteItem}
-                          sx={{
-                            backgroundColor: "#ff5722",
-                            color: "white",
-                            fontWeight: "bold",
-                            fontSize: "16px",
-                            borderRadius: "25px",
-                            padding: "12px 32px",
-                            minWidth: "120px",
-                            textTransform: "none",
-                            boxShadow: "0px 4px 12px rgba(255, 87, 34, 0.4)",
-                            "&:hover": {
-                              backgroundColor: "#e64a19",
-                              transform: "translateY(-2px)",
-                              boxShadow: "0px 6px 16px rgba(255, 87, 34, 0.6)",
-                            },
-                          }}
-                        >
-                          Excluir
-                        </Button>
-                      </DialogActions>
-                    </Dialog>
-        <Dialog open={debugDialog} onClose={() => setDebugDialog(false)} maxWidth="md" fullWidth>
+          <DialogActions
+            sx={{ justifyContent: "center", gap: 2, px: 4, pb: 4 }}
+          >
+            <Button
+              onClick={handleCloseProductModal}
+              sx={{
+                backgroundColor: "#FADADD",
+                color: "#333",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#FFB6C1",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+                },
+              }}
+            >
+              Fechar
+            </Button>
+          </DialogActions>
+        </Dialog>
+        {/* Modal de Confirmação de Exclusão de Produto */}
+        <Dialog
+          open={openDeleteDialog}
+          onClose={() => setOpenDeleteDialog(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: "20px",
+              background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
+              boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+              overflow: "visible",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              textAlign: "center",
+              pb: 2,
+              pt: 4,
+              position: "relative",
+            }}
+          >
+            <IconButton
+              onClick={() => setOpenDeleteDialog(false)}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                color: "#666",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.1)",
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 80,
+                  height: 80,
+                  backgroundColor: "#ff5722",
+                  boxShadow: "0px 8px 20px rgba(255, 87, 34, 0.3)",
+                }}
+              >
+                <WarningAmberIcon sx={{ fontSize: 40, color: "white" }} />
+              </Avatar>
+
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#333",
+                  textAlign: "center",
+                }}
+              >
+                Confirmar Exclusão
+              </Typography>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ textAlign: "center", px: 4, pb: 2 }}>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#555",
+                fontSize: "18px",
+                lineHeight: 1.6,
+                maxWidth: "400px",
+                mx: "auto",
+              }}
+            >
+              Tem certeza que deseja remover o produto "
+              <strong>{itemToDelete?.descricao}</strong>" do lote?
+              <br />
+              <strong>Esta ação não pode ser desfeita.</strong>
+            </Typography>
+          </DialogContent>
+
+          <DialogActions
+            sx={{
+              justifyContent: "center",
+              gap: 2,
+              px: 4,
+              pb: 4,
+            }}
+          >
+            <Button
+              onClick={() => setOpenDeleteDialog(false)}
+              sx={{
+                backgroundColor: "#9AE4FF",
+                color: "#333",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#7DD3FC",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
+                },
+              }}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              onClick={confirmDeleteItem}
+              sx={{
+                backgroundColor: "#ff5722",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                borderRadius: "25px",
+                padding: "12px 32px",
+                minWidth: "120px",
+                textTransform: "none",
+                boxShadow: "0px 4px 12px rgba(255, 87, 34, 0.4)",
+                "&:hover": {
+                  backgroundColor: "#e64a19",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0px 6px 16px rgba(255, 87, 34, 0.6)",
+                },
+              }}
+            >
+              Excluir
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={debugDialog}
+          onClose={() => setDebugDialog(false)}
+          maxWidth="md"
+          fullWidth
+        >
           <DialogTitle>Informações de Debug da API</DialogTitle>
           <DialogContent>
-            <pre style={{ whiteSpace: "pre-wrap", fontSize: "12px" }}>{debugInfo}</pre>
+            <pre style={{ whiteSpace: "pre-wrap", fontSize: "12px" }}>
+              {debugInfo}
+            </pre>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDebugDialog(false)}>Fechar</Button>
@@ -1464,6 +1618,5 @@ const handleViewItem = (id) => {
         </Dialog>
       </Box>
     </Box>
-    
-  )
+  );
 }

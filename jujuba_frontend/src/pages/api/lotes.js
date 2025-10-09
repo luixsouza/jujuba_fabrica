@@ -1,75 +1,93 @@
-const BASE_URL = "http://localhost:8080/api/lotes"
+const BASE_URL = "http://localhost:8080/api/lotes";
 
 const ESTADOS_CONSERVACAO = {
   Ótimo: "OTIMO",
   Excelente: "EXCELENTE",
   Bom: "BOM",
   Ruim: "RUIM",
-}
+};
 
 const GENEROS = {
   Masculino: "MASCULINO",
   Feminino: "FEMININO",
   Unisex: "UNISSEX",
-}
+};
 
 const validarProduto = (produto, index) => {
-  const erros = []
+  const erros = [];
 
   if (!produto.descricao || produto.descricao.trim() === "") {
-    erros.push(`Produto ${index + 1}: Descrição é obrigatória`)
+    erros.push(`Produto ${index + 1}: Descrição é obrigatória`);
   }
 
   if (!produto.preco || isNaN(produto.preco) || produto.preco <= 0) {
-    erros.push(`Produto ${index + 1}: Preço deve ser um número maior que 0`)
+    erros.push(`Produto ${index + 1}: Preço deve ser um número maior que 0`);
   }
 
-  if (!produto.quantidade || isNaN(produto.quantidade) || produto.quantidade <= 0) {
-    erros.push(`Produto ${index + 1}: Quantidade deve ser um número maior que 0`)
-  }
-
-  if (produto.estadoConservacao && !ESTADOS_CONSERVACAO[produto.estadoConservacao]) {
+  if (
+    !produto.quantidade ||
+    isNaN(produto.quantidade) ||
+    produto.quantidade <= 0
+  ) {
     erros.push(
-      `Produto ${index + 1}: Estado de conservação inválido. Valores aceitos: ${Object.keys(ESTADOS_CONSERVACAO).join(", ")}`,
-    )
+      `Produto ${index + 1}: Quantidade deve ser um número maior que 0`
+    );
+  }
+
+  if (
+    produto.estadoConservacao &&
+    !ESTADOS_CONSERVACAO[produto.estadoConservacao]
+  ) {
+    erros.push(
+      `Produto ${
+        index + 1
+      }: Estado de conservação inválido. Valores aceitos: ${Object.keys(
+        ESTADOS_CONSERVACAO
+      ).join(", ")}`
+    );
   }
 
   if (produto.genero && !GENEROS[produto.genero]) {
-    erros.push(`Produto ${index + 1}: Gênero inválido. Valores aceitos: ${Object.keys(GENEROS).join(", ")}`)
+    erros.push(
+      `Produto ${index + 1}: Gênero inválido. Valores aceitos: ${Object.keys(
+        GENEROS
+      ).join(", ")}`
+    );
   }
 
-  return erros
-}
+  return erros;
+};
 
 const createLote = async (fornecedoraId, produtos) => {
   try {
-    console.log("=== INÍCIO DEBUG LOTE ===")
-    console.log("fornecedoraId recebido:", fornecedoraId)
-    console.log("produtos recebidos:", produtos)
+    console.log("=== INÍCIO DEBUG LOTE ===");
+    console.log("fornecedoraId recebido:", fornecedoraId);
+    console.log("produtos recebidos:", produtos);
 
     if (!fornecedoraId) {
-      throw new Error("fornecedoraId é obrigatório")
+      throw new Error("fornecedoraId é obrigatório");
     }
 
     if (!produtos || !Array.isArray(produtos) || produtos.length === 0) {
-      throw new Error("produtos deve ser um array não vazio")
+      throw new Error("produtos deve ser um array não vazio");
     }
 
-    const todosErros = []
+    const todosErros = [];
     produtos.forEach((produto, index) => {
-      const erros = validarProduto(produto, index)
-      todosErros.push(...erros)
-    })
+      const erros = validarProduto(produto, index);
+      todosErros.push(...erros);
+    });
 
     if (todosErros.length > 0) {
-      throw new Error(`Erros de validação:\n${todosErros.join("\n")}`)
+      throw new Error(`Erros de validação:\n${todosErros.join("\n")}`);
     }
 
     const produtosFormatados = produtos.map((produto, index) => {
-      console.log(`Formatando produto ${index + 1}:`, produto)
+      console.log(`Formatando produto ${index + 1}:`, produto);
 
-      const estadoConservacao = ESTADOS_CONSERVACAO[produto.estadoConservacao] || "BOM"
-      const genero = GENEROS[produto.genero] || "UNISSEX"
+      const estadoConservacao =
+        ESTADOS_CONSERVACAO[produto.estadoConservacao] || "BOM";
+      const genero = GENEROS[produto.genero] || "UNISSEX";
 
       const produtoFormatado = {
         descricao: produto.descricao?.trim(),
@@ -79,22 +97,22 @@ const createLote = async (fornecedoraId, produtos) => {
         tamanho: produto.tamanho?.trim() || "",
         estadoConservacao: estadoConservacao,
         genero: genero,
-      }
+      };
 
-      console.log(`Produto ${index + 1} formatado:`, produtoFormatado)
-      return produtoFormatado
-    })
+      console.log(`Produto ${index + 1} formatado:`, produtoFormatado);
+      return produtoFormatado;
+    });
 
     const loteData = {
       fornecedora: {
         id: Number.parseInt(fornecedoraId),
       },
       produtos: produtosFormatados,
-    }
+    };
 
-    console.log("=== DADOS FINAIS PARA ENVIO ===")
-    console.log("URL:", BASE_URL)
-    console.log("Payload:", JSON.stringify(loteData, null, 2))
+    console.log("=== DADOS FINAIS PARA ENVIO ===");
+    console.log("URL:", BASE_URL);
+    console.log("Payload:", JSON.stringify(loteData, null, 2));
 
     const response = await fetch(BASE_URL, {
       method: "POST",
@@ -103,80 +121,83 @@ const createLote = async (fornecedoraId, produtos) => {
         Accept: "application/json",
       },
       body: JSON.stringify(loteData),
-    })
+    });
 
-    console.log("Status da resposta:", response.status)
+    console.log("Status da resposta:", response.status);
 
-    const responseText = await response.text()
-    console.log("Resposta completa (texto):", responseText)
+    const responseText = await response.text();
+    console.log("Resposta completa (texto):", responseText);
 
     if (!response.ok) {
-      let errorMessage = `Erro HTTP ${response.status}`
+      let errorMessage = `Erro HTTP ${response.status}`;
 
       if (responseText) {
         try {
-          const errorData = JSON.parse(responseText)
-          errorMessage = errorData.message || errorData.error || errorMessage
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorData.error || errorMessage;
         } catch (parseError) {
-          errorMessage = responseText
+          errorMessage = responseText;
         }
       }
 
-      throw new Error(errorMessage)
+      throw new Error(errorMessage);
     }
 
     if (!responseText) {
       return {
         success: true,
         data: { message: "Lote criado com sucesso" },
-      }
+      };
     }
 
     try {
-      const data = JSON.parse(responseText)
+      const data = JSON.parse(responseText);
       return {
         success: true,
         data: data,
-      }
+      };
     } catch (parseError) {
       return {
         success: true,
         data: { message: "Lote criado com sucesso", raw: responseText },
-      }
+      };
     }
   } catch (error) {
-    console.error("Erro ao cadastrar lote:", error)
-    throw error
+    console.error("Erro ao cadastrar lote:", error);
+    throw error;
   }
-}
+};
 
 const getAllLotes = async () => {
   try {
-    console.log("=== INÍCIO DEBUG GET ALL LOTES ===")
-    console.log("URL:", BASE_URL)
+    console.log("=== INÍCIO DEBUG GET ALL LOTES ===");
+    console.log("URL:", BASE_URL);
 
-    const response = await fetch(`${BASE_URL}`)
-    console.log("getAllLotes: Status da resposta:", response.status)
+    const response = await fetch(`${BASE_URL}`);
+    console.log("getAllLotes: Status da resposta:", response.status);
 
     if (!response.ok) {
-      throw new Error(`Erro ao buscar os lotes. Status: ${response.status}`)
+      throw new Error(`Erro ao buscar os lotes. Status: ${response.status}`);
     }
 
-    const data = await response.json()
-    console.log("getAllLotes: Dados recebidos do backend (antes da validação):", JSON.stringify(data, null, 2))
+    const data = await response.json();
+    console.log(
+      "getAllLotes: Dados recebidos do backend (antes da validação):",
+      JSON.stringify(data, null, 2)
+    );
 
     if (!Array.isArray(data)) {
-      console.error("getAllLotes: Resposta não é um array:", data)
-      throw new Error("Formato de resposta inválido - esperado um array")
+      console.error("getAllLotes: Resposta não é um array:", data);
+      throw new Error("Formato de resposta inválido - esperado um array");
     }
 
     const lotesFormatados = data
       .map((lote, index) => {
-        console.log(`Processando lote ${index + 1}:`, lote)
+        console.log(`Processando lote ${index + 1}:`, lote);
 
         if (!lote || typeof lote !== "object") {
-          console.warn(`Lote ${index + 1} tem estrutura inválida:`, lote)
-          return null
+          console.warn(`Lote ${index + 1} tem estrutura inválida:`, lote);
+          return null;
         }
 
         const loteFormatado = {
@@ -187,7 +208,12 @@ const getAllLotes = async () => {
           },
           produtos: Array.isArray(lote.produtos)
             ? lote.produtos.map((produto, produtoIndex) => {
-                console.log(`Processando produto ${produtoIndex + 1} do lote ${index + 1}:`, produto)
+                console.log(
+                  `Processando produto ${produtoIndex + 1} do lote ${
+                    index + 1
+                  }:`,
+                  produto
+                );
 
                 return {
                   id: produto.id,
@@ -199,41 +225,43 @@ const getAllLotes = async () => {
                   tamanho: produto.tamanho || "",
                   estadoConservacao: produto.estadoConservacao || "",
                   genero: produto.genero || "",
-                }
+                };
               })
             : [],
           dataCriacao: lote.dataCriacao || lote.createdAt,
           status: lote.status || "ATIVO",
-          totalProdutos: Array.isArray(lote.produtos) ? lote.produtos.length : 0,
-        }
+          totalProdutos: Array.isArray(lote.produtos)
+            ? lote.produtos.length
+            : 0,
+        };
 
-        console.log(`Lote ${index + 1} formatado:`, loteFormatado)
-        return loteFormatado
+        console.log(`Lote ${index + 1} formatado:`, loteFormatado);
+        return loteFormatado;
       })
-      .filter((lote) => lote !== null)
+      .filter((lote) => lote !== null);
 
-    console.log("=== LOTES FORMATADOS FINAIS ===")
-    console.log("Total de lotes:", lotesFormatados.length)
+    console.log("=== LOTES FORMATADOS FINAIS ===");
+    console.log("Total de lotes:", lotesFormatados.length);
 
-    return lotesFormatados
+    return lotesFormatados;
   } catch (error) {
-    console.error("Erro ao listar lotes:", error)
-    throw error
+    console.error("Erro ao listar lotes:", error);
+    throw error;
   }
-}
+};
 
 const getLoteById = async (id) => {
   try {
-    console.log(`Buscando lote com ID: ${id}`)
+    console.log(`Buscando lote com ID: ${id}`);
 
-    const response = await fetch(`${BASE_URL}/${id}`)
+    const response = await fetch(`${BASE_URL}/${id}`);
 
     if (!response.ok) {
-      throw new Error(`Erro ao buscar lote ${id}. Status: ${response.status}`)
+      throw new Error(`Erro ao buscar lote ${id}. Status: ${response.status}`);
     }
 
-    const lote = await response.json()
-    console.log("Lote encontrado:", lote)
+    const lote = await response.json();
+    console.log("Lote encontrado:", lote);
 
     return {
       id: lote.id,
@@ -257,12 +285,12 @@ const getLoteById = async (id) => {
       dataCriacao: lote.dataCriacao || lote.createdAt,
       status: lote.status || "ATIVO",
       totalProdutos: Array.isArray(lote.produtos) ? lote.produtos.length : 0,
-    }
+    };
   } catch (error) {
-    console.error(`Erro ao buscar lote ${id}:`, error)
-    throw error
+    console.error(`Erro ao buscar lote ${id}:`, error);
+    throw error;
   }
-}
+};
 
 const editLote = async (id, loteData) => {
   try {
@@ -282,7 +310,7 @@ const editLote = async (id, loteData) => {
             genero: produto.genero || "UNISSEX",
           }))
         : [],
-    }
+    };
 
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: "PUT",
@@ -291,28 +319,28 @@ const editLote = async (id, loteData) => {
         Accept: "application/json",
       },
       body: JSON.stringify(formattedLoteData),
-    })
+    });
 
-    const responseText = await response.text()
+    const responseText = await response.text();
 
     if (!response.ok) {
-      let errorMessage = `Erro HTTP ${response.status}`
+      let errorMessage = `Erro HTTP ${response.status}`;
       if (responseText) {
         try {
-          const errorData = JSON.parse(responseText)
-          errorMessage = errorData.message || errorData.error || errorMessage
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorData.error || errorMessage;
         } catch (parseError) {
-          errorMessage = responseText
+          errorMessage = responseText;
         }
       }
-      throw new Error(errorMessage)
+      throw new Error(errorMessage);
     }
 
-    let data
+    let data;
     try {
-      data = responseText ? JSON.parse(responseText) : {}
+      data = responseText ? JSON.parse(responseText) : {};
     } catch (e) {
-      data = { message: "Lote editado com sucesso" }
+      data = { message: "Lote editado com sucesso" };
     }
 
     return {
@@ -321,13 +349,15 @@ const editLote = async (id, loteData) => {
         id: data.fornecedora?.id || formattedLoteData.fornecedora.id,
         nome: data.fornecedora?.nome || "Nome não disponível",
       },
-      produtos: Array.isArray(data.produtos) ? data.produtos : formattedLoteData.produtos,
-    }
+      produtos: Array.isArray(data.produtos)
+        ? data.produtos
+        : formattedLoteData.produtos,
+    };
   } catch (error) {
-    console.error("Erro ao editar lote:", error)
-    throw error
+    console.error("Erro ao editar lote:", error);
+    throw error;
   }
-}
+};
 
 const deletarLote = async (id) => {
   try {
@@ -336,114 +366,115 @@ const deletarLote = async (id) => {
       headers: {
         Accept: "application/json",
       },
-    })
+    });
 
-    const responseText = await response.text()
+    const responseText = await response.text();
 
     if (!response.ok) {
-      let errorMessage = `Erro HTTP ${response.status}`
+      let errorMessage = `Erro HTTP ${response.status}`;
       if (responseText) {
         try {
-          const errorData = JSON.parse(responseText)
-          errorMessage = errorData.message || errorData.error || errorMessage
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorData.error || errorMessage;
         } catch (parseError) {
-          errorMessage = responseText
+          errorMessage = responseText;
         }
       }
-      throw new Error(errorMessage)
+      throw new Error(errorMessage);
     }
 
-    let data
+    let data;
     try {
-      data = responseText ? JSON.parse(responseText) : {}
+      data = responseText ? JSON.parse(responseText) : {};
     } catch (e) {
-      data = { message: "Lote deletado com sucesso" }
+      data = { message: "Lote deletado com sucesso" };
     }
 
     return {
       sucesso: true,
       mensagem: data.message || "Lote deletado com sucesso.",
       idDeletado: id,
-    }
+    };
   } catch (error) {
-    console.error("Erro ao deletar lote:", error)
-    throw error
+    console.error("Erro ao deletar lote:", error);
+    throw error;
   }
-}
+};
 
 const getFornecedoras = async () => {
   try {
-    const response = await fetch("http://localhost:8080/api/fornecedoras")
+    const response = await fetch("http://localhost:8080/api/fornecedoras");
 
     if (!response.ok) {
-      throw new Error(`Erro HTTP: ${response.status}`)
+      throw new Error(`Erro HTTP: ${response.status}`);
     }
 
-    const responseText = await response.text()
+    const responseText = await response.text();
 
     if (!responseText) {
-      return []
+      return [];
     }
 
     try {
-      const data = JSON.parse(responseText)
-      return Array.isArray(data) ? data : []
+      const data = JSON.parse(responseText);
+      return Array.isArray(data) ? data : [];
     } catch (parseError) {
-      console.error("Erro ao fazer parse das fornecedoras:", responseText)
-      return []
+      console.error("Erro ao fazer parse das fornecedoras:", responseText);
+      return [];
     }
   } catch (error) {
-    console.error("Erro ao buscar fornecedoras:", error)
-    return []
+    console.error("Erro ao buscar fornecedoras:", error);
+    return [];
   }
-}
+};
 
 const testApiConnection = async () => {
   try {
-    console.log("Testando conexão com a API...")
+    console.log("Testando conexão com a API...");
 
     const response = await fetch(`${BASE_URL}`, {
       method: "GET",
       headers: {
         Accept: "application/json",
       },
-    })
+    });
 
     if (response.ok) {
-      console.log("Conexão com API estabelecida com sucesso")
+      console.log("Conexão com API estabelecida com sucesso");
       return {
         success: true,
         status: response.status,
         message: "Conexão estabelecida com sucesso",
-      }
+      };
     } else {
-      console.warn(`API respondeu com status ${response.status}`)
+      console.warn(`API respondeu com status ${response.status}`);
       return {
         success: false,
         status: response.status,
         message: `API respondeu com status ${response.status}`,
-      }
+      };
     }
   } catch (error) {
-    console.error("Erro ao testar conexão com API:", error)
+    console.error("Erro ao testar conexão com API:", error);
     return {
       success: false,
       status: null,
       message: error.message || "Erro de conectividade",
-    }
+    };
   }
-}
+};
 
-// Exportar usando CommonJS para compatibilidade
-module.exports = {
+// Exportar usando ES named exports
+export const deleteLote = deletarLote;
+
+export {
   createLote,
   getAllLotes,
   getLoteById,
   editLote,
   deletarLote,
-  deleteLote: deletarLote,
   testApiConnection,
   getFornecedoras,
   ESTADOS_CONSERVACAO,
   GENEROS,
-}
+};
