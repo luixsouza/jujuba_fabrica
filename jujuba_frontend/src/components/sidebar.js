@@ -2,8 +2,20 @@
 
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { Users, ShoppingBag, DollarSign, Package, ChevronRight } from "lucide-react";
-import { Tooltip, ListItem, ListItemIcon, ListItemText, List } from "@mui/material";
+import {
+  Users,
+  ShoppingBag,
+  DollarSign,
+  Package,
+  ChevronRight,
+} from "lucide-react";
+import {
+  Tooltip,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  List,
+} from "@mui/material";
 
 const menuItems = [
   {
@@ -63,7 +75,13 @@ export default function Sidebar() {
     <div className="sidebar">
       <div className="logo-container">
         <div className="logo">
-          <Image src="/Imagens/LogoJujuba.png" alt="Jujuba Logo" width={245} height={142} priority />
+          <Image
+            src="/Imagens/LogoJujuba.png"
+            alt="Jujuba Logo"
+            width={245}
+            height={142}
+            priority
+          />
         </div>
       </div>
 
@@ -73,8 +91,7 @@ export default function Sidebar() {
 
           return (
             <Tooltip title={item.tooltip} placement="right" arrow key={item.id}>
-              <ListItem
-                button
+              <ListItemButton
                 sx={getMenuItemStyle(isActive)}
                 onClick={() => router.push(item.path)}
               >
@@ -91,7 +108,7 @@ export default function Sidebar() {
                   }}
                 />
                 {isActive && <ChevronRight size={16} color="black" />}
-              </ListItem>
+              </ListItemButton>
             </Tooltip>
           );
         })}
