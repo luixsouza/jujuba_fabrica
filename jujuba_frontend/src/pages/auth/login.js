@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import Image from "next/image"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import {
   Box,
   Typography,
@@ -13,24 +13,24 @@ import {
   Paper,
   InputAdornment,
   IconButton,
-} from "@mui/material"
-import VisibilityIcon from "@mui/icons-material/Visibility"
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff"
+} from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 export default function Login() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = (event) => {
-    event.preventDefault()
-    router.push("/fornecedores/fornecedores_tabela")
-  }
+    event.preventDefault();
+    router.push("/fornecedores");
+  };
 
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
-  }
+    setShowPassword(!showPassword);
+  };
 
   return (
     <Box
@@ -200,7 +200,6 @@ export default function Login() {
                 }}
               />
             ))}
-
           </Box>
 
           {/* Right side - Login form */}
@@ -288,7 +287,11 @@ export default function Login() {
                           },
                         }}
                       >
-                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        {showPassword ? (
+                          <VisibilityOffIcon />
+                        ) : (
+                          <VisibilityIcon />
+                        )}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -360,5 +363,5 @@ export default function Login() {
         </Paper>
       </Container>
     </Box>
-  )
+  );
 }

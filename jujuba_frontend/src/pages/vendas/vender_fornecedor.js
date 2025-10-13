@@ -286,7 +286,7 @@ export default function FornecedoresPage() {
         /* noop */
       }
       setTimeout(() => {
-        router.push("/vendas/vendas");
+        router.push("/vendas");
       }, 2000);
     } catch (error) {
       console.error("Erro ao finalizar venda:", error);
@@ -327,27 +327,31 @@ export default function FornecedoresPage() {
     }
   };
 
-  const fornecedoresFiltrados = (searchTerm && typeof searchTerm === "string" && searchTerm.trim() !== "")
-    ? fornecedores.filter((f) => {
-        if (!f) return false
-        const s = searchTerm.toLowerCase()
-        const id = f.id ? String(f.id).toLowerCase() : ""
-        const nome = f.nome ? f.nome.toLowerCase() : ""
-        const contato = f.contato ? f.contato.toLowerCase() : ""
-        const endereco = f.endereco ? f.endereco.toLowerCase() : ""
-        const chavePix = f.chavePix ? f.chavePix.toLowerCase() : ""
-        const credito = (f.creditoLoja ?? f.valorCredito) ? String(f.creditoLoja ?? f.valorCredito).toLowerCase() : ""
+  const fornecedoresFiltrados =
+    searchTerm && typeof searchTerm === "string" && searchTerm.trim() !== ""
+      ? fornecedores.filter((f) => {
+          if (!f) return false;
+          const s = searchTerm.toLowerCase();
+          const id = f.id ? String(f.id).toLowerCase() : "";
+          const nome = f.nome ? f.nome.toLowerCase() : "";
+          const contato = f.contato ? f.contato.toLowerCase() : "";
+          const endereco = f.endereco ? f.endereco.toLowerCase() : "";
+          const chavePix = f.chavePix ? f.chavePix.toLowerCase() : "";
+          const credito =
+            f.creditoLoja ?? f.valorCredito
+              ? String(f.creditoLoja ?? f.valorCredito).toLowerCase()
+              : "";
 
-        return (
-          id.includes(s) ||
-          nome.includes(s) ||
-          contato.includes(s) ||
-          endereco.includes(s) ||
-          chavePix.includes(s) ||
-          credito.includes(s)
-        )
-      })
-    : fornecedores
+          return (
+            id.includes(s) ||
+            nome.includes(s) ||
+            contato.includes(s) ||
+            endereco.includes(s) ||
+            chavePix.includes(s) ||
+            credito.includes(s)
+          );
+        })
+      : fornecedores;
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#a8e1ff" }}>
@@ -443,13 +447,19 @@ export default function FornecedoresPage() {
             freeSolo
             open={false}
             disableOpenOnFocus
-            options={[...new Set(fornecedores.flatMap((f) => [
-              f?.nome || "",
-              f?.contato || "",
-              f?.endereco || "",
-              f?.chavePix || "",
-              f?.id ? String(f.id) : "",
-            ]).filter(Boolean))]}
+            options={[
+              ...new Set(
+                fornecedores
+                  .flatMap((f) => [
+                    f?.nome || "",
+                    f?.contato || "",
+                    f?.endereco || "",
+                    f?.chavePix || "",
+                    f?.id ? String(f.id) : "",
+                  ])
+                  .filter(Boolean)
+              ),
+            ]}
             value={search}
             onChange={handleSearch}
             onInputChange={(event, newValue) => {

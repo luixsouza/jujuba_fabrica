@@ -394,7 +394,7 @@ export default function CadastroLotePage() {
 
         // Redirect after success
         setTimeout(() => {
-          router.push("./lotes_geral");
+          router.push("/lotes/lotes_geral");
         }, 2000);
       }
     } catch (error) {
@@ -442,7 +442,7 @@ export default function CadastroLotePage() {
         >
           <Toolbar sx={{ justifyContent: "space-between" }}>
             <IconButton
-              onClick={() => router.push("./lotes_geral")}
+              onClick={() => router.push("/lotes/lotes_geral")}
               sx={{ color: "#333" }}
             >
               <ArrowBack />
@@ -474,9 +474,7 @@ export default function CadastroLotePage() {
                 <BugReport />
               </IconButton>
               <IconButton
-                onClick={() =>
-                  router.push("../fornecedores/fornecedores_tabela")
-                }
+                onClick={() => router.push("/fornecedores")}
                 sx={{ color: "#333" }}
               >
                 <Home />

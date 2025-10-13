@@ -272,7 +272,7 @@ export default function CarrinhoPage() {
             e
           );
         }
-        router.push("/vendas/vendas");
+        router.push("/vendas");
       } else {
         console.error("Erro ao finalizar venda:", result.mensagem);
         setSnackbar({

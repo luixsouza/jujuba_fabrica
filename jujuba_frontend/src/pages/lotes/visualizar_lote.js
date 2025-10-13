@@ -93,17 +93,17 @@ export default function VisualizarLotePage() {
   };
 
   const handleGoBack = () => {
-    router.push("./lotes_geral");
+    router.push("/lotes/lotes_geral");
   };
 
   const handleGoHome = () => {
-    router.push("../fornecedores/fornecedores_tabela");
+    router.push("/fornecedores");
   };
 
   const handleEditLote = () => {
     const id = searchParams.get("id");
     if (id) {
-      router.push(`./editar_lote?id=${id}`);
+      router.push(`/lotes/editar_lote?id=${id}`);
     }
   };
 

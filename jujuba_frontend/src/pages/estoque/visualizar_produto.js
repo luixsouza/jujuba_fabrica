@@ -1,59 +1,69 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Box, Button, Paper, Typography, Grid, IconButton, CircularProgress } from "@mui/material"
-import { ArrowBack, Home, Edit } from "@mui/icons-material"
-import Sidebar from "../../components/sidebar"
-import { useRouter, useSearchParams } from "next/navigation"
-import { ProdutoService } from "../services/produto-service"
+import { useState, useEffect } from "react";
+import {
+  Box,
+  Button,
+  Paper,
+  Typography,
+  Grid,
+  IconButton,
+  CircularProgress,
+} from "@mui/material";
+import { ArrowBack, Home, Edit } from "@mui/icons-material";
+import Sidebar from "../../components/sidebar";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ProdutoService } from "../services/produto-service";
 
 export default function ProdutoVisualizacao() {
-  const [produto, setProduto] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const id = searchParams.get("id")
+  const [produto, setProduto] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
 
   useEffect(() => {
     const fetchProduto = async () => {
       if (!id) {
-        setError("ID do produto não fornecido")
-        setLoading(false)
-        return
+        setError("ID do produto não fornecido");
+        setLoading(false);
+        return;
       }
 
       try {
-        setLoading(true)
-        const produtoData = await ProdutoService.getProdutoById(id)
+        setLoading(true);
+        const produtoData = await ProdutoService.getProdutoById(id);
 
         if (produtoData) {
-          setProduto(produtoData)
+          setProduto(produtoData);
         } else {
-          setError("Produto não encontrado")
+          setError("Produto não encontrado");
         }
       } catch (err) {
-        console.error("Erro ao buscar produto:", err)
-        setError("Erro ao carregar os dados do produto. Por favor, tente novamente.")
+        console.error("Erro ao buscar produto:", err);
+        setError(
+          "Erro ao carregar os dados do produto. Por favor, tente novamente."
+        );
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchProduto()
-  }, [id])
+    fetchProduto();
+  }, [id]);
 
   const handleEditClick = () => {
-    router.push(`./editar_produto?id=${id}`)
-  }
+    router.push(`/estoque/editar_produto?id=${id}`);
+  };
 
   const handleGoBack = () => {
-    router.back()
-  }
+    router.back();
+  };
 
   const handleGoHome = () => {
-    router.push("../../fornecedores/fornecedores_tabela")
-  }
+    router.push("/fornecedores");
+  };
 
   if (loading) {
     return (
@@ -68,7 +78,7 @@ export default function ProdutoVisualizacao() {
       >
         <CircularProgress />
       </Box>
-    )
+    );
   }
 
   if (error || !produto) {
@@ -87,18 +97,25 @@ export default function ProdutoVisualizacao() {
             {error || "Produto não encontrado"}
           </Typography>
           <Button
-            onClick={() => router.push("../../estoque/estoque_tabela")}
-            sx={{ mt: 2, bgcolor: "#f8c8cc", color: "black", "&:hover": { bgcolor: "#f8c8cc" } }}
+            onClick={() => router.push("/estoque")}
+            sx={{
+              mt: 2,
+              bgcolor: "#f8c8cc",
+              color: "black",
+              "&:hover": { bgcolor: "#f8c8cc" },
+            }}
           >
             Voltar para Estoque
           </Button>
         </Paper>
       </Box>
-    )
+    );
   }
 
   return (
-    <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
+    <Box
+      sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
+    >
       <Sidebar />
 
       <Box
@@ -189,7 +206,10 @@ export default function ProdutoVisualizacao() {
 
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1 }}
+              >
                 Marca:
               </Typography>
               <Paper
@@ -204,7 +224,10 @@ export default function ProdutoVisualizacao() {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1 }}
+              >
                 Tamanho:
               </Typography>
               <Paper
@@ -219,7 +242,10 @@ export default function ProdutoVisualizacao() {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1 }}
+              >
                 Estado de Conservação:
               </Typography>
               <Paper
@@ -234,7 +260,10 @@ export default function ProdutoVisualizacao() {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1 }}
+              >
                 Preço:
               </Typography>
               <Paper
@@ -245,11 +274,16 @@ export default function ProdutoVisualizacao() {
                   mb: 2,
                 }}
               >
-                <Typography>R$ {produto.preco?.toFixed(2).replace(".", ",") || "0,00"}</Typography>
+                <Typography>
+                  R$ {produto.preco?.toFixed(2).replace(".", ",") || "0,00"}
+                </Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1 }}
+              >
                 Fornecedora:
               </Typography>
               <Paper
@@ -260,11 +294,16 @@ export default function ProdutoVisualizacao() {
                   mb: 2,
                 }}
               >
-                <Typography>{produto.lote?.fornecedora?.nome || "N/A"}</Typography>
+                <Typography>
+                  {produto.lote?.fornecedora?.nome || "N/A"}
+                </Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1 }}
+              >
                 Quantidade:
               </Typography>
               <Paper
@@ -279,7 +318,10 @@ export default function ProdutoVisualizacao() {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1 }}
+              >
                 Gênero:
               </Typography>
               <Paper
@@ -325,6 +367,6 @@ export default function ProdutoVisualizacao() {
         </Paper>
       </Box>
     </Box>
-  )
+  );
 }
 ////

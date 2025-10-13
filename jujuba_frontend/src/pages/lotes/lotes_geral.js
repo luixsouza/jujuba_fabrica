@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useMemo, forwardRef } from "react"
+import { useState, useEffect, useMemo, forwardRef } from "react";
 import {
   Box,
   Card,
@@ -26,144 +26,150 @@ import {
   CircularProgress,
   Avatar,
   Slide,
-} from "@mui/material"
-import Sidebar from "../../components/sidebar"
-import EditIcon from "@mui/icons-material/Edit"
-import DeleteIcon from "@mui/icons-material/Delete"
-import VisibilityIcon from "@mui/icons-material/Visibility"
-import SearchIcon from "@mui/icons-material/Search"
-import { useRouter } from "next/navigation"
-import WarningAmberIcon from "@mui/icons-material/WarningAmber"
-import CloseIcon from "@mui/icons-material/Close"
+} from "@mui/material";
+import Sidebar from "../../components/sidebar";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import SearchIcon from "@mui/icons-material/Search";
+import { useRouter } from "next/navigation";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import CloseIcon from "@mui/icons-material/Close";
 
 // Importando as funções da API
-import { getAllLotes, deletarLote } from "../api/lotes"
+import { getAllLotes, deletarLote } from "../api/lotes";
 
 // Transição personalizada para o modal
 const Transition = forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />
-})
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 const LotePage = () => {
-  const [lotes, setLotes] = useState([])
-  const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [search, setSearch] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [openDialog, setOpenDialog] = useState(false)
-  const [loteToDelete, setLoteToDelete] = useState(null)
+  const [lotes, setLotes] = useState([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [loteToDelete, setLoteToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
-  })
+  });
 
-  const router = useRouter()
+  const router = useRouter();
 
   useEffect(() => {
-    fetchLotes()
-  }, [])
+    fetchLotes();
+  }, []);
 
   const fetchLotes = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await getAllLotes()
+      const response = await getAllLotes();
       if (response && Array.isArray(response)) {
         const lotesFormatados = response.map((lote) => ({
           id: lote.id,
           numero: `L${lote.id}`,
           data: lote.dataCriacao || new Date().toISOString(),
           fornecedora: lote.fornecedora?.nome || "Fornecedora não especificada",
-        }))
-        setLotes(lotesFormatados)
+        }));
+        setLotes(lotesFormatados);
       } else {
-        setLotes([])
+        setLotes([]);
       }
     } catch (error) {
       setSnackbar({
         open: true,
         message: "Erro ao carregar lotes",
         severity: "error",
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDeleteClick = (id) => {
-    setLoteToDelete(id)
-    setOpenDialog(true)
-  }
+    setLoteToDelete(id);
+    setOpenDialog(true);
+  };
 
   const handleConfirmDelete = async () => {
     try {
-      setLoading(true)
-      await deletarLote(loteToDelete)
-      setLotes((prev) => prev.filter((lote) => lote.id !== loteToDelete))
+      setLoading(true);
+      await deletarLote(loteToDelete);
+      setLotes((prev) => prev.filter((lote) => lote.id !== loteToDelete));
       setSnackbar({
         open: true,
         message: "Lote excluído com sucesso",
         severity: "success",
-      })
+      });
     } catch (error) {
       setSnackbar({
         open: true,
         message: "Falha ao excluir lote",
         severity: "error",
-      })
+      });
     } finally {
-      setLoading(false)
-      setOpenDialog(false)
-      setLoteToDelete(null)
+      setLoading(false);
+      setOpenDialog(false);
+      setLoteToDelete(null);
     }
-  }
+  };
 
   const handleCancelDelete = () => {
-    setOpenDialog(false)
-    setLoteToDelete(null)
-  }
+    setOpenDialog(false);
+    setLoteToDelete(null);
+  };
 
   const handleNavigateToRegister = () => {
-    router.push("./cadastrar_lote")
-  }
+    router.push("/lotes/cadastrar_lote");
+  };
 
   const handleNavigateToView = (lote) => {
-    router.push(`./visualizar_lote?id=${lote.id}`)
-  }
+    router.push(`/lotes/visualizar_lote?id=${lote.id}`);
+  };
 
   const handleNavigateToEdit = (id) => {
-    router.push(`./editar_lote?id=${id}`)
-  }///parametro id atelrado 
+    router.push(`/lotes/editar_lote?id=${id}`);
+  }; ///parametro id atelrado
 
-  const handleChangePage = (event, newPage) => setPage(newPage)
+  const handleChangePage = (event, newPage) => setPage(newPage);
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(Number.parseInt(event.target.value, 10))
-    setPage(0)
-  }
+    setRowsPerPage(Number.parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false })
-  }
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const lotesFiltrados = useMemo(() => {
     if (!search || typeof search !== "string" || search.trim() === "") {
-      return lotes
+      return lotes;
     }
-    const s = search.toLowerCase()
+    const s = search.toLowerCase();
     return lotes.filter(
       (lote) =>
         lote.numero.toLowerCase().includes(s) ||
-        lote.fornecedora.toLowerCase().includes(s),
-    )
-  }, [lotes, search])
+        lote.fornecedora.toLowerCase().includes(s)
+    );
+  }, [lotes, search]);
 
   const searchOptions = useMemo(() => {
-    return [...new Set(lotes.flatMap((lote) => [lote.numero, lote.fornecedora]).filter(Boolean))]
-  }, [lotes])
+    return [
+      ...new Set(
+        lotes.flatMap((lote) => [lote.numero, lote.fornecedora]).filter(Boolean)
+      ),
+    ];
+  }, [lotes]);
 
   return (
-    <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
+    <Box
+      sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
+    >
       <Sidebar />
       <Box
         sx={{
@@ -211,10 +217,10 @@ const LotePage = () => {
             options={searchOptions}
             value={search}
             onChange={(event, newValue) => {
-              setSearch(newValue || "")
+              setSearch(newValue || "");
             }}
             onInputChange={(event, newValue) => {
-              setSearch(newValue || "")
+              setSearch(newValue || "");
             }}
             renderInput={(params) => (
               <TextField
@@ -350,62 +356,77 @@ const LotePage = () => {
                   </TableRow>
                 ) : lotesFiltrados.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ fontSize: "16px" }}>
+                    <TableCell
+                      colSpan={4}
+                      align="center"
+                      sx={{ fontSize: "16px" }}
+                    >
                       Nenhum lote encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
-                  lotesFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((lote) => (
-                    <TableRow key={lote.id}>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          fontSize: "18px",
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                        }}
-                      >
-                        {lote.numero}
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          fontSize: "18px",
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                        }}
-                      >
-                        {new Date(lote.data).toLocaleDateString("pt-BR")}
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          fontSize: "18px",
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                        }}
-                      >
-                        {lote.fornecedora}
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          gap: 1,
-                          padding: "8px",
-                        }}
-                      >
-                        <IconButton onClick={() => handleNavigateToView(lote)} sx={{ color: "#00509E" }}>
-                          <VisibilityIcon />
-                        </IconButton>
-                        <IconButton onClick={() => handleNavigateToEdit(lote.id)} sx={{ color: "#00509E" }}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton onClick={() => handleDeleteClick(lote.id)} sx={{ color: "#d32f2f" }}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  lotesFiltrados
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((lote) => (
+                      <TableRow key={lote.id}>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontSize: "18px",
+                            padding: { xs: "8px 4px", sm: "16px 8px" },
+                          }}
+                        >
+                          {lote.numero}
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontSize: "18px",
+                            padding: { xs: "8px 4px", sm: "16px 8px" },
+                          }}
+                        >
+                          {new Date(lote.data).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontSize: "18px",
+                            padding: { xs: "8px 4px", sm: "16px 8px" },
+                          }}
+                        >
+                          {lote.fornecedora}
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: 1,
+                            padding: "8px",
+                          }}
+                        >
+                          <IconButton
+                            onClick={() => handleNavigateToView(lote)}
+                            sx={{ color: "#00509E" }}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleNavigateToEdit(lote.id)}
+                            sx={{ color: "#00509E" }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleDeleteClick(lote.id)}
+                            sx={{ color: "#d32f2f" }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
                 )}
               </TableBody>
             </Table>
@@ -421,7 +442,9 @@ const LotePage = () => {
           />
         </Card>
 
-        <Box sx={{ display: "flex", justifyContent: "center", marginTop: "30px" }}>
+        <Box
+          sx={{ display: "flex", justifyContent: "center", marginTop: "30px" }}
+        >
           <Button
             sx={{
               backgroundColor: "#FADADD",
@@ -441,7 +464,6 @@ const LotePage = () => {
             Cadastrar Lote
           </Button>
         </Box>
-
 
         <Dialog
           open={openDialog}
@@ -542,7 +564,9 @@ const LotePage = () => {
                     height: 50,
                   }}
                 >
-                  <Typography sx={{ fontWeight: "bold", color: "#333" }}>L</Typography>
+                  <Typography sx={{ fontWeight: "bold", color: "#333" }}>
+                    L
+                  </Typography>
                 </Avatar>
                 <Box sx={{ textAlign: "left" }}>
                   <Typography
@@ -639,14 +663,22 @@ const LotePage = () => {
           </DialogActions>
         </Dialog>
 
-        <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
-          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+        >
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbar.severity}
+            sx={{ width: "100%" }}
+          >
             {snackbar.message}
           </Alert>
         </Snackbar>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default LotePage
+export default LotePage;
