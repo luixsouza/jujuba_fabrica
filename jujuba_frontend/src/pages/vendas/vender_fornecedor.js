@@ -35,6 +35,8 @@ import {
   Card,
   CardContent,
   Chip,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 
 // Ícones
@@ -52,6 +54,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Home as HomeIcon,
   Download as DownloadIcon,
+  Print as PrintIcon,
 } from "@mui/icons-material";
 
 // Componentes e APIs locais
@@ -79,6 +82,11 @@ export default function FornecedoresPage() {
   const [totalVenda, setTotalVenda] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
+  const [orderRef, setOrderRef] = useState(null);
+  const [confirmedReview, setConfirmedReview] = useState(false);
+  const [paymentDinheiro, setPaymentDinheiro] = useState(0);
+  const [paymentCartao, setPaymentCartao] = useState(0);
+  const [paymentPix, setPaymentPix] = useState(0);
 
   const handleDownloadContrato = () => {
     if (selectedFornecedor?.contratoUrl) {
@@ -109,7 +117,9 @@ export default function FornecedoresPage() {
     const fetchFornecedores = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:8080/api/fornecedoras");
+        const response = await fetch("http://localhost:8080/api/fornecedoras", {
+          credentials: "include",
+        });
         if (!response.ok) {
           throw new Error("Falha ao buscar fornecedores");
         }
@@ -163,7 +173,8 @@ export default function FornecedoresPage() {
   const handleViewFornecedor = async (id) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/fornecedoras/${id}`
+        `http://localhost:8080/api/fornecedoras/${id}`,
+        { credentials: "include" }
       );
       if (!response.ok) {
         throw new Error("Falha ao buscar detalhes do fornecedor");
@@ -195,6 +206,7 @@ export default function FornecedoresPage() {
           `http://localhost:8080/api/fornecedoras/${fornecedorToDelete.id}`,
           {
             method: "DELETE",
+            credentials: "include",
           }
         );
 
@@ -224,6 +236,9 @@ export default function FornecedoresPage() {
       alert("Por favor, selecione um fornecedor antes de finalizar a compra.");
       return;
     }
+    // generate order reference and reset confirmation state
+    setOrderRef(`VND-${Date.now()}`);
+    setConfirmedReview(false);
     setOpenFinalizarModal(true);
   };
 
@@ -257,12 +272,43 @@ export default function FornecedoresPage() {
         }
       }
 
-      const resultado = await finalizarVendaFornecedora(
-        selectedFornecedorForSale.id.toString()
-      );
+      // Before finalizing, check if supplier credit is enough or payments were provided
+      const deficit = calcularDeficit();
+      let resultado = null;
+      if (deficit > 0) {
+        const totalPago = pagamentoTotal();
+        if (totalPago < deficit) {
+          setError(
+            "Complete o valor do pagamento para cobrir o déficit do fornecedor."
+          );
+          setIsLoading(false);
+          return;
+        }
 
-      if (!resultado.sucesso) {
-        throw new Error(resultado.mensagem);
+        // send payments breakdown to backend
+        resultado = await finalizarVendaFornecedora(
+          selectedFornecedorForSale.id.toString(),
+          { dinheiro: paymentDinheiro, cartao: paymentCartao, pix: paymentPix }
+        );
+
+        if (!resultado.sucesso) {
+          throw new Error(
+            resultado.mensagem || "Falha ao finalizar venda com pagamento"
+          );
+        }
+      } else {
+        resultado = await finalizarVendaFornecedora(
+          selectedFornecedorForSale.id.toString(),
+          { dinheiro: 0, cartao: 0, pix: 0 }
+        );
+
+        if (!resultado.sucesso) {
+          throw new Error(resultado.mensagem || "Falha ao finalizar venda");
+        }
+      }
+
+      if (!resultado || !resultado.sucesso) {
+        throw new Error(resultado?.mensagem || "Falha ao finalizar venda");
       }
 
       // Limpar carrinho apenas após sucesso no backend
@@ -290,9 +336,16 @@ export default function FornecedoresPage() {
       }, 2000);
     } catch (error) {
       console.error("Erro ao finalizar venda:", error);
-      setError("Falha ao finalizar a venda. Por favor, tente novamente.");
+      setError(
+        error.message ||
+          "Falha ao finalizar a venda. Por favor, tente novamente."
+      );
     } finally {
       setIsLoading(false);
+      // reset payment inputs
+      setPaymentDinheiro(0);
+      setPaymentCartao(0);
+      setPaymentPix(0);
     }
   };
 
@@ -306,7 +359,26 @@ export default function FornecedoresPage() {
       selectedFornecedorForSale.creditoLoja ??
         selectedFornecedorForSale.valorCredito
     );
-    return credito - totalVenda;
+    // Include any payments entered to top up the supplier's credit before deducting the sale
+    const totalPago = pagamentoTotal();
+    return credito + totalPago - totalVenda;
+  };
+
+  const calcularDeficit = () => {
+    const credito = obterValorSeguro(
+      selectedFornecedorForSale?.creditoLoja ??
+        selectedFornecedorForSale?.valorCredito
+    );
+    const deficit = Number(totalVenda) - credito;
+    return deficit > 0 ? deficit : 0;
+  };
+
+  const pagamentoTotal = () => {
+    return (
+      (Number(paymentDinheiro) || 0) +
+      (Number(paymentCartao) || 0) +
+      (Number(paymentPix) || 0)
+    );
   };
 
   const handleSelectFornecedorForSale = async (fornecedorOrId) => {
@@ -315,7 +387,9 @@ export default function FornecedoresPage() {
         typeof fornecedorOrId === "object" ? fornecedorOrId.id : fornecedorOrId;
       if (!id) return;
       // fetch detailed fornecedor data (includes creditoLoja)
-      const resp = await fetch(`http://localhost:8080/api/fornecedoras/${id}`);
+      const resp = await fetch(`http://localhost:8080/api/fornecedoras/${id}`, {
+        credentials: "include",
+      });
       if (!resp.ok) throw new Error("Falha ao buscar dados da fornecedora");
       const data = await resp.json();
       setSelectedFornecedorForSale(data);
@@ -405,7 +479,7 @@ export default function FornecedoresPage() {
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Avatar sx={{ bgcolor: "#9AE4FF", width: 44, height: 44 }}>
+                  <Avatar sx={{ bgcolor: "#9ae4ffff", width: 44, height: 44 }}>
                     <PersonIcon sx={{ color: "#fff" }} />
                   </Avatar>
                   <Box>
@@ -445,8 +519,6 @@ export default function FornecedoresPage() {
         >
           <Autocomplete
             freeSolo
-            open={false}
-            disableOpenOnFocus
             options={[
               ...new Set(
                 fornecedores
@@ -1037,12 +1109,250 @@ export default function FornecedoresPage() {
               "& .MuiTabs-indicator": { backgroundColor: "#9AE4FF" },
             }}
           >
-            <Tab label="Fornecedor" />
             <Tab label="Resumo e Total" />
+            <Tab label="Fornecedor" />
           </Tabs>
+          {/* Tab 0: Resumo e Total (enhanced) */}
+          {tabValue === 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Box
+                sx={{
+                  mb: 2,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Box>
+                  <Typography variant="subtitle2">
+                    Ref: {orderRef || "—"}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Data: {new Date().toLocaleString()}
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: "right" }}>
+                  <Typography variant="subtitle2">
+                    Itens: {carrinhoItems.length}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Qtd total:{" "}
+                    {carrinhoItems.reduce(
+                      (s, it) => s + (Number(it.quantidade) || 1),
+                      0
+                    )}
+                  </Typography>
+                </Box>
+              </Box>
 
-          {/* Tab 0: Fornecedor */}
-          {tabValue === 0 && selectedFornecedorForSale && (
+              <Box sx={{ mb: 2 }}>
+                {carrinhoItems.map((item, index) => {
+                  const quantidade = Number(item.quantidade || 1);
+                  const precoUnit = Number(item.preco || 0);
+                  const subtotal = quantidade * precoUnit;
+                  return (
+                    <Box
+                      key={index}
+                      sx={{
+                        display: "flex",
+                        gap: 2,
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        py: 1,
+                        px: 1,
+                        bgcolor: index % 2 === 0 ? "#fff" : "#f7f7f7",
+                        borderRadius: 1,
+                        mb: 1,
+                      }}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <Typography sx={{ fontWeight: "bold" }}>
+                          {item.descricao}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ width: 160, textAlign: "right" }}>
+                        <Typography variant="body2">
+                          {quantidade} × R$ {formatarValor(precoUnit)}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                          R$ {formatarValor(subtotal)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+
+              <Box sx={{ borderTop: "1px solid #ddd", pt: 2, mt: 2 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 1,
+                  }}
+                >
+                  <Typography variant="body1">Subtotal</Typography>
+                  <Typography variant="body1">
+                    R$ {formatarValor(totalVenda)}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                    Total
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                    R$ {formatarValor(totalVenda)}
+                  </Typography>
+                </Box>
+
+                {selectedFornecedorForSale && (
+                  <Box
+                    sx={{ mt: 1, bgcolor: "#f3f6f4", p: 2, borderRadius: 1 }}
+                  >
+                    <Typography variant="body2">
+                      <strong>Fornecedor:</strong>{" "}
+                      {selectedFornecedorForSale.nome}
+                    </Typography>
+                    <Typography variant="body2">
+                      Crédito antes: R${" "}
+                      {formatarValor(
+                        selectedFornecedorForSale.creditoLoja ??
+                          selectedFornecedorForSale.valorCredito ??
+                          0
+                      )}
+                    </Typography>
+                    <Typography variant="body2">
+                      Crédito após venda: R${" "}
+                      {formatarValor(calcularCreditoFinal())}
+                    </Typography>
+                    {/* If there's a deficit, present payment options */}
+                    {calcularDeficit() > 0 && (
+                      <Box
+                        sx={{
+                          mt: 2,
+                          p: 2,
+                          bgcolor: "#b8e4f4ff",
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: "bold", color: "#00509E" }}
+                        >
+                          Crédito insuficiente — completar com pagamento
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "#00509E" }}>
+                          Déficit: R$ {formatarValor(calcularDeficit())}
+                        </Typography>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: 2,
+                            mt: 2,
+                            alignItems: "center",
+                          }}
+                        >
+                          <TextField
+                            label="Dinheiro"
+                            type="number"
+                            value={paymentDinheiro}
+                            onChange={(e) => setPaymentDinheiro(e.target.value)}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  R$
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                          <TextField
+                            label="Cartão"
+                            type="number"
+                            value={paymentCartao}
+                            onChange={(e) => setPaymentCartao(e.target.value)}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  R$
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                          <TextField
+                            label="Pix"
+                            type="number"
+                            value={paymentPix}
+                            onChange={(e) => setPaymentPix(e.target.value)}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  R$
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                        </Box>
+
+                        <Box
+                          sx={{
+                            mt: 2,
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ color: "#023e58" }}>
+                            Total pagamento:
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: "#023e58" }}>
+                            R$ {formatarValor(pagamentoTotal())}
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ mt: 1 }}>
+                          {pagamentoTotal() < calcularDeficit() ? (
+                            <Typography color="error">
+                              A soma dos pagamentos é menor que o déficit.
+                              Complete os valores.
+                            </Typography>
+                          ) : (
+                            <Typography sx={{ color: "#0b6b9a" }}>
+                              Pagamento suficiente para cobrir o déficit.
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              </Box>
+
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Confirme os dados antes de finalizar a compra.
+              </Typography>
+
+              <Box sx={{ mt: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={confirmedReview}
+                      onChange={(e) => setConfirmedReview(e.target.checked)}
+                    />
+                  }
+                  label="Li e conferi os itens, valores e fornecedor selecionado"
+                />
+              </Box>
+            </Box>
+          )}
+
+          {/* Tab 1: Fornecedor */}
+          {tabValue === 1 && selectedFornecedorForSale && (
             <Box sx={{ mb: 3, p: 3, bgcolor: "#f8f9fa", borderRadius: 2 }}>
               <Typography
                 variant="h6"
@@ -1068,49 +1378,6 @@ export default function FornecedoresPage() {
               <Typography variant="body1">
                 <strong>Chave Pix:</strong>{" "}
                 {selectedFornecedorForSale.chavePix || "N/A"}
-              </Typography>
-            </Box>
-          )}
-
-          {/* Tab 1: Resumo e Total */}
-          {tabValue === 1 && (
-            <Box sx={{ mt: 2 }}>
-              {carrinhoItems.map((item, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 1,
-                    px: 1,
-                  }}
-                >
-                  <Typography variant="body2">{item.descricao}</Typography>
-                  <Typography variant="body2">
-                    R$ {formatarValor(item.preco)}
-                  </Typography>
-                </Box>
-              ))}
-
-              <Box sx={{ borderTop: "1px solid #ddd", pt: 2, mt: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 2,
-                  }}
-                >
-                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                    Total:
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                    R$ {formatarValor(totalVenda)}
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                Confirme os dados antes de finalizar a compra.
               </Typography>
             </Box>
           )}
@@ -1140,11 +1407,97 @@ export default function FornecedoresPage() {
           >
             Cancelar
           </Button>
+          <Button
+            onClick={() => {
+              // build a printable receipt with a table
+              const rowsHtml = carrinhoItems
+                .map((it) => {
+                  const q = Number(it.quantidade) || 1;
+                  const pu = Number(it.preco) || 0;
+                  return `<tr><td style="padding:6px;border:1px solid #ddd">${
+                    it.descricao
+                  }</td><td style="padding:6px;border:1px solid #ddd;text-align:center">${q}</td><td style="padding:6px;border:1px solid #ddd;text-align:right">R$ ${formatarValor(
+                    pu
+                  )}</td><td style="padding:6px;border:1px solid #ddd;text-align:right">R$ ${formatarValor(
+                    q * pu
+                  )}</td></tr>`;
+                })
+                .join("");
+
+              const receiptHtml = `
+                <html>
+                  <head>
+                    <title>Recibo ${orderRef || ""}</title>
+                    <meta charset="utf-8" />
+                  </head>
+                  <body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;">
+                    <h2>Recibo - ${orderRef || ""}</h2>
+                    <p>Data: ${new Date().toLocaleString()}</p>
+                    <table style="border-collapse:collapse;width:100%;margin-top:12px">
+                      <thead>
+                        <tr>
+                          <th style="padding:8px;border:1px solid #ddd;text-align:left">Descrição</th>
+                          <th style="padding:8px;border:1px solid #ddd;text-align:center">Qtde</th>
+                          <th style="padding:8px;border:1px solid #ddd;text-align:right">Valor unit.</th>
+                          <th style="padding:8px;border:1px solid #ddd;text-align:right">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${rowsHtml}
+                      </tbody>
+                    </table>
+                    <div style="margin-top:12px;text-align:right">
+                      <div style="font-weight:bold">Total: R$ ${formatarValor(
+                        totalVenda
+                      )}</div>
+                    </div>
+                    <div style="margin-top:12px">
+                      <div><strong>Fornecedor:</strong> ${
+                        selectedFornecedorForSale?.nome || "-"
+                      }</div>
+                      <div>Crédito antes: R$ ${formatarValor(
+                        selectedFornecedorForSale?.creditoLoja ??
+                          selectedFornecedorForSale?.valorCredito ??
+                          0
+                      )}</div>
+                      <div>Crédito após venda: R$ ${formatarValor(
+                        calcularCreditoFinal()
+                      )}</div>
+                    </div>
+                  </body>
+                </html>
+              `;
+
+              const w = window.open("", "_blank");
+              if (!w)
+                return alert("Não foi possível abrir janela de impressão.");
+              w.document.open();
+              w.document.write(receiptHtml);
+              w.document.close();
+              w.focus();
+              setTimeout(() => w.print(), 300);
+            }}
+            startIcon={<PrintIcon />}
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              fontWeight: "bold",
+              fontSize: "14px",
+              borderRadius: "25px",
+              padding: "10px 20px",
+              minWidth: "120px",
+              textTransform: "none",
+            }}
+          >
+            Imprimir Recibo
+          </Button>
 
           <Button
             onClick={handleConfirmarCompra}
+            disabled={!confirmedReview || isLoading}
             sx={{
-              backgroundColor: "#4caf50",
+              backgroundColor:
+                !confirmedReview || isLoading ? "#9e9e9e" : "#4caf50",
               color: "#fff",
               fontWeight: "bold",
               fontSize: "16px",
@@ -1154,14 +1507,19 @@ export default function FornecedoresPage() {
               textTransform: "none",
               boxShadow: "0px 4px 12px rgba(76, 175, 80, 0.4)",
               "&:hover": {
-                backgroundColor: "#45a049",
+                backgroundColor:
+                  !confirmedReview || isLoading ? "#9e9e9e" : "#45a049",
                 transform: "translateY(-2px)",
                 boxShadow: "0px 6px 16px rgba(76, 175, 80, 0.6)",
               },
               transition: "all 0.3s ease",
             }}
           >
-            Confirmar Compra
+            {isLoading ? (
+              <CircularProgress size={20} sx={{ color: "white" }} />
+            ) : (
+              "Confirmar Compra"
+            )}
           </Button>
         </DialogActions>
       </Dialog>

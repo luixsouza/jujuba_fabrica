@@ -1,60 +1,61 @@
-const BASE_URL = "http://localhost:8080/api/vendas"
+const BASE_URL = "http://localhost:8080/api/vendas";
 
-const tratarErro = (error ) => {
+const tratarErro = (error) => {
   if (error.name === "TypeError" && error.message.includes("fetch")) {
     return {
       sucesso: false,
       mensagem: "Erro de conexão com o servidor.",
       detalhes: error.message,
-    }
+    };
   } else if (error.message.includes("HTTP error")) {
     return {
       sucesso: false,
       mensagem: "Erro ao processar requisição.",
       status: error.message.match(/\d+/)?.[0],
       detalhes: error.message,
-    }
+    };
   } else {
     return {
       sucesso: false,
       mensagem: "Erro desconhecido.",
       detalhes: error.message,
-    }
+    };
   }
-}
+};
 
 export const listarVendasRealizadas = async () => {
   try {
     // ATENÇÃO: Seu VendaController não parece ter a rota "/realizadas".
     // O endpoint para listar todas as vendas é GET /api/vendas.
     // Se "/realizadas" for um alias ou filtro, mantenha. Senão, remova.
-    const response = await fetch(`${BASE_URL}`, { // Ajustado para o endpoint principal
+    const response = await fetch(`${BASE_URL}`, {
+      // Ajustado para o endpoint principal
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json()
+    const data = await response.json();
 
     return {
       sucesso: true,
       vendas: data,
       mensagem: "Vendas carregadas com sucesso!",
-    }
+    };
   } catch (error) {
-    console.error("Erro ao listar vendas realizadas:", error)
+    console.error("Erro ao listar vendas realizadas:", error);
     return {
       sucesso: false,
       vendas: [],
       mensagem: "Erro ao carregar vendas",
-    }
+    };
   }
-}
+};
 
 export const buscarVendaPorId = async (id) => {
   try {
@@ -63,59 +64,78 @@ export const buscarVendaPorId = async (id) => {
       headers: {
         "Content-Type": "application/json",
       },
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json()
+    const data = await response.json();
 
     return {
       sucesso: true,
       venda: data,
       mensagem: "Venda encontrada com sucesso!",
-    }
+    };
   } catch (error) {
-    console.error("Erro ao buscar venda por ID:", error)
+    console.error("Erro ao buscar venda por ID:", error);
     return {
       sucesso: false,
       venda: null,
       mensagem: "Erro ao buscar venda",
-    }
+    };
   }
-}
+};
 
-export const finalizarVendaFornecedora = async (fornecedoraId) => {
+export const finalizarVendaFornecedora = async (
+  fornecedoraId,
+  payments = { dinheiro: 0, cartao: 0, pix: 0 }
+) => {
   try {
-    // Ajustado para o endpoint correto do seu VendaController
-    const response = await fetch(`${BASE_URL}/finalizar/fornecedora/${fornecedoraId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    // Body includes optional payments breakdown when supplier tops up
+    const body = {
+      fornecedoraId,
+      pagamentos: {
+        dinheiro: Number(payments.dinheiro) || 0,
+        cartao: Number(payments.cartao) || 0,
+        pix: Number(payments.pix) || 0,
       },
-      // O corpo foi removido pois o backend não espera um para esta ação
-    })
+    };
+
+    const response = await fetch(
+      `${BASE_URL}/finalizar/fornecedora/${fornecedoraId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(body),
+      }
+    );
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      const err = await response.json().catch(() => null);
+      throw new Error(
+        err?.mensagem || `HTTP error! status: ${response.status}`
+      );
     }
 
-    const data = await response.json()
+    const data = await response.json();
 
     return {
       sucesso: true,
       venda: data,
       mensagem: "Venda finalizada com sucesso!",
-    }
+    };
   } catch (error) {
-    console.error("Erro ao finalizar venda:", error)
+    console.error("Erro ao finalizar venda:", error);
     return {
       sucesso: false,
-      mensagem: "Erro ao finalizar venda",
-    }
+      mensagem: error.message || "Erro ao finalizar venda",
+    };
   }
-}
+};
 
 export const criarVenda = async (dadosVenda) => {
   try {
@@ -125,27 +145,27 @@ export const criarVenda = async (dadosVenda) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(dadosVenda),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json()
+    const data = await response.json();
 
     return {
       sucesso: true,
       venda: data,
       mensagem: "Venda criada com sucesso!",
-    }
+    };
   } catch (error) {
-    console.error("Erro ao criar venda:", error)
+    console.error("Erro ao criar venda:", error);
     return {
       sucesso: false,
       mensagem: "Erro ao criar venda",
-    }
+    };
   }
-}
+};
 
 export const atualizarVenda = async (id, dadosVenda) => {
   try {
@@ -155,27 +175,27 @@ export const atualizarVenda = async (id, dadosVenda) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(dadosVenda),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json()
+    const data = await response.json();
 
     return {
       sucesso: true,
       venda: data,
       mensagem: "Venda atualizada com sucesso!",
-    }
+    };
   } catch (error) {
-    console.error("Erro ao atualizar venda:", error)
+    console.error("Erro ao atualizar venda:", error);
     return {
       sucesso: false,
       mensagem: "Erro ao atualizar venda",
-    }
+    };
   }
-}
+};
 
 export const excluirVenda = async (id) => {
   try {
@@ -184,24 +204,24 @@ export const excluirVenda = async (id) => {
       headers: {
         "Content-Type": "application/json",
       },
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     return {
       sucesso: true,
       mensagem: "Venda excluída com sucesso!",
-    }
+    };
   } catch (error) {
-    console.error("Erro ao excluir venda:", error)
+    console.error("Erro ao excluir venda:", error);
     return {
       sucesso: false,
       mensagem: "Erro ao excluir venda",
-    }
+    };
   }
-}
+};
 
 // ==================================================================
 // **INÍCIO DA CORREÇÃO: Função que estava faltando**
@@ -224,7 +244,8 @@ export const finalizarVendaSimples = async () => {
 
     if (!response.ok) {
       const erroData = await response.json().catch(() => null);
-      const mensagemErro = erroData?.mensagem || `Erro no servidor (status: ${response.status})`;
+      const mensagemErro =
+        erroData?.mensagem || `Erro no servidor (status: ${response.status})`;
       throw new Error(mensagemErro);
     }
 
