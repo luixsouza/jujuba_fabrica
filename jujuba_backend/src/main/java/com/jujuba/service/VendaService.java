@@ -41,13 +41,12 @@ public class VendaService {
             }
         }
 
-        BigDecimal totalVenda = carrinhoService.calcularTotal();
-        Venda venda = VendaMapper.mapearVendaSimples(totalVenda, produtosCarrinho);
+    BigDecimal totalVenda = carrinhoService.calcularTotal();
+    Venda venda = VendaMapper.mapearVendaSimples(totalVenda, produtosCarrinho);
 
-        atualizarEstoque(produtosCarrinho);
-        carrinhoService.limparCarrinho();
+    carrinhoService.limparCarrinho();
 
-        return vendaRepository.save(venda);
+    return vendaRepository.save(venda);
     }
 
     @Transactional
@@ -67,13 +66,12 @@ public class VendaService {
         Fornecedora fornecedora = fornecedoraRepository.findById(fornecedoraId)
                 .orElseThrow(() -> new FornecedoraNotFoundException("Fornecedora com ID " + fornecedoraId + " não encontrada."));
 
-        BigDecimal totalVenda = carrinhoService.calcularTotal();
-        Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora, produtosCarrinho);
+    BigDecimal totalVenda = carrinhoService.calcularTotal();
+    Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora, produtosCarrinho);
 
-        atualizarEstoque(produtosCarrinho);
-        carrinhoService.limparCarrinho();
+    carrinhoService.limparCarrinho();
 
-        return vendaRepository.save(venda);
+    return vendaRepository.save(venda);
     }
 
     public List<Venda> listarTodas() {

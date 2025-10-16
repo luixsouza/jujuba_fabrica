@@ -273,6 +273,29 @@ export default function EstoquePage() {
         return;
       }
 
+      // Verifica no carrinho atual se já existe quantidade do mesmo produto
+      try {
+        const carrinhoResp = await listarCarrinho();
+        if (carrinhoResp?.sucesso && carrinhoResp.carrinho?.itens) {
+          const itemNoCarrinho = carrinhoResp.carrinho.itens.find(
+            (it) => String(it.id) === String(produtoNormalizado.id)
+          );
+          const quantidadeAtual = Number(itemNoCarrinho?.quantidade) || 0;
+          const quantidadeDesejada = quantidadeAtual + 1;
+          const estoqueDisponivel = Number(produtoNormalizado.quantidade) || 0;
+          if (quantidadeDesejada > estoqueDisponivel) {
+            mostrarSnackbar(
+              `Estoque insuficiente: existem apenas ${estoqueDisponivel} unidade(s) disponíveis.`,
+              "error"
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        // se falhar ao verificar o carrinho, não bloqueia a operação — logs para debug
+        console.warn("Falha ao verificar carrinho antes de adicionar:", e);
+      }
+
       const resultado = await adicionarAoCarrinho(produtoNormalizado, 1);
 
       if (resultado?.sucesso) {
@@ -284,6 +307,11 @@ export default function EstoquePage() {
           "success"
         );
         handleCloseProductModal(); // Fecha o modal após adicionar
+        try {
+          window.dispatchEvent(new Event("estoque-atualizado"));
+        } catch (e) {
+          console.warn("Falha ao despachar evento estoque-atualizado:", e);
+        }
       } else {
         const mensagemErro =
           resultado?.mensagem || "Erro desconhecido ao adicionar";

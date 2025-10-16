@@ -26,6 +26,15 @@ public class CarrinhoService {
             throw new ProductUnavailableException("Produto com ID " + produtoId + " está indisponível ou com estoque zerado.");
         }
 
+        long existentes = carrinho.stream().filter(p -> p.getId().equals(produtoId)).count();
+        int estoqueDisponivel = produto.getQuantidade() != null ? produto.getQuantidade() : 0;
+        if (existentes >= estoqueDisponivel) {
+            throw new ProductUnavailableException("Não é possível adicionar mais unidades do produto (ID " + produtoId + "). Estoque disponível: " + estoqueDisponivel + ".");
+        }
+
+        produto.setQuantidade(estoqueDisponivel - 1);
+        produtoRepository.save(produto);
+
         carrinho.add(produto);
     }
 
@@ -34,6 +43,12 @@ public class CarrinhoService {
         if (!removido) {
             throw new ResourceNotFoundException("Produto com ID " + produtoId + " não está no carrinho.");
         }
+
+        Produto produto = produtoRepository.findById(produtoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto com ID " + produtoId + " não encontrado."));
+        int atual = produto.getQuantidade() != null ? produto.getQuantidade() : 0;
+        produto.setQuantidade(atual + 1);
+        produtoRepository.save(produto);
     }
 
     public List<Produto> listarProdutos() {

@@ -180,6 +180,11 @@ export default function CarrinhoPage() {
             message: `"${itemToDelete.descricao}" removido do carrinho!`,
             severity: "success",
           });
+          try {
+            window.dispatchEvent(new Event("estoque-atualizado"));
+          } catch (e) {
+            console.warn("Falha ao despachar evento estoque-atualizado:", e);
+          }
         } else {
           console.error("Erro ao remover item do carrinho:", result.mensagem);
           setSnackbar({

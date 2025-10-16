@@ -105,7 +105,8 @@ export const adicionarAoCarrinho = async (produto, quantidade) => {
       headers: {
         "Content-Type": "application/json",
       },
-      // Corpo da requisição removido.
+      credentials: "include",
+      // Corpo da requisição removido (backend usa sessão).
     });
 
     if (!response.ok) {
@@ -134,6 +135,7 @@ export const removerDoCarrinho = async (produtoId) => {
   try {
     const response = await fetch(`${BASE_URL}/remover/${produtoId}`, {
       method: "DELETE",
+      credentials: "include",
     });
 
     if (!response.ok) {
