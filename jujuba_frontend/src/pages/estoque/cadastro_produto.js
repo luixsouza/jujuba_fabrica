@@ -1,16 +1,27 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Box, Button, Paper, TextField, Typography, Grid, IconButton, CircularProgress, MenuItem } from "@mui/material"
-import { ArrowBack, Home } from "@mui/icons-material"
-import Sidebar from "../../components/sidebar"
-import { useRouter } from "next/router"
-import { ProdutoService } from "../services/produto-service"
+import { useState, useEffect } from "react";
+import Head from "next/head";
+import {
+  Box,
+  Button,
+  Paper,
+  TextField,
+  Typography,
+  Grid,
+  IconButton,
+  CircularProgress,
+  MenuItem,
+} from "@mui/material";
+import { ArrowBack, Home } from "@mui/icons-material";
+import Sidebar from "../../components/sidebar";
+import { useRouter } from "next/router";
+import { ProdutoService } from "../services/produto-service";
 
 export default function ProdutoCadastro() {
   const [produto, setProduto] = useState({
     descricao: "",
-    descricaoDetalhada: "", 
+    descricaoDetalhada: "",
     marca: "",
     tamanho: "",
     estadoConservacao: "",
@@ -18,29 +29,29 @@ export default function ProdutoCadastro() {
     preco: "",
     fornecedora: "",
     forma_pagamento: "",
-    lote_id: "",////
-  })
+    lote_id: "", ////
+  });
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [fornecedoras, setFornecedoras] = useState([])
-  const [formasPagamento, setFormasPagamento] = useState([])
-  const router = useRouter()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [fornecedoras, setFornecedoras] = useState([]);
+  const [formasPagamento, setFormasPagamento] = useState([]);
+  const router = useRouter();
 
   const handleChange = (event) => {
-    const { name, value } = event.target
-    setProduto((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = event.target;
+    setProduto((prev) => ({ ...prev, [name]: value }));
+  };
 
   // Função para gerar uma descrição detalhada mockada com base na descrição principal
   const gerarDescricaoDetalhada = (descricao) => {
-    if (!descricao) return ""
+    if (!descricao) return "";
 
     return `${descricao} com características premium. 
 Este item apresenta excelente qualidade e acabamento. Fabricado com materiais de primeira linha, 
 oferece durabilidade e conforto. Ideal para uso diário e ocasiões especiais. 
-Disponível em estoque para entrega imediata.`
-  }
+Disponível em estoque para entrega imediata.`;
+  };
 
   // Atualiza a descrição detalhada quando a descrição principal mudar
   useEffect(() => {
@@ -48,63 +59,68 @@ Disponível em estoque para entrega imediata.`
       setProduto((prev) => ({
         ...prev,
         descricaoDetalhada: gerarDescricaoDetalhada(produto.descricao),
-      }))
+      }));
     }
-  }, [produto.descricao])
+  }, [produto.descricao]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true)
+        setLoading(true);
         const [fornecedorasData, formasPagamentoData] = await Promise.all([
           ProdutoService.getFornecedoras(),
           ProdutoService.getFormasPagamento(),
-        ])
+        ]);
 
-        setFornecedoras(fornecedorasData)
-        setFormasPagamento(formasPagamentoData)
+        setFornecedoras(fornecedorasData);
+        setFormasPagamento(formasPagamentoData);
       } catch (err) {
-        console.error("Erro ao carregar dados:", err)
-        setError("Não foi possível carregar alguns dados. Tente novamente.")
+        console.error("Erro ao carregar dados:", err);
+        setError("Não foi possível carregar alguns dados. Tente novamente.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   const handleSubmit = async (event) => {
-    event.preventDefault()
-    setLoading(true)
-    setError("")
+    event.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
       // Formatando o preço para número antes de enviar
       const produtoFormatado = {
         ...produto,
         preco: Number.parseFloat(produto.preco) || 0,
-      }
+      };
 
       // Usando o ProdutoService em vez de axios diretamente
-      const novoProduto = await ProdutoService.createProduto(produtoFormatado)
+      const novoProduto = await ProdutoService.createProduto(produtoFormatado);
 
       if (novoProduto) {
-        alert("Produto cadastrado com sucesso!")
-        router.push("/produtos")
+        alert("Produto cadastrado com sucesso!");
+        router.push("/produtos");
       } else {
-        setError("Não foi possível cadastrar o produto. Tente novamente.")
+        setError("Não foi possível cadastrar o produto. Tente novamente.");
       }
     } catch (err) {
-      console.error("Erro ao cadastrar produto:", err)
-      setError("Erro ao cadastrar produto. Por favor, tente novamente.")
+      console.error("Erro ao cadastrar produto:", err);
+      setError("Erro ao cadastrar produto. Por favor, tente novamente.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
+    <Box
+      sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
+    >
+      <Head>
+        <title>Jujuba - Cadastro Produto</title>
+      </Head>
       <Sidebar />
 
       <Box
@@ -167,7 +183,10 @@ Disponível em estoque para entrega imediata.`
           </Typography>
         )}
 
-        <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "800px" }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ width: "100%", maxWidth: "800px" }}
+        >
           <Paper
             elevation={3}
             sx={{
@@ -410,13 +429,16 @@ Disponível em estoque para entrega imediata.`
                   },
                 }}
               >
-                {loading ? <CircularProgress size={24} sx={{ color: "black" }} /> : "Cadastrar"}
+                {loading ? (
+                  <CircularProgress size={24} sx={{ color: "black" }} />
+                ) : (
+                  "Cadastrar"
+                )}
               </Button>
             </Box>
           </Paper>
         </form>
       </Box>
     </Box>
-  )
+  );
 }
-

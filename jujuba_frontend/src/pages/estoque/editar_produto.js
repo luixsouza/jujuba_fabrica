@@ -1,12 +1,23 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Box, Button, Paper, TextField, Typography, Grid, IconButton, CircularProgress, MenuItem } from "@mui/material"
-import { ArrowBack, Home, Save } from "@mui/icons-material"
-import Sidebar from "../../components/sidebar"
-import { useRouter } from "next/router"
-import { ProdutoService } from "../services/produto-service"
-import { getAllLotes, deleteLote } from "../api/lotes"
+import { useState, useEffect } from "react";
+import Head from "next/head";
+import {
+  Box,
+  Button,
+  Paper,
+  TextField,
+  Typography,
+  Grid,
+  IconButton,
+  CircularProgress,
+  MenuItem,
+} from "@mui/material";
+import { ArrowBack, Home, Save } from "@mui/icons-material";
+import Sidebar from "../../components/sidebar";
+import { useRouter } from "next/router";
+import { ProdutoService } from "../services/produto-service";
+import { getAllLotes, deleteLote } from "../api/lotes";
 
 // Enums baseados no backend
 const ESTADO_CONSERVACAO = [
@@ -14,13 +25,13 @@ const ESTADO_CONSERVACAO = [
   { value: "BOM", label: "BOM" },
   { value: "OTIMO", label: "OTIMO" },
   { value: "EXCELENTE", label: "EXCELENTE" },
-]
+];
 
 const GENERO = [
   { value: "MASCULINO", label: "Masculino" },
   { value: "FEMININO", label: "Feminino" },
   { value: "UNISSEX", label: "Unissex" },
-]
+];
 
 export default function ProdutoEditar() {
   const [produto, setProduto] = useState({
@@ -32,48 +43,48 @@ export default function ProdutoEditar() {
     preco: "",
     quantidade: 1,
     lote_id: "",
-  })
+  });
 
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState("")
-  const [validationErrors, setValidationErrors] = useState({})
-  const router = useRouter()
-  const { id } = router.query
-  const [lotes, setLotes] = useState([])
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState({});
+  const router = useRouter();
+  const { id } = router.query;
+  const [lotes, setLotes] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!id) return
+      if (!id) return;
 
       try {
-        setLoading(true)
+        setLoading(true);
 
         // Carregar produto e lotes
         const [produtoData, lotesData] = await Promise.all([
           ProdutoService.getProdutoById(id),
           getAllLotes(), // Usar a função importada
-        ])
+        ]);
 
         if (!produtoData) {
-          setError("Produto não encontrado")
-          return
+          setError("Produto não encontrado");
+          return;
         }
 
         // Debug completo do produto
-        console.log("Produto completo:", produtoData)
-        console.log("Lote do produto:", produtoData.lote)
-        console.log("Lote ID:", produtoData.lote?.id)
-        console.log("Lote_id direto:", produtoData.lote_id)
+        console.log("Produto completo:", produtoData);
+        console.log("Lote do produto:", produtoData.lote);
+        console.log("Lote ID:", produtoData.lote?.id);
+        console.log("Lote_id direto:", produtoData.lote_id);
 
         // Tentar diferentes formas de acessar o lote
-        let loteId = ""
+        let loteId = "";
         if (produtoData.lote?.id) {
-          loteId = produtoData.lote.id.toString()
+          loteId = produtoData.lote.id.toString();
         } else if (produtoData.lote_id) {
-          loteId = produtoData.lote_id.toString()
+          loteId = produtoData.lote_id.toString();
         } else if (produtoData.loteId) {
-          loteId = produtoData.loteId.toString()
+          loteId = produtoData.loteId.toString();
         }
 
         setProduto({
@@ -85,126 +96,130 @@ export default function ProdutoEditar() {
           preco: produtoData.preco?.toString() || "",
           quantidade: produtoData.quantidade || 1,
           lote_id: loteId,
-        })
+        });
 
-        setLotes(lotesData || [])
+        setLotes(lotesData || []);
 
         console.log("Estado do produto setado:", {
           ...produtoData,
           lote_id: loteId,
-        })
+        });
       } catch (err) {
-        console.error("Erro ao carregar dados:", err)
-        setError("Erro ao carregar os dados. Por favor, tente novamente.")
+        console.error("Erro ao carregar dados:", err);
+        setError("Erro ao carregar os dados. Por favor, tente novamente.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [id])
+    fetchData();
+  }, [id]);
 
   const validateField = (name, value) => {
-    const errors = { ...validationErrors }
+    const errors = { ...validationErrors };
 
     switch (name) {
       case "descricao":
         if (!value) {
-          errors.descricao = "Descrição é obrigatória"
+          errors.descricao = "Descrição é obrigatória";
         } else if (value.length > 300) {
-          errors.descricao = "Descrição deve ter no máximo 300 caracteres"
+          errors.descricao = "Descrição deve ter no máximo 300 caracteres";
         } else {
-          delete errors.descricao
+          delete errors.descricao;
         }
-        break
+        break;
       case "marca":
         if (!value) {
-          errors.marca = "Marca é obrigatória"
+          errors.marca = "Marca é obrigatória";
         } else if (value.length > 100) {
-          errors.marca = "Marca deve ter no máximo 100 caracteres"
+          errors.marca = "Marca deve ter no máximo 100 caracteres";
         } else {
-          delete errors.marca
+          delete errors.marca;
         }
-        break
+        break;
       case "tamanho":
         if (!value) {
-          errors.tamanho = "Tamanho é obrigatório"
+          errors.tamanho = "Tamanho é obrigatório";
         } else if (value.length > 50) {
-          errors.tamanho = "Tamanho deve ter no máximo 50 caracteres"
+          errors.tamanho = "Tamanho deve ter no máximo 50 caracteres";
         } else {
-          delete errors.tamanho
+          delete errors.tamanho;
         }
-        break
+        break;
       case "preco":
         if (!value || Number.parseFloat(value) <= 0) {
-          errors.preco = "Preço deve ser maior que zero"
+          errors.preco = "Preço deve ser maior que zero";
         } else {
-          delete errors.preco
+          delete errors.preco;
         }
-        break
+        break;
       case "quantidade":
         if (!value || Number.parseInt(value) < 1) {
-          errors.quantidade = "Quantidade deve ser pelo menos 1"
+          errors.quantidade = "Quantidade deve ser pelo menos 1";
         } else {
-          delete errors.quantidade
+          delete errors.quantidade;
         }
-        break
+        break;
       case "estadoConservacao":
         if (!value) {
-          errors.estadoConservacao = "Estado de conservação é obrigatório"
+          errors.estadoConservacao = "Estado de conservação é obrigatório";
         } else {
-          delete errors.estadoConservacao
+          delete errors.estadoConservacao;
         }
-        break
+        break;
       case "genero":
         if (!value) {
-          errors.genero = "Gênero é obrigatório"
+          errors.genero = "Gênero é obrigatório";
         } else {
-          delete errors.genero
+          delete errors.genero;
         }
-        break
+        break;
       case "lote_id":
         // Temporariamente não obrigatório para debug
         if (value && !lotes.find((l) => l.id.toString() === value)) {
-          errors.lote_id = "Lote selecionado não é válido"
+          errors.lote_id = "Lote selecionado não é válido";
         } else {
-          delete errors.lote_id
+          delete errors.lote_id;
         }
-        break
+        break;
     }
 
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
-  }
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleChange = (event) => {
-    const { name, value } = event.target
+    const { name, value } = event.target;
 
-    setProduto((prev) => ({ ...prev, [name]: value }))
+    setProduto((prev) => ({ ...prev, [name]: value }));
 
     // Validar campo em tempo real
-    validateField(name, value)
-  }
+    validateField(name, value);
+  };
 
   const handleSubmit = async (event) => {
-    event.preventDefault()
-    setSaving(true)
-    setError("")
+    event.preventDefault();
+    setSaving(true);
+    setError("");
 
     // Validar todos os campos
-    const isValid = Object.keys(produto).every((key) => validateField(key, produto[key]))
+    const isValid = Object.keys(produto).every((key) =>
+      validateField(key, produto[key])
+    );
 
     if (!isValid) {
-      setSaving(false)
-      setError("Por favor, corrija os erros no formulário.")
-      return
+      setSaving(false);
+      setError("Por favor, corrija os erros no formulário.");
+      return;
     }
 
     try {
       // Encontrar o lote completo se um ID foi selecionado
-      let loteCompleto = null
+      let loteCompleto = null;
       if (produto.lote_id) {
-        loteCompleto = lotes.find((l) => l.id.toString() === produto.lote_id.toString())
+        loteCompleto = lotes.find(
+          (l) => l.id.toString() === produto.lote_id.toString()
+        );
       }
 
       // Formatar dados para envio ao backend - seguindo exatamente o modelo Java
@@ -219,37 +234,45 @@ export default function ProdutoEditar() {
         quantidade: Number.parseInt(produto.quantidade),
         // Enviar o objeto lote completo conforme esperado pelo backend
         lote: loteCompleto,
-      }
+      };
 
-      console.log("Dados sendo enviados para o backend:", produtoFormatado)
-      console.log("Lote selecionado:", loteCompleto)
+      console.log("Dados sendo enviados para o backend:", produtoFormatado);
+      console.log("Lote selecionado:", loteCompleto);
 
-      const produtoAtualizado = await ProdutoService.updateProduto(id, produtoFormatado)
+      const produtoAtualizado = await ProdutoService.updateProduto(
+        id,
+        produtoFormatado
+      );
 
       if (produtoAtualizado) {
-        alert("Produto atualizado com sucesso!")
-        router.push(`/produtos/visualizar/${id}`)
+        alert("Produto atualizado com sucesso!");
+        router.push(`/produtos/visualizar/${id}`);
       } else {
-        setError("Não foi possível atualizar o produto. Tente novamente.")
+        setError("Não foi possível atualizar o produto. Tente novamente.");
       }
     } catch (err) {
-      console.error("Erro completo:", err)
-      console.error("Response data:", err.response?.data)
-      console.error("Response status:", err.response?.status)
+      console.error("Erro completo:", err);
+      console.error("Response data:", err.response?.data);
+      console.error("Response status:", err.response?.status);
 
       if (err.response?.status === 500) {
-        setError(`Erro interno do servidor. Detalhes: ${err.response?.data?.message || "Erro desconhecido"}`)
+        setError(
+          `Erro interno do servidor. Detalhes: ${
+            err.response?.data?.message || "Erro desconhecido"
+          }`
+        );
       } else {
-        setError("Erro ao atualizar produto. Por favor, tente novamente.")
+        setError("Erro ao atualizar produto. Por favor, tente novamente.");
       }
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <Box
+        component="div"
         sx={{
           display: "flex",
           justifyContent: "center",
@@ -260,12 +283,13 @@ export default function ProdutoEditar() {
       >
         <CircularProgress />
       </Box>
-    )
+    );
   }
 
   if (error && !produto.descricao) {
     return (
       <Box
+        component="div"
         sx={{
           display: "flex",
           justifyContent: "center",
@@ -280,17 +304,27 @@ export default function ProdutoEditar() {
           </Typography>
           <Button
             onClick={() => router.push("/produtos")}
-            sx={{ mt: 2, bgcolor: "#f8c8cc", color: "black", "&:hover": { bgcolor: "#f8c8cc" } }}
+            sx={{
+              mt: 2,
+              bgcolor: "#f8c8cc",
+              color: "black",
+              "&:hover": { bgcolor: "#f8c8cc" },
+            }}
           >
             Voltar para Lista de Produtos
           </Button>
         </Paper>
       </Box>
-    )
+    );
   }
 
   return (
-    <Box sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}>
+    <Box
+      sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
+    >
+      <Head>
+        <title>Jujuba - Editar Produto</title>
+      </Head>
       <Sidebar />
 
       <Box
@@ -353,7 +387,10 @@ export default function ProdutoEditar() {
           </Typography>
         )}
 
-        <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "800px" }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ width: "100%", maxWidth: "800px" }}
+        >
           <Paper
             elevation={3}
             sx={{
@@ -372,7 +409,10 @@ export default function ProdutoEditar() {
               onChange={handleChange}
               required
               error={!!validationErrors.descricao}
-              helperText={validationErrors.descricao || `${produto.descricao.length}/300 caracteres`}
+              helperText={
+                validationErrors.descricao ||
+                `${produto.descricao.length}/300 caracteres`
+              }
               inputProps={{ maxLength: 300 }}
               variant="outlined"
               sx={{
@@ -396,7 +436,10 @@ export default function ProdutoEditar() {
                   onChange={handleChange}
                   required
                   error={!!validationErrors.marca}
-                  helperText={validationErrors.marca || `${produto.marca.length}/100 caracteres`}
+                  helperText={
+                    validationErrors.marca ||
+                    `${produto.marca.length}/100 caracteres`
+                  }
                   inputProps={{ maxLength: 100 }}
                   variant="outlined"
                   sx={{
@@ -419,7 +462,10 @@ export default function ProdutoEditar() {
                   onChange={handleChange}
                   required
                   error={!!validationErrors.tamanho}
-                  helperText={validationErrors.tamanho || `${produto.tamanho.length}/50 caracteres`}
+                  helperText={
+                    validationErrors.tamanho ||
+                    `${produto.tamanho.length}/50 caracteres`
+                  }
                   inputProps={{ maxLength: 50 }}
                   variant="outlined"
                   sx={{
@@ -556,7 +602,10 @@ export default function ProdutoEditar() {
                   onChange={handleChange}
                   // required - removido temporariamente
                   error={!!validationErrors.lote_id}
-                  helperText={validationErrors.lote_id || `Valor atual: "${produto.lote_id}"`}
+                  helperText={
+                    validationErrors.lote_id ||
+                    `Valor atual: "${produto.lote_id}"`
+                  }
                   variant="outlined"
                   sx={{
                     mb: 2,
@@ -569,7 +618,9 @@ export default function ProdutoEditar() {
                   <MenuItem value="">Nenhum lote selecionado</MenuItem>
                   {lotes.map((lote) => (
                     <MenuItem key={lote.id} value={lote.id.toString()}>
-                      {`Lote ${lote.id} - ${lote.fornecedora?.nome || "Sem fornecedora"}`}
+                      {`Lote ${lote.id} - ${
+                        lote.fornecedora?.nome || "Sem fornecedora"
+                      }`}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -605,12 +656,16 @@ export default function ProdutoEditar() {
                   },
                 }}
               >
-                {saving ? <CircularProgress size={24} sx={{ color: "black" }} /> : "Salvar Alterações"}
+                {saving ? (
+                  <CircularProgress size={24} sx={{ color: "black" }} />
+                ) : (
+                  "Salvar Alterações"
+                )}
               </Button>
             </Box>
           </Paper>
         </form>
       </Box>
     </Box>
-  )
+  );
 }

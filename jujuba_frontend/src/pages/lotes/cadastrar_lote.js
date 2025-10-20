@@ -2,6 +2,7 @@
 
 import { Autocomplete } from "@mui/material";
 import { useState, useEffect } from "react";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import CloseIcon from "@mui/icons-material/Close";
 import InventoryIcon from "@mui/icons-material/Inventory";
@@ -419,6 +420,9 @@ export default function CadastroLotePage() {
 
   return (
     <Box sx={{ display: "flex" }}>
+      <Head>
+        <title>Jujuba - Cadastrar Lote</title>
+      </Head>
       <Sidebar lotes={lotesSidebar} />
 
       <Box

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Head from "next/head";
 import {
   Box,
   Button,
@@ -116,6 +117,9 @@ export default function ProdutoVisualizacao() {
     <Box
       sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
     >
+      <Head>
+        <title>Jujuba - Visualizar Produto</title>
+      </Head>
       <Sidebar />
 
       <Box

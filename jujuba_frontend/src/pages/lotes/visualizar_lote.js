@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Head from "next/head";
 import {
   Box,
   Card,
@@ -231,6 +232,9 @@ export default function VisualizarLotePage() {
     <Box
       sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
     >
+      <Head>
+        <title>Jujuba - Visualizar Lote</title>
+      </Head>
       <Sidebar />
       <Box
         sx={{

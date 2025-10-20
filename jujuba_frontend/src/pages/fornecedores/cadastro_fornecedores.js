@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Head from "next/head";
 import {
   Box,
   Button,
@@ -237,6 +238,9 @@ export default function FornecedoresCadastro() {
         flexDirection: { xs: "column", md: "row" },
       }}
     >
+      <Head>
+        <title>Jujuba - Cadastro Fornecedoras</title>
+      </Head>
       <Box sx={{ width: { xs: "100%", md: "250px" } }}>
         <Sidebar />
       </Box>

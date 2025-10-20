@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Head from "next/head";
 import {
   Box,
   Button,
@@ -121,6 +122,9 @@ export default function FornecedoresVisualizar() {
           flexDirection: { xs: "column", md: "row" },
         }}
       >
+        <Head>
+          <title>Jujuba - Visualizar Fornecedora</title>
+        </Head>
         <Box sx={{ width: { xs: "100%", md: "250px" } }}>
           <Sidebar />
         </Box>
@@ -151,6 +155,9 @@ export default function FornecedoresVisualizar() {
         flexDirection: { xs: "column", md: "row" },
       }}
     >
+      <Head>
+        <title>Jujuba - Visualizar Fornecedora</title>
+      </Head>
       <Box sx={{ width: { xs: "100%", md: "250px" } }}>
         <Sidebar />
       </Box>
