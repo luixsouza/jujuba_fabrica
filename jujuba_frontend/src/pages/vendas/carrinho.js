@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, forwardRef } from "react";
+import Head from "next/head";
 import { useRouter } from "next/navigation";
 
 // Material-UI
@@ -310,6 +311,9 @@ export default function CarrinhoPage() {
     <Box
       sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
     >
+      <Head>
+        <title>Jujuba - Carrinho</title>
+      </Head>
       <Sidebar />
       <Box
         component="main"

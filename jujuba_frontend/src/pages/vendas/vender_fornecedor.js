@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Head from "next/head";
 
 // Material-UI
 import {
@@ -429,6 +430,9 @@ export default function FornecedoresPage() {
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#a8e1ff" }}>
+      <Head>
+        <title>Jujuba - Fornecedoras</title>
+      </Head>
       {/* Sidebar */}
       <Sidebar />
       {/* Main Content */}

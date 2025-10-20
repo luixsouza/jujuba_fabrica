@@ -40,6 +40,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import { forwardRef } from "react";
+import Head from "next/head";
 import { useRouter } from "next/navigation";
 
 // Importações da API corrigidas
@@ -354,6 +355,9 @@ export default function EstoquePage() {
     <Box
       sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
     >
+      <Head>
+        <title>Jujuba - Estoque</title>
+      </Head>
       <Sidebar />
       <Box
         component="main"
