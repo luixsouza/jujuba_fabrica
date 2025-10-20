@@ -40,6 +40,21 @@ public class CarrinhoController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/adicionar/{produtoId}/{quantidade}")
+    @Operation(
+        summary = "Adicionar N unidades ao carrinho",
+        description = "Adiciona N unidades de um produto ao carrinho de forma atômica."
+    )
+    public ResponseEntity<Void> adicionarProdutoQuantidade(
+        @Parameter(description = "ID do produto a ser adicionado", required = true)
+        @PathVariable Long produtoId,
+        @Parameter(description = "Quantidade a adicionar", required = true)
+        @PathVariable int quantidade
+    ) {
+        carrinhoService.adicionarProduto(produtoId, quantidade);
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/remover/{id}")
     @Operation(
         summary = "Remover produto do carrinho",

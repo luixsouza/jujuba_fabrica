@@ -62,29 +62,22 @@ export default function SearchAddCart({ onAdded } = {}) {
     try {
       const p = await buscarProdutoPorId(selected.id);
       const estoque = Number(p?.produto?.quantidade) || 0;
-      // Count how many already in cart
-      const carrinhoResp = await listarCarrinho();
-      const existente =
-        carrinhoResp?.sucesso && carrinhoResp.carrinho?.itens
-          ? carrinhoResp.carrinho.itens.find(
-              (it) => String(it.id) === String(selected.id)
-            )?.quantidade || 0
-          : 0;
-      if (existente + desired > estoque) {
+      // O backend já decrementa o estoque ao adicionar ao carrinho, então
+      // basta verificar se a quantidade desejada cabe no estoque atual.
+      if (desired > estoque) {
         setMessage({
           type: "error",
-          text: `Estoque insuficiente. Disponível: ${estoque - existente}`,
+          text: `Estoque insuficiente. Disponível: ${estoque}`,
         });
         setBusy(false);
         return;
       }
 
-      // Add in loop (backend currently supports adding one unit per call)
-      for (let i = 0; i < desired; i++) {
-        const res = await adicionarAoCarrinho(selected.produto, 1);
-        if (!res?.sucesso) {
-          throw new Error(res?.mensagem || "Erro ao adicionar ao carrinho");
-        }
+      // Use adicionarAoCarrinho with quantity; wrapper will loop if backend
+      // only accepts one unit per request.
+      const res = await adicionarAoCarrinho(selected.produto, desired);
+      if (!res?.sucesso) {
+        throw new Error(res?.mensagem || "Erro ao adicionar ao carrinho");
       }
 
       setMessage({

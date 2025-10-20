@@ -44,7 +44,7 @@ import Head from "next/head";
 import { useRouter } from "next/navigation";
 
 // Importações da API corrigidas
-import { listarProdutos } from "../api/produtos";
+import { listarProdutos, buscarProdutoPorId } from "../api/produtos";
 import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho"; // Agora aponta para o arquivo correto
 
 const Transition = forwardRef(function Transition(props, ref) {
@@ -179,6 +179,7 @@ export default function EstoquePage() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const [openProductModal, setOpenProductModal] = useState(false);
+  const [modalQty, setModalQty] = useState(1);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -251,6 +252,7 @@ export default function EstoquePage() {
     const produtoNormalizado = normalizarProduto(produto);
     if (produtoNormalizado) {
       setProdutoSelecionado(produtoNormalizado);
+      setModalQty(1);
       setOpenProductModal(true);
       setTabValue(0);
     }
@@ -276,28 +278,42 @@ export default function EstoquePage() {
 
       // Verifica no carrinho atual se já existe quantidade do mesmo produto
       try {
-        const carrinhoResp = await listarCarrinho();
-        if (carrinhoResp?.sucesso && carrinhoResp.carrinho?.itens) {
-          const itemNoCarrinho = carrinhoResp.carrinho.itens.find(
-            (it) => String(it.id) === String(produtoNormalizado.id)
+        // Recheca estoque atual diretamente no backend (o estoque já é reduzido
+        // quando o produto é adicionado, então comparamos modalQty com o
+        // valor atual retornado por buscarProdutoPorId).
+        const produtoAtual = await buscarProdutoPorId(produtoNormalizado.id);
+        const estoqueDisponivel =
+          Number(produtoAtual?.produto?.quantidade) || 0;
+        const desired = Number(modalQty) || 1;
+        if (desired > estoqueDisponivel) {
+          mostrarSnackbar(
+            `Estoque insuficiente: disponíveis ${estoqueDisponivel} unidade(s).`,
+            "error"
           );
-          const quantidadeAtual = Number(itemNoCarrinho?.quantidade) || 0;
-          const quantidadeDesejada = quantidadeAtual + 1;
-          const estoqueDisponivel = Number(produtoNormalizado.quantidade) || 0;
-          if (quantidadeDesejada > estoqueDisponivel) {
-            mostrarSnackbar(
-              `Estoque insuficiente: existem apenas ${estoqueDisponivel} unidade(s) disponíveis.`,
-              "error"
-            );
-            return;
-          }
+          return;
         }
       } catch (e) {
-        // se falhar ao verificar o carrinho, não bloqueia a operação — logs para debug
-        console.warn("Falha ao verificar carrinho antes de adicionar:", e);
+        console.warn("Falha ao verificar estoque atual antes de adicionar:", e);
       }
 
-      const resultado = await adicionarAoCarrinho(produtoNormalizado, 1);
+      if (!produtoNormalizado.id) {
+        mostrarSnackbar(
+          "Produto sem ID válido. Consulte o administrador.",
+          "error"
+        );
+        return;
+      }
+
+      console.debug("[estoque] adicionando ao carrinho", {
+        id: produtoNormalizado.id,
+        descricao: produtoNormalizado.descricao,
+        quantidade: modalQty || 1,
+      });
+
+      const resultado = await adicionarAoCarrinho(
+        produtoNormalizado,
+        modalQty || 1
+      );
 
       if (resultado?.sucesso) {
         const novoTotal =
@@ -933,6 +949,14 @@ export default function EstoquePage() {
           >
             Adicionar ao Carrinho
           </Button>
+          <TextField
+            label="Quantidade"
+            type="number"
+            value={modalQty}
+            onChange={(e) => setModalQty(Number(e.target.value))}
+            inputProps={{ min: 1 }}
+            sx={{ width: 120 }}
+          />
         </DialogActions>
       </Dialog>
 

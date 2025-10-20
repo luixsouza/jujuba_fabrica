@@ -87,39 +87,107 @@ export const listarCarrinho = async () => {
  * @param {object} produto - O objeto do produto a ser adicionado.
  * @param {number} quantidade - A quantidade (atualmente ignorada pelo backend).
  */
-export const adicionarAoCarrinho = async (produto, quantidade) => {
+export const adicionarAoCarrinho = async (produto, quantidade = 1) => {
   try {
-    // Verificação rápida no cliente: não adiciona produto sem estoque
-    if (
-      !produto ||
-      (typeof produto.quantidade === "number" && produto.quantidade <= 0)
-    ) {
+    // Validações rápidas no cliente
+    if (!produto || !produto.id) {
+      return {
+        sucesso: false,
+        mensagem:
+          "Produto inválido ou sem ID. Não é possível adicionar ao carrinho.",
+      };
+    }
+
+    // Não adiciona produto sem estoque
+    if (typeof produto.quantidade === "number" && produto.quantidade <= 0) {
       return {
         sucesso: false,
         mensagem: "Não é possível adicionar ao carrinho: produto sem estoque.",
       };
     }
-    // O backend espera o ID na URL e não espera um corpo na requisição.
-    const response = await fetch(`${BASE_URL}/adicionar/${produto.id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      // Corpo da requisição removido (backend usa sessão).
-    });
 
-    if (!response.ok) {
-      // Tenta extrair uma mensagem de erro mais clara do backend, se houver
-      const erroData = await response.json().catch(() => null);
-      const mensagemErro =
-        erroData?.mensagem || `Erro no servidor (status: ${response.status})`;
-      throw new Error(mensagemErro);
+    const qty = Number(quantidade) || 1;
+    if (qty <= 0) {
+      return {
+        sucesso: false,
+        mensagem: "Quantidade inválida.",
+      };
     }
 
-    // Como o backend retorna uma resposta vazia (200 OK sem corpo),
-    // precisamos chamar listarCarrinho() novamente para obter o estado atualizado
-    // e retorná-lo para o componente que fez a chamada.
+    // Preferir chamar endpoint atômico de quantidade quando disponível
+    if (qty > 1) {
+      const url = `${BASE_URL}/adicionar/${produto.id}/${qty}`;
+      console.debug(`[carrinho] POST ${url} (atomic)`);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        // Fallback para chamadas unitárias caso o endpoint não exista ou falhe
+        console.warn(
+          `[carrinho] atomic add failed, falling back to unit loop (${response.status})`
+        );
+        // fallback: try looping single adds
+        for (let i = 0; i < qty; i++) {
+          const urlSingle = `${BASE_URL}/adicionar/${produto.id}`;
+          console.debug(
+            `[carrinho] POST ${urlSingle} (attempt ${i + 1}/${qty})`
+          );
+          const resSingle = await fetch(urlSingle, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          });
+          if (!resSingle.ok) {
+            let mensagemErro = `Erro no servidor (status: ${resSingle.status} ${resSingle.statusText})`;
+            try {
+              const erroData = await resSingle.json().catch(() => null);
+              if (erroData)
+                mensagemErro =
+                  erroData.mensagem ||
+                  erroData.message ||
+                  JSON.stringify(erroData);
+            } catch (e) {
+              try {
+                mensagemErro = await resSingle.text();
+              } catch (e2) {}
+            }
+            throw new Error(mensagemErro);
+          }
+        }
+      }
+    } else {
+      // Single unit — chama endpoint tradicional
+      const url = `${BASE_URL}/adicionar/${produto.id}`;
+      console.debug(`[carrinho] POST ${url} (single)`);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      if (!response.ok) {
+        let mensagemErro = `Erro no servidor (status: ${response.status} ${response.statusText})`;
+        try {
+          const erroData = await response.json().catch(() => null);
+          if (erroData)
+            mensagemErro =
+              erroData.mensagem || erroData.message || JSON.stringify(erroData);
+        } catch (e) {
+          try {
+            mensagemErro = await response.text();
+          } catch (e2) {}
+        }
+        throw new Error(mensagemErro);
+      }
+    }
+
+    // Depois de executar as chamadas, buscamos o estado atualizado do carrinho
     return await listarCarrinho();
   } catch (error) {
     console.error("Erro ao adicionar produto ao carrinho:", error);
