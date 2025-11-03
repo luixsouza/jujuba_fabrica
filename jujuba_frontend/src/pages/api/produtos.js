@@ -60,6 +60,34 @@ export const listarProdutos = async () => {
   }
 };
 
+export const listarProdutosComEstoque = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/estoque`);
+    return {
+      sucesso: true,
+      mensagem: "produtos com estoque listados com sucesso.",
+      quantidade: response.data.length,
+      produtos: response.data.map((p) => ({
+        id: p.id,
+        descricao: p.descricao,
+        quantidade: p.quantidade,
+        marca: p.marca,
+        tamanho: p.tamanho,
+        estadoConservacao: p.estadoConservacao,
+        preco: p.preco,
+        imagemUrl: p.imagemUrl,
+        fornecedoraId: p.fornecedoraId,
+      })),
+    };
+  } catch (error) {
+    return {
+      sucesso: false,
+      mensagem: "Erro ao listar produtos com estoque.",
+      erro: error.response?.data || error.message,
+    };
+  }
+};
+
 export const buscarProdutoPorId = async (id) => {
   try {
     const response = await axios.get(`${BASE_URL}/${id}`);

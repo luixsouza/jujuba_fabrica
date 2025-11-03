@@ -32,6 +32,17 @@ public class ProdutoController {
         return produtoService.listarTodos();
     }
 
+    @GetMapping("/estoque")
+    @Operation(summary = "Listar produtos com estoque disponível",
+               description = "Retorna apenas produtos com quantidade maior que 0.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de produtos com estoque retornada com sucesso"),
+        @ApiResponse(responseCode = "500", description = "Erro interno ao listar produtos")
+    })
+    public List<Produto> listarProdutosComEstoque() {
+        return produtoService.listarComEstoque();
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Buscar um produto por ID",
                description = "Busca e retorna um produto com base no ID fornecido.")

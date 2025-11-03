@@ -264,7 +264,10 @@ export default function CadastroLotePage() {
     try {
       const response = await fetch(`/api/fornecedores`);
       const data = await response.json();
-      const fornecedora = data.find((f) => f.id === fornecedoraId);
+      
+      // Verifica se data é um array ou se tem uma propriedade que contém o array
+      const fornecedoras = Array.isArray(data) ? data : (data.fornecedoras || []);
+      const fornecedora = fornecedoras.find((f) => f.id === fornecedoraId);
       return fornecedora ? fornecedora.creditoLoja || 0 : 0;
     } catch (error) {
       console.error("Erro ao buscar crédito da fornecedora:", error);

@@ -24,9 +24,9 @@ public class CarrinhoService {
     }
 
     /**
-     * Adiciona várias unidades de um produto ao carrinho de forma atômica.
-     * Esta implementação reduz o estoque uma vez e adiciona múltiplas entradas
-     * no carrinho para cada unidade solicitada.
+     * Adiciona várias unidades de um produto ao carrinho.
+     * Apenas verifica disponibilidade, sem decrementar o estoque.
+     * O estoque será decrementado apenas na finalização da venda.
      */
     public synchronized void adicionarProduto(Long produtoId, int quantidade) {
         if (quantidade <= 0) {
@@ -37,15 +37,17 @@ public class CarrinhoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Produto com ID " + produtoId + " não encontrado."));
 
         int estoqueDisponivel = produto.getQuantidade() != null ? produto.getQuantidade() : 0;
-        if (estoqueDisponivel < quantidade) {
-            throw new ProductUnavailableException("Não é possível adicionar mais unidades do produto (ID " + produtoId + "). Estoque disponível: " + estoqueDisponivel + ".");
+        
+        // Conta quantas unidades deste produto já estão no carrinho
+        long unidadesNoCarrinho = carrinho.stream()
+                .filter(p -> p.getId().equals(produtoId))
+                .count();
+        
+        if (estoqueDisponivel < (unidadesNoCarrinho + quantidade)) {
+            throw new ProductUnavailableException("Não é possível adicionar mais unidades do produto (ID " + produtoId + "). Estoque disponível: " + (estoqueDisponivel - unidadesNoCarrinho) + ".");
         }
 
-        // decrementa o estoque de forma atômica
-        produto.setQuantidade(estoqueDisponivel - quantidade);
-        produtoRepository.save(produto);
-
-        // adiciona 'quantidade' entradas no carrinho (cada uma representa uma unidade)
+        // Adiciona ao carrinho SEM decrementar o estoque
         for (int i = 0; i < quantidade; i++) {
             carrinho.add(produto);
         }
@@ -66,15 +68,9 @@ public class CarrinhoService {
             throw new ResourceNotFoundException("Produto com ID " + produtoId + " não está no carrinho.");
         }
 
-        // Remove somente a unidade encontrada
+        // Remove somente a unidade encontrada do carrinho
+        // Não altera o estoque, pois ele não foi decrementado ao adicionar
         carrinho.remove(indexToRemove);
-
-        // Restaura uma unidade no estoque do produto persistido
-        Produto produto = produtoRepository.findById(produtoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Produto com ID " + produtoId + " não encontrado."));
-        int atual = produto.getQuantidade() != null ? produto.getQuantidade() : 0;
-        produto.setQuantidade(atual + 1);
-        produtoRepository.save(produto);
     }
 
     public List<Produto> listarProdutos() {

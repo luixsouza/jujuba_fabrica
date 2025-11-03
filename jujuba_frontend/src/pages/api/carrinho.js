@@ -143,18 +143,16 @@ export const adicionarAoCarrinho = async (produto, quantidade = 1) => {
             credentials: "include",
           });
           if (!resSingle.ok) {
-            let mensagemErro = `Erro no servidor (status: ${resSingle.status} ${resSingle.statusText})`;
+            let mensagemErro = `Erro no servidor (status: ${resSingle.status})`;
             try {
-              const erroData = await resSingle.json().catch(() => null);
-              if (erroData)
-                mensagemErro =
-                  erroData.mensagem ||
-                  erroData.message ||
-                  JSON.stringify(erroData);
+              const erroText = await resSingle.text();
+              if (erroText && erroText.includes("Estoque disponível")) {
+                mensagemErro = "Este produto já está no carrinho. Estoque insuficiente para adicionar mais unidades.";
+              } else if (erroText) {
+                mensagemErro = erroText;
+              }
             } catch (e) {
-              try {
-                mensagemErro = await resSingle.text();
-              } catch (e2) {}
+              // Mantém a mensagem padrão se não conseguir ler a resposta
             }
             throw new Error(mensagemErro);
           }
@@ -172,16 +170,16 @@ export const adicionarAoCarrinho = async (produto, quantidade = 1) => {
         credentials: "include",
       });
       if (!response.ok) {
-        let mensagemErro = `Erro no servidor (status: ${response.status} ${response.statusText})`;
+        let mensagemErro = `Erro no servidor (status: ${response.status})`;
         try {
-          const erroData = await response.json().catch(() => null);
-          if (erroData)
-            mensagemErro =
-              erroData.mensagem || erroData.message || JSON.stringify(erroData);
+          const erroText = await response.text();
+          if (erroText && erroText.includes("Estoque disponível")) {
+            mensagemErro = "Este produto já está no carrinho. Estoque insuficiente para adicionar mais unidades.";
+          } else if (erroText) {
+            mensagemErro = erroText;
+          }
         } catch (e) {
-          try {
-            mensagemErro = await response.text();
-          } catch (e2) {}
+          // Mantém a mensagem padrão se não conseguir ler a resposta
         }
         throw new Error(mensagemErro);
       }
