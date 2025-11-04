@@ -106,14 +106,4 @@ public class CarrinhoController {
         }
         return ResponseEntity.ok(total);
     }
-
-    @DeleteMapping("/limpar")
-    @Operation(
-        summary = "Limpar carrinho",
-        description = "Remove todos os produtos do carrinho."
-    )
-    public ResponseEntity<Void> limparCarrinho() {
-        carrinhoService.limparCarrinho();
-        return ResponseEntity.ok().build();
-    }
 }

@@ -18,10 +18,6 @@ public class ProdutoService {
         return produtoRepository.findAll();
     }
 
-    public List<Produto> listarComEstoque() {
-        return produtoRepository.findByQuantidadeGreaterThan(0);
-    }
-
     public Produto buscarPorId(Long id) {
         return produtoRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));

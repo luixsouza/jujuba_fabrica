@@ -47,8 +47,11 @@ services:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://backend:8080/
+    volumes:
+      - ./jujuba_frontend:/app
     networks:
       - app-network
+    command: npm run dev
 
 networks:
   app-network:

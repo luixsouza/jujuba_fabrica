@@ -44,7 +44,7 @@ import Head from "next/head";
 import { useRouter } from "next/navigation";
 
 // Importações da API corrigidas
-import { listarProdutos, listarProdutosComEstoque, buscarProdutoPorId } from "../api/produtos";
+import { listarProdutos, buscarProdutoPorId } from "../api/produtos";
 import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho"; // Agora aponta para o arquivo correto
 
 const Transition = forwardRef(function Transition(props, ref) {
@@ -173,7 +173,6 @@ export default function EstoquePage() {
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   const [searchOptions, setSearchOptions] = useState([]);
   const [cartItemCount, setCartItemCount] = useState(0);
-  const [cartItems, setCartItems] = useState([]);
   const [tabValue, setTabValue] = useState(0);
 
   const [page, setPage] = useState(0);
@@ -200,7 +199,7 @@ export default function EstoquePage() {
     try {
       setLoading(true);
 
-      const produtosResponse = await listarProdutosComEstoque();
+      const produtosResponse = await listarProdutos();
       if (
         produtosResponse?.sucesso &&
         Array.isArray(produtosResponse.produtos)
@@ -223,10 +222,8 @@ export default function EstoquePage() {
       if (carrinhoResponse?.sucesso && carrinhoResponse.carrinho) {
         const totalItens = Number(carrinhoResponse.carrinho.totalItens) || 0;
         setCartItemCount(totalItens);
-        setCartItems(carrinhoResponse.carrinho.itens || []);
       } else {
         console.error("Erro ao buscar carrinho:", carrinhoResponse?.mensagem);
-        setCartItems([]);
         // Opcional: mostrar snackbar se o carrinho falhar, mas pode não ser crítico
         // mostrarSnackbar(carrinhoResponse?.mensagem || "Não foi possível carregar o carrinho", "warning");
       }
@@ -322,7 +319,6 @@ export default function EstoquePage() {
         const novoTotal =
           Number(resultado.carrinho?.totalItens) || cartItemCount + 1;
         setCartItemCount(novoTotal);
-        setCartItems(resultado.carrinho?.itens || []);
         mostrarSnackbar(
           `"${produtoNormalizado.descricao}" adicionado ao carrinho!`,
           "success"
@@ -359,18 +355,6 @@ export default function EstoquePage() {
 
   const handleCloseSnackbar = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
-  };
-
-  // Verifica se o produto pode ser adicionado ao carrinho
-  const canAddToCart = (produto) => {
-    if (!produto || produto.quantidade <= 0) return false;
-    
-    // Se o produto tem mais de 1 unidade, sempre pode adicionar
-    if (produto.quantidade > 1) return true;
-    
-    // Se tem apenas 1 unidade, verifica se já está no carrinho
-    const isInCart = cartItems.some(item => item.id === produto.id);
-    return !isInCart;
   };
 
   const produtosFiltrados = useMemo(() => {
@@ -656,17 +640,13 @@ export default function EstoquePage() {
                         </IconButton>
                         <IconButton
                           onClick={() => handleAddToCart(produto)}
-                          sx={{ 
-                            color: canAddToCart(produto) ? "#00509E" : "#ccc"
-                          }}
+                          sx={{ color: "#00509E" }}
                           title={
-                            !canAddToCart(produto)
-                              ? produto.quantidade <= 0
-                                ? "Sem estoque"
-                                : "Produto já está no carrinho"
-                              : "Adicionar ao carrinho"
+                            produto.quantidade > 0
+                              ? "Adicionar ao carrinho"
+                              : "Sem estoque"
                           }
-                          disabled={!canAddToCart(produto)}
+                          disabled={!(produto.quantidade > 0)}
                         >
                           <ShoppingCartIcon />
                         </IconButton>
@@ -949,31 +929,25 @@ export default function EstoquePage() {
           <Button
             startIcon={<ShoppingCartIcon />}
             onClick={() => handleAddToCart(produtoSelecionado)}
-            disabled={!canAddToCart(produtoSelecionado)}
             sx={{
-              backgroundColor: canAddToCart(produtoSelecionado) ? "#FADADD" : "#e0e0e0",
-              color: canAddToCart(produtoSelecionado) ? "#333" : "#999",
+              backgroundColor: "#FADADD",
+              color: "#333",
               fontWeight: "bold",
               fontSize: "16px",
               borderRadius: "25px",
               padding: "12px 32px",
               minWidth: "180px",
               textTransform: "none",
-              boxShadow: canAddToCart(produtoSelecionado) ? "0px 4px 12px rgba(250, 218, 221, 0.4)" : "none",
-              "&:hover": canAddToCart(produtoSelecionado) ? {
+              boxShadow: "0px 4px 12px rgba(250, 218, 221, 0.4)",
+              "&:hover": {
                 backgroundColor: "#FFB6C1",
                 transform: "translateY(-2px)",
                 boxShadow: "0px 6px 16px rgba(250, 218, 221, 0.6)",
-              } : {},
+              },
               transition: "all 0.3s ease",
             }}
           >
-            {canAddToCart(produtoSelecionado) 
-              ? "Adicionar ao Carrinho" 
-              : produtoSelecionado?.quantidade <= 0 
-                ? "Sem Estoque" 
-                : "Já no Carrinho"
-            }
+            Adicionar ao Carrinho
           </Button>
           <TextField
             label="Quantidade"

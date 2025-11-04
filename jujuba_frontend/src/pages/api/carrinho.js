@@ -143,16 +143,18 @@ export const adicionarAoCarrinho = async (produto, quantidade = 1) => {
             credentials: "include",
           });
           if (!resSingle.ok) {
-            let mensagemErro = `Erro no servidor (status: ${resSingle.status})`;
+            let mensagemErro = `Erro no servidor (status: ${resSingle.status} ${resSingle.statusText})`;
             try {
-              const erroText = await resSingle.text();
-              if (erroText && erroText.includes("Estoque disponível")) {
-                mensagemErro = "Este produto já está no carrinho. Estoque insuficiente para adicionar mais unidades.";
-              } else if (erroText) {
-                mensagemErro = erroText;
-              }
+              const erroData = await resSingle.json().catch(() => null);
+              if (erroData)
+                mensagemErro =
+                  erroData.mensagem ||
+                  erroData.message ||
+                  JSON.stringify(erroData);
             } catch (e) {
-              // Mantém a mensagem padrão se não conseguir ler a resposta
+              try {
+                mensagemErro = await resSingle.text();
+              } catch (e2) {}
             }
             throw new Error(mensagemErro);
           }
@@ -170,16 +172,16 @@ export const adicionarAoCarrinho = async (produto, quantidade = 1) => {
         credentials: "include",
       });
       if (!response.ok) {
-        let mensagemErro = `Erro no servidor (status: ${response.status})`;
+        let mensagemErro = `Erro no servidor (status: ${response.status} ${response.statusText})`;
         try {
-          const erroText = await response.text();
-          if (erroText && erroText.includes("Estoque disponível")) {
-            mensagemErro = "Este produto já está no carrinho. Estoque insuficiente para adicionar mais unidades.";
-          } else if (erroText) {
-            mensagemErro = erroText;
-          }
+          const erroData = await response.json().catch(() => null);
+          if (erroData)
+            mensagemErro =
+              erroData.mensagem || erroData.message || JSON.stringify(erroData);
         } catch (e) {
-          // Mantém a mensagem padrão se não conseguir ler a resposta
+          try {
+            mensagemErro = await response.text();
+          } catch (e2) {}
         }
         throw new Error(mensagemErro);
       }

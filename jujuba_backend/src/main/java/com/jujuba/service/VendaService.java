@@ -3,7 +3,6 @@ package com.jujuba.service;
 import com.jujuba.exception.EmptyCartException;
 import com.jujuba.exception.FornecedoraNotFoundException;
 import com.jujuba.exception.ProductUnavailableException;
-import com.jujuba.exception.ResourceNotFoundException;
 import com.jujuba.exception.SaleNotFoundException;
 import com.jujuba.mapper.VendaMapper;
 import com.jujuba.model.Fornecedora;
@@ -36,15 +35,18 @@ public class VendaService {
             throw new EmptyCartException("O carrinho está vazio. Adicione produtos antes de finalizar a venda.");
         }
 
-        // Valida e decrementa o estoque na finalização da venda
-        atualizarEstoque(produtosCarrinho);
+        for (Produto produto : produtosCarrinho) {
+            if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
+                throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produto.getDescricao());
+            }
+        }
 
-        BigDecimal totalVenda = carrinhoService.calcularTotal();
-        Venda venda = VendaMapper.mapearVendaSimples(totalVenda, produtosCarrinho);
+    BigDecimal totalVenda = carrinhoService.calcularTotal();
+    Venda venda = VendaMapper.mapearVendaSimples(totalVenda, produtosCarrinho);
 
-        carrinhoService.limparCarrinho();
+    carrinhoService.limparCarrinho();
 
-        return vendaRepository.save(venda);
+    return vendaRepository.save(venda);
     }
 
     @Transactional
@@ -55,18 +57,21 @@ public class VendaService {
             throw new EmptyCartException("O carrinho está vazio. Adicione produtos antes de finalizar a venda.");
         }
 
+        for (Produto produto : produtosCarrinho) {
+            if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
+                throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produto.getDescricao());
+            }
+        }
+
         Fornecedora fornecedora = fornecedoraRepository.findById(fornecedoraId)
                 .orElseThrow(() -> new FornecedoraNotFoundException("Fornecedora com ID " + fornecedoraId + " não encontrada."));
 
-        // Valida e decrementa o estoque na finalização da venda
-        atualizarEstoque(produtosCarrinho);
+    BigDecimal totalVenda = carrinhoService.calcularTotal();
+    Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora, produtosCarrinho);
 
-        BigDecimal totalVenda = carrinhoService.calcularTotal();
-        Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora, produtosCarrinho);
+    carrinhoService.limparCarrinho();
 
-        carrinhoService.limparCarrinho();
-
-        return vendaRepository.save(venda);
+    return vendaRepository.save(venda);
     }
 
     public List<Venda> listarTodas() {
@@ -79,34 +84,11 @@ public class VendaService {
     }
 
     private void atualizarEstoque(List<Produto> produtos) {
-        System.out.println("[VENDA] Iniciando atualização de estoque para " + produtos.size() + " produtos");
-        
-        // Primeiro valida se há estoque suficiente para todos os produtos
-        for (Produto produtoCarrinho : produtos) {
-            Produto produtoAtual = produtoRepository.findById(produtoCarrinho.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado: " + produtoCarrinho.getId()));
-            
-            int estoqueAtual = produtoAtual.getQuantidade() != null ? produtoAtual.getQuantidade() : 0;
-            System.out.println("[VENDA] Produto ID " + produtoCarrinho.getId() + " - Estoque atual: " + estoqueAtual);
-            
-            if (estoqueAtual <= 0) {
-                throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produtoAtual.getDescricao());
-            }
+        for (Produto produto : produtos) {
+            Integer atual = produto.getQuantidade() != null ? produto.getQuantidade() : 0;
+            int novo = Math.max(0, atual - 1);
+            produto.setQuantidade(novo);
+            produtoRepository.save(produto);
         }
-        
-        // Se chegou até aqui, todos os produtos têm estoque, então decrementa
-        for (Produto produtoCarrinho : produtos) {
-            Produto produtoAtual = produtoRepository.findById(produtoCarrinho.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado: " + produtoCarrinho.getId()));
-            
-            int estoqueAtual = produtoAtual.getQuantidade() != null ? produtoAtual.getQuantidade() : 0;
-            int novoEstoque = estoqueAtual - 1;
-            produtoAtual.setQuantidade(novoEstoque);
-            produtoRepository.save(produtoAtual);
-            
-            System.out.println("[VENDA] Produto ID " + produtoCarrinho.getId() + " - Estoque atualizado: " + estoqueAtual + " -> " + novoEstoque);
-        }
-        
-        System.out.println("[VENDA] Atualização de estoque concluída");
     }
 }
