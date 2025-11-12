@@ -11,7 +11,7 @@ public class FornecedoraMapper {
         fornecedora.setNome(dto.getNome());
         fornecedora.setContato(dto.getContato());
         fornecedora.setEndereco(dto.getEndereco());
-        fornecedora.setChavePix(dto.getChavePix());
+        fornecedora.setChavePix(dto.getChavePix() != null && !dto.getChavePix().trim().isEmpty() ? dto.getChavePix() : null);
         fornecedora.setDataNascimento(dto.getDataNascimento());
         fornecedora.setCreditoLoja(dto.getCreditoLoja());
         return fornecedora;
@@ -21,7 +21,7 @@ public class FornecedoraMapper {
         fornecedora.setNome(dto.getNome());
         fornecedora.setContato(dto.getContato());
         fornecedora.setEndereco(dto.getEndereco());
-        fornecedora.setChavePix(dto.getChavePix());
+        fornecedora.setChavePix(dto.getChavePix() != null && !dto.getChavePix().trim().isEmpty() ? dto.getChavePix() : null);
         fornecedora.setDataNascimento(dto.getDataNascimento());
         fornecedora.setCreditoLoja(dto.getCreditoLoja());
     }

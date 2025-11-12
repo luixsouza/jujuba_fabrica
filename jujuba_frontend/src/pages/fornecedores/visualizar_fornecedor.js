@@ -101,12 +101,12 @@ export default function FornecedoresVisualizar() {
     if (fornecedora.contratoUrl) {
       const url = fornecedora.contratoUrl.startsWith("http")
         ? fornecedora.contratoUrl
-        : `${BACKEND_BASE_URL}/${fornecedora.contratoUrl.replace(/^\/+/, "")}`;
+        : `${BACKEND_BASE_URL}${fornecedora.contratoUrl}`;
       window.open(url, "_blank");
     } else {
       setSnackbar({
         open: true,
-        message: "Contrato não disponível para download",
+        message: "Contrato não disponível",
         severity: "warning",
       });
     }

@@ -61,7 +61,7 @@ const normalizarProduto = (produto) => {
     descricao: produto.descricao || "Produto sem descrição",
     marca: produto.marca || "Marca não informada",
     tamanho: produto.tamanho || "Tamanho não informado",
-    genero: produto.genero || "Não especificado",
+    genero: produto.genero || "UNISSEX",
     estadoConservacao: produto.estadoConservacao || "Não informado",
     quantidade: produto.quantidade != null ? Number(produto.quantidade) : 1,
     preco: Number(produto.preco) || 0,
@@ -173,6 +173,7 @@ export default function EstoquePage() {
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   const [searchOptions, setSearchOptions] = useState([]);
   const [cartItemCount, setCartItemCount] = useState(0);
+  const [cartItems, setCartItems] = useState([]);
   const [tabValue, setTabValue] = useState(0);
 
   const [page, setPage] = useState(0);
@@ -206,7 +207,7 @@ export default function EstoquePage() {
       ) {
         const produtosNormalizados = produtosResponse.produtos
           .map(normalizarProduto)
-          .filter((produto) => produto !== null && produto.ativo);
+          .filter((produto) => produto !== null && produto.ativo && produto.quantidade > 0);
         setProdutos(produtosNormalizados);
         setSearchOptions(criarOpcoesBusca(produtosNormalizados));
       } else {
@@ -220,8 +221,10 @@ export default function EstoquePage() {
       // Esta chamada agora deve funcionar corretamente
       const carrinhoResponse = await listarCarrinho();
       if (carrinhoResponse?.sucesso && carrinhoResponse.carrinho) {
-        const totalItens = Number(carrinhoResponse.carrinho.totalItens) || 0;
-        setCartItemCount(totalItens);
+        const itens = carrinhoResponse.carrinho.itens || [];
+        const total = itens.reduce((sum, item) => sum + (item.quantidade || 1), 0);
+        setCartItemCount(total);
+        setCartItems(itens);
       } else {
         console.error("Erro ao buscar carrinho:", carrinhoResponse?.mensagem);
         // Opcional: mostrar snackbar se o carrinho falhar, mas pode não ser crítico
@@ -268,7 +271,7 @@ export default function EstoquePage() {
     setTabValue(newValue);
   };
 
-  const handleAddToCart = async (produto) => {
+  const handleAddToCart = async (produto, quantidade = 1) => {
     try {
       const produtoNormalizado = normalizarProduto(produto);
       if (!produtoNormalizado) {
@@ -278,13 +281,10 @@ export default function EstoquePage() {
 
       // Verifica no carrinho atual se já existe quantidade do mesmo produto
       try {
-        // Recheca estoque atual diretamente no backend (o estoque já é reduzido
-        // quando o produto é adicionado, então comparamos modalQty com o
-        // valor atual retornado por buscarProdutoPorId).
         const produtoAtual = await buscarProdutoPorId(produtoNormalizado.id);
         const estoqueDisponivel =
           Number(produtoAtual?.produto?.quantidade) || 0;
-        const desired = Number(modalQty) || 1;
+        const desired = Number(quantidade) || 1;
         if (desired > estoqueDisponivel) {
           mostrarSnackbar(
             `Estoque insuficiente: disponíveis ${estoqueDisponivel} unidade(s).`,
@@ -307,28 +307,40 @@ export default function EstoquePage() {
       console.debug("[estoque] adicionando ao carrinho", {
         id: produtoNormalizado.id,
         descricao: produtoNormalizado.descricao,
-        quantidade: modalQty || 1,
+        quantidade: quantidade || 1,
       });
 
       const resultado = await adicionarAoCarrinho(
         produtoNormalizado,
-        modalQty || 1
+        quantidade || 1
       );
 
       if (resultado?.sucesso) {
-        const novoTotal =
-          Number(resultado.carrinho?.totalItens) || cartItemCount + 1;
-        setCartItemCount(novoTotal);
+        // Atualiza o estoque do produto localmente
+        setProdutos(prevProdutos => 
+          prevProdutos.map(p => 
+            p.id === produtoNormalizado.id 
+              ? { ...p, quantidade: Math.max(0, p.quantidade - quantidade) }
+              : p
+          )
+        );
+        
+        // Atualiza o carrinho - soma quantidades individuais
+        const itens = resultado.carrinho?.itens || [];
+        console.log('DEBUG - Itens retornados:', itens);
+        const total = itens.reduce((sum, item) => {
+          console.log(`Produto ${item.id}: ${item.quantidade} unidades`);
+          return sum + (item.quantidade || 1);
+        }, 0);
+        console.log('DEBUG - Total calculado:', total);
+        setCartItemCount(total);
+        setCartItems(itens);
+        
         mostrarSnackbar(
           `"${produtoNormalizado.descricao}" adicionado ao carrinho!`,
           "success"
         );
         handleCloseProductModal(); // Fecha o modal após adicionar
-        try {
-          window.dispatchEvent(new Event("estoque-atualizado"));
-        } catch (e) {
-          console.warn("Falha ao despachar evento estoque-atualizado:", e);
-        }
       } else {
         const mensagemErro =
           resultado?.mensagem || "Erro desconhecido ao adicionar";
@@ -360,6 +372,13 @@ export default function EstoquePage() {
   const produtosFiltrados = useMemo(() => {
     return filtrarProdutos(produtos, searchQuery);
   }, [produtos, searchQuery]);
+
+  // Função para verificar se um produto pode ser adicionado ao carrinho
+  const podeAdicionarAoCarrinho = (produto) => {
+    // Como o backend reduz o estoque imediatamente, verificamos apenas se há estoque
+    const estoqueDisponivel = produto.quantidade || 0;
+    return estoqueDisponivel > 0;
+  };
 
   const produtosPaginados = useMemo(() => {
     const inicio = page * rowsPerPage;
@@ -541,7 +560,7 @@ export default function EstoquePage() {
               pl: 1,
             }}
           >
-            Produtos disponíveis ({produtosFiltrados.length})
+            Produtos em estoque ({produtosFiltrados.length})
           </Typography>
 
           <TableContainer
@@ -600,7 +619,14 @@ export default function EstoquePage() {
                       <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
                         {produto.id || "-"}
                       </TableCell>
-                      <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
+                      <TableCell sx={{ 
+                        fontSize: "16px", 
+                        textAlign: "center",
+                        maxWidth: "200px",
+                        wordWrap: "break-word",
+                        whiteSpace: "normal",
+                        overflow: "hidden",
+                      }}>
                         {produto.descricao}
                       </TableCell>
                       <TableCell sx={{ fontSize: "16px", textAlign: "center" }}>
@@ -623,14 +649,18 @@ export default function EstoquePage() {
                       </TableCell>
                       <TableCell
                         sx={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          gap: 1,
+                          textAlign: "center",
+                          verticalAlign: "middle",
                           padding: "8px",
                           minWidth: "150px",
                         }}
                       >
+                        <Box sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 1,
+                        }}>
                         <IconButton
                           onClick={() => handleOpenProductModal(produto)}
                           sx={{ color: "#00509E" }}
@@ -639,17 +669,20 @@ export default function EstoquePage() {
                           <VisibilityIcon />
                         </IconButton>
                         <IconButton
-                          onClick={() => handleAddToCart(produto)}
+                          onClick={() => handleAddToCart(produto, 1)}
                           sx={{ color: "#00509E" }}
                           title={
-                            produto.quantidade > 0
-                              ? "Adicionar ao carrinho"
+                            !podeAdicionarAoCarrinho(produto)
+                              ? "Todas as unidades já estão no carrinho"
+                              : produto.quantidade > 0
+                              ? "Adicionar 1 unidade ao carrinho"
                               : "Sem estoque"
                           }
-                          disabled={!(produto.quantidade > 0)}
+                          disabled={!podeAdicionarAoCarrinho(produto)}
                         >
                           <ShoppingCartIcon />
                         </IconButton>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
@@ -928,7 +961,8 @@ export default function EstoquePage() {
 
           <Button
             startIcon={<ShoppingCartIcon />}
-            onClick={() => handleAddToCart(produtoSelecionado)}
+            onClick={() => handleAddToCart(produtoSelecionado, modalQty)}
+            disabled={produtoSelecionado && (!podeAdicionarAoCarrinho(produtoSelecionado) || modalQty > (produtoSelecionado.quantidade - (cartItems.find(item => item.id === produtoSelecionado.id)?.quantidade || 0)))}
             sx={{
               backgroundColor: "#FADADD",
               color: "#333",
@@ -944,17 +978,32 @@ export default function EstoquePage() {
                 transform: "translateY(-2px)",
                 boxShadow: "0px 6px 16px rgba(250, 218, 221, 0.6)",
               },
+              "&:disabled": {
+                backgroundColor: "#e0e0e0",
+                color: "#999",
+              },
               transition: "all 0.3s ease",
             }}
           >
-            Adicionar ao Carrinho
+            {produtoSelecionado && !podeAdicionarAoCarrinho(produtoSelecionado) 
+              ? "Todas no carrinho" 
+              : "Adicionar ao Carrinho"}
           </Button>
           <TextField
             label="Quantidade"
             type="number"
             value={modalQty}
-            onChange={(e) => setModalQty(Number(e.target.value))}
-            inputProps={{ min: 1 }}
+            onChange={(e) => {
+              const valor = Number(e.target.value);
+              const itemNoCarrinho = cartItems.find(item => item.id === produtoSelecionado?.id);
+              const quantidadeNoCarrinho = itemNoCarrinho ? itemNoCarrinho.quantidade || 0 : 0;
+              const maxDisponivel = (produtoSelecionado?.quantidade || 0) - quantidadeNoCarrinho;
+              setModalQty(Math.min(Math.max(1, valor), maxDisponivel));
+            }}
+            inputProps={{ 
+              min: 1, 
+              max: produtoSelecionado ? (produtoSelecionado.quantidade - (cartItems.find(item => item.id === produtoSelecionado.id)?.quantidade || 0)) : 1
+            }}
             sx={{ width: 120 }}
           />
         </DialogActions>

@@ -26,35 +26,21 @@ import axios from "axios";
 
 const BASE_URL = "http://localhost:8080/api/fornecedoras";
 
-// Função para editar fornecedora usando FormData (para enviar arquivo e dados)
 const editarFornecedora = async (id, fornecedoraData, selectedFile) => {
-  try {
-    console.log("=== INICIANDO EDIÇÃO ===");
-    console.log("ID:", id);
+  const formData = new FormData();
+  formData.append("fornecedora", JSON.stringify(fornecedoraData));
 
-    const formData = new FormData();
-    formData.append("fornecedora", JSON.stringify(fornecedoraData));
-
-    if (selectedFile) {
-      formData.append("contrato", selectedFile);
-      console.log("Arquivo contrato anexado:", selectedFile.name);
-    }
-
-    const response = await axios.put(`${BASE_URL}/${id}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    console.log("=== RESPOSTA DA API ===");
-    console.log("Status:", response.status);
-    console.log("Data:", response.data);
-
-    return response.data;
-  } catch (error) {
-    console.error("=== ERRO COMPLETO NA EDIÇÃO ===", error);
-    throw error;
+  if (selectedFile) {
+    formData.append("contrato", selectedFile);
   }
+
+  const response = await axios.put(`${BASE_URL}/${id}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data;
 };
 
 export default function FornecedoresEdicao() {
@@ -78,7 +64,7 @@ export default function FornecedoresEdicao() {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
   const [contratoAtual, setContratoAtual] = useState("");
-  const [errorDetails, setErrorDetails] = useState(null);
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -145,7 +131,6 @@ export default function FornecedoresEdicao() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setErrorDetails(null);
 
     if (
       !fornecedora.nome.trim() ||
@@ -160,6 +145,8 @@ export default function FornecedoresEdicao() {
       });
       return;
     }
+
+
 
     if (!id) {
       setSnackbar({
@@ -197,10 +184,9 @@ export default function FornecedoresEdicao() {
         router.back();
       }, 2000);
     } catch (error) {
-      setErrorDetails(error.fullDetails || error.response?.data || error);
       setSnackbar({
         open: true,
-        message: `ERRO: ${error.response?.data || error.message}`,
+        message: `Erro ao atualizar fornecedor: ${error.response?.data?.message || error.message}`,
         severity: "error",
       });
     } finally {
@@ -259,47 +245,7 @@ export default function FornecedoresEdicao() {
       </Box>
 
       <Box sx={{ flex: 1, p: 3 }}>
-        {/* Seção de Debug de Erro */}
-        {errorDetails && (
-          <Paper
-            sx={{
-              p: 3,
-              mb: 3,
-              backgroundColor: "#ffebee",
-              border: "2px solid #f44336",
-              borderRadius: 2,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: "#d32f2f",
-                mb: 2,
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              <BugReport sx={{ mr: 1 }} />
-              DETALHES COMPLETOS DO ERRO
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Typography
-              variant="body2"
-              component="pre"
-              sx={{
-                whiteSpace: "pre-wrap",
-                fontSize: "12px",
-                backgroundColor: "#fff",
-                p: 2,
-                borderRadius: 1,
-                maxHeight: "300px",
-                overflow: "auto",
-              }}
-            >
-              {JSON.stringify(errorDetails, null, 2)}
-            </Typography>
-          </Paper>
-        )}
+
 
         <form autoComplete="off" onSubmit={handleSubmit}>
           <Card
@@ -596,6 +542,7 @@ export default function FornecedoresEdicao() {
                           textAlign: "center",
                         }}
                       >
+                        Contrato<br/>
                         {contratoAtual && !selectedFile ? (
                           <>
                             Contrato atual:{" "}

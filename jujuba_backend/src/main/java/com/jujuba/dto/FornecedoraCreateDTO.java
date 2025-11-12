@@ -30,7 +30,6 @@ public class FornecedoraCreateDTO {
     @Size(max = 200)
     private String endereco;
 
-    @NotBlank
     @Size(max = 100)
     private String chavePix;
 

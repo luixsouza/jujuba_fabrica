@@ -46,8 +46,13 @@ public class FornecedoraController {
             Fornecedora fornecedora = FornecedoraMapper.toFornecedora(dto);
 
             if (contrato != null && !contrato.isEmpty()) {
-                String contratoUrl = arquivoService.salvarContrato(contrato);
-                fornecedora.setContratoUrl(contratoUrl);
+                try {
+                    String contratoUrl = arquivoService.salvarContrato(contrato);
+                    fornecedora.setContratoUrl(contratoUrl);
+                } catch (Exception e) {
+                    System.err.println("Erro ao salvar contrato: " + e.getMessage());
+                    // Continua sem o contrato por enquanto
+                }
             }
 
             Fornecedora fornecedoraSalva = fornecedoraService.salvar(fornecedora);

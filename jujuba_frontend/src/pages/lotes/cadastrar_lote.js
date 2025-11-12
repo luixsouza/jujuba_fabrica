@@ -264,6 +264,13 @@ export default function CadastroLotePage() {
     try {
       const response = await fetch(`/api/fornecedores`);
       const data = await response.json();
+      
+      // Verificar se data é um array antes de usar find
+      if (!Array.isArray(data)) {
+        console.error("Resposta da API não é um array:", data);
+        return 0;
+      }
+      
       const fornecedora = data.find((f) => f.id === fornecedoraId);
       return fornecedora ? fornecedora.creditoLoja || 0 : 0;
     } catch (error) {

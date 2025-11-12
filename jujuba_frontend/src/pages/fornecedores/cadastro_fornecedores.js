@@ -112,25 +112,21 @@ export default function FornecedoresCadastro() {
 
   // Função para formatar a data no padrão "dd/MM/yyyy"
   function formatDateToDDMMYYYY(dateString) {
-    if (!dateString) return "N/A";
+    if (!dateString || dateString.trim() === "") {
+      throw new Error("Data de nascimento é obrigatória!");
+    }
 
+    // Se já está no formato correto dd/MM/yyyy
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+      const [day, month, year] = dateString.split("/");
+      const date = new Date(year, month - 1, day);
+      if (isNaN(date.getTime())) {
+        throw new Error("Data de nascimento inválida!");
+      }
       return dateString;
     }
 
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-      const [y, m, d] = dateString.split("-");
-      return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
-    }
-
-    const date = new Date(dateString);
-    if (isNaN(date)) return "N/A";
-
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-
-    return `${day}/${month}/${year}`;
+    throw new Error("Data deve estar no formato dd/MM/yyyy!");
   }
 
   // Função para formatar telefone armazenado como (DD)NUMERO para exibição
@@ -146,31 +142,52 @@ export default function FornecedoresCadastro() {
 
   const createFornecedora = async (values) => {
     try {
-      const formData = new FormData();
-
-      const dataNascimentoFormatted = formatDateToDDMMYYYY(
-        values.dataNascimento
-      );
-
-      const fornecedoraObj = {
-        nome: values.nome || "N/A",
-        dataNascimento: dataNascimentoFormatted,
-        contato: values.contato || "N/A",
-        endereco: values.endereco || "N/A",
-        chavePix: values.chavePix || "N/A",
-      };
-
-      formData.append("fornecedora", JSON.stringify(fornecedoraObj));
-
-      const contrato = document.querySelector('input[name="contrato"]')
-        ?.files[0];
-
-      if (contrato) {
-        formData.append("contrato", contrato);
-      } else {
-        throw new Error("O arquivo do contrato é obrigatório!");
+      // Validações antes de enviar
+      if (!values.nome?.trim()) {
+        throw new Error("Nome é obrigatório!");
+      }
+      if (!values.contato?.trim()) {
+        throw new Error("Contato é obrigatório!");
+      }
+      if (!values.endereco?.trim()) {
+        throw new Error("Endereço é obrigatório!");
+      }
+      if (!values.dataNascimento?.trim()) {
+        throw new Error("Data de nascimento é obrigatória!");
+      }
+      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(values.dataNascimento)) {
+        throw new Error("Data deve estar no formato dd/MM/yyyy!");
       }
 
+      const contrato = document.querySelector('input[name="contrato"]')?.files[0];
+
+
+      // Converter data para formato ISO (yyyy-MM-dd) que o backend espera
+      const [day, month, year] = values.dataNascimento.split('/');
+      const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+      const formData = new FormData();
+      const dataNascimentoFormatted = values.dataNascimento; // Manter formato dd/MM/yyyy
+
+      const fornecedoraObj = {
+        nome: values.nome.trim(),
+        dataNascimento: dataNascimentoFormatted,
+        contato: values.contato.trim(),
+        endereco: values.endereco.trim(),
+        chavePix: values.chavePix?.trim() || "",
+      };
+
+      console.log("Dados sendo enviados:", fornecedoraObj);
+      formData.append("fornecedora", JSON.stringify(fornecedoraObj));
+
+      console.log("Arquivo de contrato:", contrato.name, contrato.size);
+      if (contrato.size > 10 * 1024 * 1024) {
+        throw new Error("Arquivo muito grande! Máximo 10MB.");
+      }
+      formData.append("contrato", contrato);
+
+      console.log("Enviando para:", BASE_URL);
+      
       const response = await axios.post(BASE_URL, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -178,6 +195,11 @@ export default function FornecedoresCadastro() {
       return response.data;
     } catch (error) {
       console.error("Erro ao criar fornecedora:", error);
+      if (error.response) {
+        console.error("Resposta do servidor:", error.response.data);
+        console.error("Status:", error.response.status);
+        throw new Error(`Erro ${error.response.status}: ${JSON.stringify(error.response.data)}`);
+      }
       throw error;
     }
   };
@@ -223,7 +245,7 @@ export default function FornecedoresCadastro() {
       setSelectedFile(null);
     } catch (error) {
       console.error("Erro ao criar fornecedor:", error);
-      alert("Erro ao criar fornecedor.");
+      alert(`Erro ao criar fornecedor: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -529,9 +551,9 @@ export default function FornecedoresCadastro() {
                           </>
                         ) : (
                           <>
-                            O upload do contrato é{" "}
-                            <span style={{ color: "red", fontWeight: "bold" }}>
-                              obrigatório
+                            Upload do contrato{" "}
+                            <span style={{ color: "gray", fontWeight: "normal" }}>
+                              (opcional)
                             </span>
                           </>
                         )}
@@ -854,9 +876,7 @@ export default function FornecedoresCadastro() {
                   }}
                 >
                   Nascimento:{" "}
-                  {formatDateToDDMMYYYY(
-                    successModal.fornecedorData?.dataNascimento
-                  )}
+                  {successModal.fornecedorData?.dataNascimento || "N/A"}
                 </Typography>
               </Box>
             </Box>

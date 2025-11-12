@@ -9,14 +9,16 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class CarrinhoService {
 
     private final ProdutoRepository produtoRepository;
-    private final List<Produto> carrinho = new ArrayList<>();
+    private final Map<Long, Integer> carrinho = new HashMap<>();
 
     public void adicionarProduto(Long produtoId) {
         // Delegate to multi-unit method for single unit
@@ -25,8 +27,6 @@ public class CarrinhoService {
 
     /**
      * Adiciona várias unidades de um produto ao carrinho de forma atômica.
-     * Esta implementação reduz o estoque uma vez e adiciona múltiplas entradas
-     * no carrinho para cada unidade solicitada.
      */
     public synchronized void adicionarProduto(Long produtoId, int quantidade) {
         if (quantidade <= 0) {
@@ -45,29 +45,21 @@ public class CarrinhoService {
         produto.setQuantidade(estoqueDisponivel - quantidade);
         produtoRepository.save(produto);
 
-        // adiciona 'quantidade' entradas no carrinho (cada uma representa uma unidade)
-        for (int i = 0; i < quantidade; i++) {
-            carrinho.add(produto);
-        }
+        // adiciona quantidade ao carrinho
+        carrinho.put(produtoId, carrinho.getOrDefault(produtoId, 0) + quantidade);
     }
 
     public void removerProduto(Long produtoId) {
-        // Remove apenas uma ocorrência do produto no carrinho (uma unidade)
-        int indexToRemove = -1;
-        for (int i = 0; i < carrinho.size(); i++) {
-            Produto p = carrinho.get(i);
-            if (p.getId().equals(produtoId)) {
-                indexToRemove = i;
-                break;
-            }
-        }
-
-        if (indexToRemove == -1) {
+        if (!carrinho.containsKey(produtoId)) {
             throw new ResourceNotFoundException("Produto com ID " + produtoId + " não está no carrinho.");
         }
 
-        // Remove somente a unidade encontrada
-        carrinho.remove(indexToRemove);
+        int quantidadeAtual = carrinho.get(produtoId);
+        if (quantidadeAtual > 1) {
+            carrinho.put(produtoId, quantidadeAtual - 1);
+        } else {
+            carrinho.remove(produtoId);
+        }
 
         // Restaura uma unidade no estoque do produto persistido
         Produto produto = produtoRepository.findById(produtoId)
@@ -78,16 +70,46 @@ public class CarrinhoService {
     }
 
     public List<Produto> listarProdutos() {
-        return new ArrayList<>(carrinho);
+        List<Produto> produtos = new ArrayList<>();
+        for (Map.Entry<Long, Integer> entry : carrinho.entrySet()) {
+            Produto produto = produtoRepository.findById(entry.getKey())
+                    .orElse(null);
+            if (produto != null) {
+                // Cria uma cópia do produto com a quantidade do carrinho (não a original)
+                Produto produtoCarrinho = new Produto();
+                produtoCarrinho.setId(produto.getId());
+                produtoCarrinho.setDescricao(produto.getDescricao());
+                produtoCarrinho.setPreco(produto.getPreco());
+                produtoCarrinho.setMarca(produto.getMarca());
+                produtoCarrinho.setTamanho(produto.getTamanho());
+                produtoCarrinho.setGenero(produto.getGenero());
+                produtoCarrinho.setEstadoConservacao(produto.getEstadoConservacao());
+                // IMPORTANTE: usar a quantidade do carrinho, não do produto original
+                produtoCarrinho.setQuantidade(entry.getValue());
+                produtos.add(produtoCarrinho);
+            }
+        }
+        return produtos;
     }
 
     public BigDecimal calcularTotal() {
-        return carrinho.stream()
-                .map(Produto::getPreco)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal total = BigDecimal.ZERO;
+        for (Map.Entry<Long, Integer> entry : carrinho.entrySet()) {
+            Produto produto = produtoRepository.findById(entry.getKey())
+                    .orElse(null);
+            if (produto != null) {
+                BigDecimal precoUnitario = produto.getPreco() != null ? produto.getPreco() : BigDecimal.ZERO;
+                total = total.add(precoUnitario.multiply(BigDecimal.valueOf(entry.getValue())));
+            }
+        }
+        return total;
     }
 
     public void limparCarrinho() {
         carrinho.clear();
+    }
+
+    public int getTotalItens() {
+        return carrinho.values().stream().mapToInt(Integer::intValue).sum();
     }
 }

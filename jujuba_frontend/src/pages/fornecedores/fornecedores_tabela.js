@@ -206,8 +206,6 @@ const FornecedoresPage = () => {
           sx={{
             flex: 1,
             marginLeft: { xs: 0, sm: "290px" },
-            maxHeight: "1000px",
-            overflow: "auto",
             backgroundColor: "#9AE4FF",
             paddingTop: "3rem",
             paddingX: { xs: "1rem", sm: "2rem" },
@@ -417,6 +415,10 @@ const FornecedoresPage = () => {
                             fontSize: { xs: "14px", sm: "16px", md: "18px" },
                             padding: { xs: "8px 4px", sm: "16px 8px" },
                             textAlign: "center",
+                            maxWidth: "150px",
+                            wordWrap: "break-word",
+                            whiteSpace: "normal",
+                            overflow: "hidden",
                           }}
                         >
                           {fornecedora.nome}
@@ -435,6 +437,10 @@ const FornecedoresPage = () => {
                             fontSize: { xs: "14px", sm: "16px", md: "18px" },
                             padding: { xs: "8px 4px", sm: "16px 8px" },
                             textAlign: "center",
+                            maxWidth: "200px",
+                            wordWrap: "break-word",
+                            whiteSpace: "normal",
+                            overflow: "hidden",
                           }}
                         >
                           {fornecedora.endereco}
@@ -450,14 +456,18 @@ const FornecedoresPage = () => {
                         </TableCell>
                         <TableCell
                           sx={{
+                            textAlign: "center",
+                            verticalAlign: "middle",
+                            padding: "8px",
+                            minWidth: "150px",
+                          }}
+                        >
+                          <Box sx={{
                             display: "flex",
                             justifyContent: "center",
                             alignItems: "center",
                             gap: 1,
-                            padding: "8px",
-                            minWidth: "150px", // ajuste se quiser
-                          }}
-                        >
+                          }}>
                           <IconButton
                             onClick={() => handleNavigation(fornecedora.id)}
                             sx={{ color: "#00509E" }}
@@ -476,6 +486,7 @@ const FornecedoresPage = () => {
                           >
                             <DeleteIcon />
                           </IconButton>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))}

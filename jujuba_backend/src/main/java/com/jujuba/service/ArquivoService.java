@@ -22,6 +22,6 @@ public class ArquivoService {
         Files.createDirectories(caminhoArquivo.getParent());
         Files.write(caminhoArquivo, contrato.getBytes());
 
-        return caminhoArquivo.toString();
+        return "/uploads/contratos/" + nomeArquivo;
     }
 }

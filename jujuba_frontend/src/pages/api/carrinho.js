@@ -67,7 +67,7 @@ export const listarCarrinho = async () => {
     const carrinhoCompleto = {
       itens: itens || [], // Garante que seja sempre um array
       valorTotal: Number(valorTotal) || 0, // Garante que seja sempre um número
-      totalItens: (itens || []).length,
+      totalItens: (itens || []).length, // Conta produtos únicos, não quantidades
     };
 
     return {

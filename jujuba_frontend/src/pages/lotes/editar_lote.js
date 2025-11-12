@@ -417,11 +417,19 @@ export default function EditarLotePage() {
       setLoading(true);
 
       // Prepare data according to API format
+      // Filtrar apenas produtos com estoque (quantidade > 0) e novos produtos para enviar
+      const produtosParaEnviar = items.filter(item => {
+        // Enviar apenas:
+        // 1. Produtos novos (ID temporário)
+        // 2. Produtos existentes com quantidade > 0 (com estoque)
+        return item.id.toString().startsWith("TEMP_") || item.quantidade > 0;
+      });
+
       const loteData = {
         fornecedora: {
           id: Number(selectedFornecedora),
         },
-        produtos: items.map((item) => ({
+        produtos: produtosParaEnviar.map((item) => ({
           id: item.id.toString().startsWith("TEMP_") ? undefined : item.id,
           descricao: item.descricao,
           preco: Number(item.preco),
@@ -721,7 +729,13 @@ export default function EditarLotePage() {
                     key={item.id}
                     sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                   >
-                    <TableCell sx={{ fontSize: "0.95rem" }}>
+                    <TableCell sx={{ 
+                      fontSize: "0.95rem",
+                      maxWidth: "200px",
+                      wordWrap: "break-word",
+                      whiteSpace: "normal",
+                      overflow: "hidden",
+                    }}>
                       {editingItemId === item.id ? (
                         <TextField
                           fullWidth
@@ -733,7 +747,21 @@ export default function EditarLotePage() {
                           size="small"
                         />
                       ) : (
-                        item.descricao
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {item.descricao}
+                          {item.quantidade === 0 && (
+                            <Chip 
+                              label="VENDIDO" 
+                              size="small" 
+                              sx={{ 
+                                bgcolor: '#ff5722', 
+                                color: 'white', 
+                                fontWeight: 'bold',
+                                fontSize: '0.7rem'
+                              }} 
+                            />
+                          )}
+                        </Box>
                       )}
                     </TableCell>
                     <TableCell
@@ -795,9 +823,30 @@ export default function EditarLotePage() {
                           onChange={handleEditChange}
                           variant="outlined"
                           size="small"
+                          disabled={item.quantidade === 0}
                         />
                       ) : (
-                        item.quantidade
+                        <Box sx={{ 
+                          color: item.quantidade === 0 ? '#ff5722' : 'inherit',
+                          fontWeight: item.quantidade === 0 ? 'bold' : 'normal',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          {item.quantidade}
+                          {item.quantidade === 0 && (
+                            <Chip 
+                              label="VENDIDO" 
+                              size="small" 
+                              sx={{ 
+                                bgcolor: '#ff5722', 
+                                color: 'white', 
+                                fontWeight: 'bold',
+                                fontSize: '0.6rem'
+                              }} 
+                            />
+                          )}
+                        </Box>
                       )}
                     </TableCell>
                     <TableCell
@@ -853,11 +902,15 @@ export default function EditarLotePage() {
                         getGeneroLabel(item.genero)
                       )}
                     </TableCell>
-                    <TableCell sx={{ textAlign: "center" }}>
+                    <TableCell sx={{ 
+                      textAlign: "center",
+                      verticalAlign: "middle",
+                    }}>
                       <Box
                         sx={{
                           display: "flex",
                           justifyContent: "center",
+                          alignItems: "center",
                           gap: 1,
                         }}
                       >
@@ -891,6 +944,8 @@ export default function EditarLotePage() {
                               size="small"
                               onClick={() => handleEditItem(item)}
                               sx={{ color: "#00509E" }}
+                              disabled={item.quantidade === 0}
+                              title={item.quantidade === 0 ? "Produto vendido - não pode ser editado" : "Editar produto"}
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>
@@ -898,6 +953,8 @@ export default function EditarLotePage() {
                               size="small"
                               onClick={() => handleDeleteItem(item)}
                               sx={{ color: "#d32f2f" }}
+                              disabled={item.quantidade === 0}
+                              title={item.quantidade === 0 ? "Produto vendido - não pode ser removido" : "Remover produto"}
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
