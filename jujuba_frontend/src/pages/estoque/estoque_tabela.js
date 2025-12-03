@@ -45,16 +45,20 @@ import { useRouter } from "next/navigation";
 
 // Importações da API corrigidas
 import { listarProdutos, buscarProdutoPorId } from "../api/produtos";
-import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho"; // Agora aponta para o arquivo correto
+import { adicionarAoCarrinho, listarCarrinho } from "../api/carrinho";
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
+// Função de normalização com conversão forte para números
 const normalizarProduto = (produto) => {
   if (!produto || typeof produto !== "object") {
     return null;
   }
+
+  const quantidade = Number(produto.quantidade);
+  const preco = Number(produto.preco);
 
   return {
     id: produto.id || null,
@@ -63,8 +67,8 @@ const normalizarProduto = (produto) => {
     tamanho: produto.tamanho || "Tamanho não informado",
     genero: produto.genero || "UNISSEX",
     estadoConservacao: produto.estadoConservacao || "Não informado",
-    quantidade: produto.quantidade != null ? Number(produto.quantidade) : 1,
-    preco: Number(produto.preco) || 0,
+    quantidade: isNaN(quantidade) ? 0 : Math.floor(quantidade), // Garante inteiro positivo
+    preco: isNaN(preco) ? 0 : preco,
     categoria: produto.categoria || "Sem categoria",
     cor: produto.cor || "Não informada",
     material: produto.material || "Não informado",
@@ -133,7 +137,6 @@ const filtrarProdutos = (produtos, query) => {
     return produtos;
   }
 
-  // Se a query estiver vazia ou apenas espaços, retorna todos os produtos (mostrar tudo)
   if (!query || query.trim() === "") {
     return produtos;
   }
@@ -218,17 +221,14 @@ export default function EstoquePage() {
         );
       }
 
-      // Esta chamada agora deve funcionar corretamente
       const carrinhoResponse = await listarCarrinho();
       if (carrinhoResponse?.sucesso && carrinhoResponse.carrinho) {
         const itens = carrinhoResponse.carrinho.itens || [];
-        const total = itens.reduce((sum, item) => sum + (item.quantidade || 1), 0);
+        const total = itens.reduce((sum, item) => sum + Number(item.quantidade || 0), 0); // Correção: usa Number para evitar string
         setCartItemCount(total);
         setCartItems(itens);
       } else {
         console.error("Erro ao buscar carrinho:", carrinhoResponse?.mensagem);
-        // Opcional: mostrar snackbar se o carrinho falhar, mas pode não ser crítico
-        // mostrarSnackbar(carrinhoResponse?.mensagem || "Não foi possível carregar o carrinho", "warning");
       }
     } catch (error) {
       console.error("Erro ao carregar dados iniciais:", error);
@@ -243,7 +243,6 @@ export default function EstoquePage() {
 
   useEffect(() => {
     buscarDadosIniciais();
-    // Ouve eventos disparados por outras páginas para recarregar o estoque
     const handler = () => {
       buscarDadosIniciais();
     };
@@ -279,21 +278,17 @@ export default function EstoquePage() {
         return;
       }
 
-      // Verifica no carrinho atual se já existe quantidade do mesmo produto
-      try {
-        const produtoAtual = await buscarProdutoPorId(produtoNormalizado.id);
-        const estoqueDisponivel =
-          Number(produtoAtual?.produto?.quantidade) || 0;
-        const desired = Number(quantidade) || 1;
-        if (desired > estoqueDisponivel) {
-          mostrarSnackbar(
-            `Estoque insuficiente: disponíveis ${estoqueDisponivel} unidade(s).`,
-            "error"
-          );
-          return;
-        }
-      } catch (e) {
-        console.warn("Falha ao verificar estoque atual antes de adicionar:", e);
+      const desired = Number(quantidade) || 1;
+
+      // Verifica estoque real no backend
+      const produtoAtual = await buscarProdutoPorId(produtoNormalizado.id);
+      const estoqueDisponivel = Number(produtoAtual?.produto?.quantidade) || 0;
+      if (desired > estoqueDisponivel) {
+        mostrarSnackbar(
+          `Estoque insuficiente: disponíveis ${estoqueDisponivel} unidade(s).`,
+          "error"
+        );
+        return;
       }
 
       if (!produtoNormalizado.id) {
@@ -304,35 +299,24 @@ export default function EstoquePage() {
         return;
       }
 
-      console.debug("[estoque] adicionando ao carrinho", {
-        id: produtoNormalizado.id,
-        descricao: produtoNormalizado.descricao,
-        quantidade: quantidade || 1,
-      });
-
       const resultado = await adicionarAoCarrinho(
         produtoNormalizado,
-        quantidade || 1
+        desired
       );
 
       if (resultado?.sucesso) {
-        // Atualiza o estoque do produto localmente
+        // Atualiza estoque local
         setProdutos(prevProdutos => 
           prevProdutos.map(p => 
             p.id === produtoNormalizado.id 
-              ? { ...p, quantidade: Math.max(0, p.quantidade - quantidade) }
+              ? { ...p, quantidade: Math.max(0, p.quantidade - desired) }
               : p
           )
         );
         
-        // Atualiza o carrinho - soma quantidades individuais
+        // Atualiza carrinho com soma correta
         const itens = resultado.carrinho?.itens || [];
-        console.log('DEBUG - Itens retornados:', itens);
-        const total = itens.reduce((sum, item) => {
-          console.log(`Produto ${item.id}: ${item.quantidade} unidades`);
-          return sum + (item.quantidade || 1);
-        }, 0);
-        console.log('DEBUG - Total calculado:', total);
+        const total = itens.reduce((sum, item) => sum + Number(item.quantidade || 0), 0);
         setCartItemCount(total);
         setCartItems(itens);
         
@@ -340,7 +324,7 @@ export default function EstoquePage() {
           `"${produtoNormalizado.descricao}" adicionado ao carrinho!`,
           "success"
         );
-        handleCloseProductModal(); // Fecha o modal após adicionar
+        handleCloseProductModal();
       } else {
         const mensagemErro =
           resultado?.mensagem || "Erro desconhecido ao adicionar";
@@ -373,10 +357,8 @@ export default function EstoquePage() {
     return filtrarProdutos(produtos, searchQuery);
   }, [produtos, searchQuery]);
 
-  // Função para verificar se um produto pode ser adicionado ao carrinho
   const podeAdicionarAoCarrinho = (produto) => {
-    // Como o backend reduz o estoque imediatamente, verificamos apenas se há estoque
-    const estoqueDisponivel = produto.quantidade || 0;
+    const estoqueDisponivel = Number(produto.quantidade) || 0;
     return estoqueDisponivel > 0;
   };
 
@@ -800,13 +782,13 @@ export default function EstoquePage() {
               "& .MuiTab-root": {
                 fontWeight: "bold",
                 fontSize: "16px",
-                color: "#333", // cor padrão quando não selecionado
+                color: "#333",
               },
               "& .MuiTab-root.Mui-selected": {
-                color: "#9AE4FF", // cor azul quando ativo
+                color: "#9AE4FF",
               },
               "& .MuiTabs-indicator": {
-                backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
+                backgroundColor: "#9AE4FF",
               },
             }}
           >
@@ -959,10 +941,28 @@ export default function EstoquePage() {
             Fechar
           </Button>
 
+          <TextField
+            label="Quantidade"
+            type="number"
+            value={modalQty}
+            onChange={(e) => {
+              const valor = Number(e.target.value);
+              const itemNoCarrinho = cartItems.find(item => item.id === produtoSelecionado?.id);
+              const quantidadeNoCarrinho = itemNoCarrinho ? Number(itemNoCarrinho.quantidade) || 0 : 0;
+              const maxDisponivel = Number(produtoSelecionado?.quantidade || 0) - quantidadeNoCarrinho;
+              setModalQty(Math.min(Math.max(1, valor), maxDisponivel));
+            }}
+            inputProps={{ 
+              min: 1, 
+              max: produtoSelecionado ? (produtoSelecionado.quantidade - (cartItems.find(item => item.id === produtoSelecionado.id)?.quantidade || 0)) : 1
+            }}
+            sx={{ width: 120 }}
+          />
+
           <Button
             startIcon={<ShoppingCartIcon />}
             onClick={() => handleAddToCart(produtoSelecionado, modalQty)}
-            disabled={produtoSelecionado && (!podeAdicionarAoCarrinho(produtoSelecionado) || modalQty > (produtoSelecionado.quantidade - (cartItems.find(item => item.id === produtoSelecionado.id)?.quantidade || 0)))}
+            disabled={produtoSelecionado && (!podeAdicionarAoCarrinho(produtoSelecionado) || modalQty > (produtoSelecionado.quantidade - (Number(cartItems.find(item => item.id === produtoSelecionado.id)?.quantidade) || 0)))}
             sx={{
               backgroundColor: "#FADADD",
               color: "#333",
@@ -989,23 +989,6 @@ export default function EstoquePage() {
               ? "Todas no carrinho" 
               : "Adicionar ao Carrinho"}
           </Button>
-          <TextField
-            label="Quantidade"
-            type="number"
-            value={modalQty}
-            onChange={(e) => {
-              const valor = Number(e.target.value);
-              const itemNoCarrinho = cartItems.find(item => item.id === produtoSelecionado?.id);
-              const quantidadeNoCarrinho = itemNoCarrinho ? itemNoCarrinho.quantidade || 0 : 0;
-              const maxDisponivel = (produtoSelecionado?.quantidade || 0) - quantidadeNoCarrinho;
-              setModalQty(Math.min(Math.max(1, valor), maxDisponivel));
-            }}
-            inputProps={{ 
-              min: 1, 
-              max: produtoSelecionado ? (produtoSelecionado.quantidade - (cartItems.find(item => item.id === produtoSelecionado.id)?.quantidade || 0)) : 1
-            }}
-            sx={{ width: 120 }}
-          />
         </DialogActions>
       </Dialog>
 

@@ -42,7 +42,7 @@ export const listarProdutos = async () => {
       produtos: response.data.map((p) => ({
         id: p.id,
         descricao: p.descricao,
-        quantidade: p.quantidade,
+        quantidade: parseInt(p.quantidade, 10) || 0,  //  converte pra numero
         marca: p.marca,
         tamanho: p.tamanho,
         estadoConservacao: p.estadoConservacao,
@@ -63,13 +63,15 @@ export const listarProdutos = async () => {
 export const buscarProdutoPorId = async (id) => {
   try {
     const response = await axios.get(`${BASE_URL}/${id}`);
-    const p = response.data; ///
+    const p = response.data;
+    // ← ADICIONE ISSO AQUI! Converte pra número antes de retornar
+    const quantidadeConvertida = parseInt(p.quantidade, 10) || 0;
     return {
       sucesso: true,
       mensagem: `Produto com ID ${id} encontrado.`,
       produto: {
         id: p.id,
-        quantidade: p.quantidade,
+        quantidade: quantidadeConvertida,  // Use a versão convertida
         descricao: p.descricao,
         marca: p.marca,
         tamanho: p.tamanho,

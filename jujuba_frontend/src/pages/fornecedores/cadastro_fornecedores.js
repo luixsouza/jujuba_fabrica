@@ -161,11 +161,6 @@ export default function FornecedoresCadastro() {
 
       const contrato = document.querySelector('input[name="contrato"]')?.files[0];
 
-
-      // Converter data para formato ISO (yyyy-MM-dd) que o backend espera
-      const [day, month, year] = values.dataNascimento.split('/');
-      const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-
       const formData = new FormData();
       const dataNascimentoFormatted = values.dataNascimento; // Manter formato dd/MM/yyyy
 
@@ -180,11 +175,16 @@ export default function FornecedoresCadastro() {
       console.log("Dados sendo enviados:", fornecedoraObj);
       formData.append("fornecedora", JSON.stringify(fornecedoraObj));
 
-      console.log("Arquivo de contrato:", contrato.name, contrato.size);
-      if (contrato.size > 10 * 1024 * 1024) {
-        throw new Error("Arquivo muito grande! Máximo 10MB.");
+      // Só adiciona o contrato se um arquivo foi selecionado
+      if (contrato) {
+        console.log("Arquivo de contrato:", contrato.name, contrato.size);
+        if (contrato.size > 10 * 1024 * 1024) {
+          throw new Error("Arquivo muito grande! Máximo 10MB.");
+        }
+        formData.append("contrato", contrato);
+      } else {
+        console.log("Nenhum contrato selecionado - prosseguindo sem arquivo");
       }
-      formData.append("contrato", contrato);
 
       console.log("Enviando para:", BASE_URL);
       
