@@ -133,6 +133,7 @@ export default function CadastroLotePage() {
             data: new Date(lote.dataCriacao).toLocaleDateString("pt-BR"),
           }))
           .slice(0, 5);
+          console.log()
 
         setLotesSidebar(lotesFormatados);
       }
@@ -141,7 +142,7 @@ export default function CadastroLotePage() {
       setError("Não foi possível carregar os lotes.");
     }
   };
-
+   console.log(lotesFormatados)
   const fetchFornecedoras = async () => {
     try {
       const data = await getFornecedoras();
@@ -437,8 +438,7 @@ export default function CadastroLotePage() {
         sx={{
           flexGrow: 1,
           ml: "244px",
-          backgroundColor: "#a3e0f5",
-          minHeight: "100vh",
+          backgroundColor: "#9AE4FF",
           p: 4,
         }}
       >

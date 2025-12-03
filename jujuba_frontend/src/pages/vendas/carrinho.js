@@ -152,7 +152,7 @@ export default function CarrinhoPage() {
 
     fetchCartItems();
   }, []);
-
+  console.log(cartItems)
   const handleOpenSellModal = () => setOpenSellModal(true);
   const handleCloseSellModal = () => setOpenSellModal(false);
   const handleVenderParaFornecedor = () =>
@@ -446,16 +446,6 @@ export default function CarrinhoPage() {
                       }}
                     >
                       Valor
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: "18px",
-                        backgroundColor: "#FADADD",
-                        borderRight: "2px solid #F5F5F5",
-                      }}
-                    >
-                      Lote
                     </TableCell>
                     <TableCell
                       align="center"

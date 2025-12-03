@@ -69,6 +69,7 @@ export const listarCarrinho = async () => {
       valorTotal: Number(valorTotal) || 0, // Garante que seja sempre um número
       totalItens: (itens || []).reduce((total, item) => total + Number(item.quantidade || 1), 0), // Soma as quantidades
     };
+    console.log(carrinhoCompleto)
 
     return {
       sucesso: true,

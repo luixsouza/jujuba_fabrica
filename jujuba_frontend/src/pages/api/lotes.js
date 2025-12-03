@@ -122,6 +122,7 @@ const createLote = async (fornecedoraId, produtos) => {
       },
       body: JSON.stringify(loteData),
     });
+    console.log(response)
 
     console.log("Status da resposta:", response.status);
 
