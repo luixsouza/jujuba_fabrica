@@ -1,6 +1,4 @@
-import axios from "axios"
-
-const BASE_URL = "http://localhost:8080/api/produtos"
+import api from "../../utils/api"
 
 
 const FORNECEDORAS_MOCK = [
@@ -60,7 +58,7 @@ export const ProdutoService = {
    */
   getProdutos: async () => {
     try {
-      const response = await axios.get(BASE_URL)
+      const response = await api.get("/produtos")
 
       
       const produtosAjustados = response.data.map((produto) => ({
@@ -87,7 +85,7 @@ export const ProdutoService = {
  
   getProdutoById: async (id) => {
     try {
-      const response = await axios.get(`${BASE_URL}/${id}`)
+      const response = await api.get(`/produtos/${id}`)
 
     
       const descricaoDetalhada = gerarDescricaoDetalhada(id, response.data.descricao)
@@ -117,7 +115,7 @@ export const ProdutoService = {
       
       const { fornecedora, forma_pagamento, descricaoDetalhada, ...produtoParaEnviar } = produto
 
-      const response = await axios.post(BASE_URL, produtoParaEnviar)
+      const response = await api.post("/produtos", produtoParaEnviar)
 
       
       if (response.data && response.data.id) {
@@ -148,7 +146,7 @@ export const ProdutoService = {
     try {
        const { fornecedora, forma_pagamento, descricaoDetalhada, ...produtoParaEnviar } = produto
 
-      const response = await axios.put(`${BASE_URL}/${id}`, produtoParaEnviar)
+      const response = await api.put(`/produtos/${id}`, produtoParaEnviar)
 
      
       if (response.data) {
@@ -176,7 +174,7 @@ export const ProdutoService = {
    */
   deleteProduto: async (id) => {
     try {
-      await axios.delete(`${BASE_URL}/${id}`)
+      await api.delete(`/produtos/${id}`)
 
      
       DESCRICOES_DETALHADAS_MOCK.delete(id)

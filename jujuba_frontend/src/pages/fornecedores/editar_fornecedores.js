@@ -22,9 +22,7 @@ import {
 import { ArrowBack, Home, BugReport } from "@mui/icons-material";
 import Sidebar from "../../components/sidebar";
 import { useRouter } from "next/router";
-import axios from "axios";
-
-const BASE_URL = "http://localhost:8080/api/fornecedoras";
+import api from "../../utils/api";
 
 const editarFornecedora = async (id, fornecedoraData, selectedFile) => {
   const formData = new FormData();
@@ -34,7 +32,7 @@ const editarFornecedora = async (id, fornecedoraData, selectedFile) => {
     formData.append("contrato", selectedFile);
   }
 
-  const response = await axios.put(`${BASE_URL}/${id}`, formData, {
+  const response = await api.put(`/fornecedoras/${id}`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -80,7 +78,7 @@ export default function FornecedoresEdicao() {
   const fetchFornecedora = async (fornecedoraId) => {
     try {
       setFetchLoading(true);
-      const response = await axios.get(`${BASE_URL}/${fornecedoraId}`);
+      const response = await api.get(`/fornecedoras/${fornecedoraId}`);
       const data = response.data;
 
       setFornecedora({

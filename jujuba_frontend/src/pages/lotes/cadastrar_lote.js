@@ -51,6 +51,7 @@ import {
   testApiConnection,
 } from "../api/lotes";
 import Sidebar from "../../components/sidebar";
+import api from "../../utils/api";
 
 export default function CadastroLotePage() {
   const router = useRouter();
@@ -124,16 +125,15 @@ export default function CadastroLotePage() {
 
   const fetchLotes = async () => {
     try {
-      const response = await getAllLotes();
-      if (response.data) {
-        const lotesFormatados = response.data
+      const lotes = await getAllLotes();
+      if (lotes && Array.isArray(lotes)) {
+        const lotesFormatados = lotes
           .map((lote) => ({
             id: lote.id,
             codigo: `L${lote.id}`,
             data: new Date(lote.dataCriacao).toLocaleDateString("pt-BR"),
           }))
           .slice(0, 5);
-          console.log()
 
         setLotesSidebar(lotesFormatados);
       }
@@ -142,7 +142,7 @@ export default function CadastroLotePage() {
       setError("Não foi possível carregar os lotes.");
     }
   };
-   console.log(lotesFormatados)
+
   const fetchFornecedoras = async () => {
     try {
       const data = await getFornecedoras();
@@ -247,24 +247,10 @@ export default function CadastroLotePage() {
     }
   };
 
-  const handleTestApi = async () => {
-    try {
-      setLoading(true);
-      const result = await testApiConnection();
-      setDebugInfo(JSON.stringify(result, null, 2));
-      setDebugDialog(true);
-    } catch (error) {
-      setDebugInfo(`Erro ao testar API: ${error.message}`);
-      setDebugDialog(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getFornecedoraCredit = async (fornecedoraId) => {
     try {
-      const response = await fetch(`/api/fornecedores`);
-      const data = await response.json();
+      const response = await api.get("/fornecedoras");
+      const data = response.data;
       
       // Verificar se data é um array antes de usar find
       if (!Array.isArray(data)) {
@@ -286,17 +272,9 @@ export default function CadastroLotePage() {
       console.log("[v0] ID:", fornecedoraId);
       console.log("[v0] Novo valor de crédito:", newCreditValue);
 
-      const getFornecedoraResponse = await fetch(
-        `http://localhost:8080/api/fornecedoras/${fornecedoraId}`
-      );
+      const getFornecedoraResponse = await api.get(`/fornecedoras/${fornecedoraId}`);
 
-      if (!getFornecedoraResponse.ok) {
-        throw new Error(
-          `Erro ao buscar fornecedora: ${getFornecedoraResponse.status}`
-        );
-      }
-
-      const fornecedoraData = await getFornecedoraResponse.json();
+      const fornecedoraData = getFornecedoraResponse.data;
       console.log("[v0] Dados atuais da fornecedora:", fornecedoraData);
 
       const updatedFornecedora = {
@@ -307,24 +285,16 @@ export default function CadastroLotePage() {
       const formData = new FormData();
       formData.append("fornecedora", JSON.stringify(updatedFornecedora));
 
-      const updateResponse = await fetch(
-        `http://localhost:8080/api/fornecedoras/${fornecedoraId}`,
-        {
-          method: "PUT",
-          body: formData,
-        }
-      );
+      const updateResponse = await api.put(`/fornecedoras/${fornecedoraId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       console.log("[v0] === RESPOSTA DA API ===");
       console.log("[v0] Status:", updateResponse.status);
 
-      if (!updateResponse.ok) {
-        const errorText = await updateResponse.text();
-        console.error("[v0] Erro na resposta:", errorText);
-        throw new Error(`HTTP ${updateResponse.status}: ${errorText}`);
-      }
-
-      const result = await updateResponse.json();
+      const result = updateResponse.data;
       console.log("[v0] Data:", result);
 
       return result;
@@ -451,10 +421,10 @@ export default function CadastroLotePage() {
             mb: 4,
           }}
         >
-          <Toolbar sx={{ justifyContent: "space-between" }}>
+          <Toolbar sx={{ justifyContent: "center", position: "relative" }}>
             <IconButton
               onClick={() => router.push("/lotes/lotes_geral")}
-              sx={{ color: "#333" }}
+              sx={{ color: "#333", position: "absolute", left: 0 }}
             >
               <ArrowBack />
             </IconButton>
@@ -474,22 +444,6 @@ export default function CadastroLotePage() {
               <Typography variant="h6" sx={{ color: "#666" }}>
                 Lote: {loteId}
               </Typography>
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <IconButton
-                onClick={handleTestApi}
-                sx={{ color: "#333" }}
-                title="Testar API"
-              >
-                <BugReport />
-              </IconButton>
-              <IconButton
-                onClick={() => router.push("/fornecedores")}
-                sx={{ color: "#333" }}
-              >
-                <Home />
-              </IconButton>
             </Box>
           </Toolbar>
         </AppBar>
@@ -1607,22 +1561,6 @@ export default function CadastroLotePage() {
             >
               Excluir
             </Button>
-          </DialogActions>
-        </Dialog>
-        <Dialog
-          open={debugDialog}
-          onClose={() => setDebugDialog(false)}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>Informações de Debug da API</DialogTitle>
-          <DialogContent>
-            <pre style={{ whiteSpace: "pre-wrap", fontSize: "12px" }}>
-              {debugInfo}
-            </pre>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDebugDialog(false)}>Fechar</Button>
           </DialogActions>
         </Dialog>
       </Box>

@@ -7,6 +7,7 @@ import { Box, Typography, Button, TextField, InputAdornment, IconButton, Contain
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import api from "../../utils/api"
 
 export default function Signup() {
   const [firstName, setFirstName] = useState("")
@@ -17,12 +18,29 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [error, setError] = useState("")
   const router = useRouter()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    alert("Conta criada com sucesso!")
-    router.push("/login")
+    setError("")
+
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem.")
+      return
+    }
+
+    try {
+      await api.post("/usuarios", {
+        username: email,
+        password: password,
+      })
+      alert("Conta criada com sucesso!")
+      router.push("/auth/login")
+    } catch (err) {
+      console.error("Erro ao criar conta:", err)
+      setError("Erro ao criar conta. Verifique os dados e tente novamente.")
+    }
   }
 
   const togglePasswordVisibility = () => {
@@ -224,11 +242,24 @@ export default function Signup() {
               sx={{
                 textAlign: "center",
                 color: "#555",
-                mb: 3,
+                mb: 4,
               }}
             >
-              Preencha seus dados para se cadastrar
+              Preencha os dados abaixo
             </Typography>
+
+            {error && (
+              <Typography
+                variant="body2"
+                sx={{
+                  textAlign: "center",
+                  color: "red",
+                  mb: 2,
+                }}
+              >
+                {error}
+              </Typography>
+            )}
 
             <form onSubmit={handleSubmit}>
               <Grid container spacing={2}>

@@ -16,16 +16,42 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import api from "../../utils/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    router.push("/fornecedores");
+    setError("");
+
+    if (!email || !password) {
+      setError("Por favor, preencha todos os campos.");
+      return;
+    }
+
+    try {
+      const response = await api.post("/auth", {
+        username: email,
+        password: password,
+      });
+      
+      if (response.data && response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        router.push("/fornecedores");
+      }
+    } catch (err) {
+      // Apenas loga erro se não for erro de autenticação (401)
+      if (err.response?.status !== 401) {
+        console.error("Login failed", err);
+      }
+      const errorMessage = err.response?.data?.message || "Falha no login. Verifique suas credenciais.";
+      setError(errorMessage);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -234,6 +260,19 @@ export default function Login() {
             >
               Entre com seus dados
             </Typography>
+
+            {error && (
+              <Typography
+                variant="body2"
+                sx={{
+                  textAlign: "center",
+                  color: "red",
+                  mb: 2,
+                }}
+              >
+                {error}
+              </Typography>
+            )}
 
             <form onSubmit={handleSubmit}>
               <TextField

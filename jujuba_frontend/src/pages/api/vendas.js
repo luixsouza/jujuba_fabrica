@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8080/api/vendas";
+import api from "../../utils/api";
 
 const tratarErro = (error) => {
   if (error.name === "TypeError" && error.message.includes("fetch")) {
@@ -28,23 +28,11 @@ export const listarVendasRealizadas = async () => {
     // ATENÇÃO: Seu VendaController não parece ter a rota "/realizadas".
     // O endpoint para listar todas as vendas é GET /api/vendas.
     // Se "/realizadas" for um alias ou filtro, mantenha. Senão, remova.
-    const response = await fetch(`${BASE_URL}`, {
-      // Ajustado para o endpoint principal
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const response = await api.get("/vendas");
 
     return {
       sucesso: true,
-      vendas: data,
+      vendas: response.data,
       mensagem: "Vendas carregadas com sucesso!",
     };
   } catch (error) {
@@ -59,22 +47,11 @@ export const listarVendasRealizadas = async () => {
 
 export const buscarVendaPorId = async (id) => {
   try {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const response = await api.get(`/vendas/${id}`);
 
     return {
       sucesso: true,
-      venda: data,
+      venda: response.data,
       mensagem: "Venda encontrada com sucesso!",
     };
   } catch (error) {
@@ -102,30 +79,14 @@ export const finalizarVendaFornecedora = async (
       },
     };
 
-    const response = await fetch(
-      `${BASE_URL}/finalizar/fornecedora/${fornecedoraId}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(body),
-      }
+    const response = await api.post(
+      `/vendas/finalizar/fornecedora/${fornecedoraId}`,
+      body
     );
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => null);
-      throw new Error(
-        err?.mensagem || `HTTP error! status: ${response.status}`
-      );
-    }
-
-    const data = await response.json();
 
     return {
       sucesso: true,
-      venda: data,
+      venda: response.data,
       mensagem: "Venda finalizada com sucesso!",
     };
   } catch (error) {
@@ -139,23 +100,11 @@ export const finalizarVendaFornecedora = async (
 
 export const criarVenda = async (dadosVenda) => {
   try {
-    const response = await fetch(BASE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dadosVenda),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const response = await api.post("/vendas", dadosVenda);
 
     return {
       sucesso: true,
-      venda: data,
+      venda: response.data,
       mensagem: "Venda criada com sucesso!",
     };
   } catch (error) {
@@ -169,23 +118,11 @@ export const criarVenda = async (dadosVenda) => {
 
 export const atualizarVenda = async (id, dadosVenda) => {
   try {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dadosVenda),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const response = await api.put(`/vendas/${id}`, dadosVenda);
 
     return {
       sucesso: true,
-      venda: data,
+      venda: response.data,
       mensagem: "Venda atualizada com sucesso!",
     };
   } catch (error) {
@@ -199,16 +136,7 @@ export const atualizarVenda = async (id, dadosVenda) => {
 
 export const excluirVenda = async (id) => {
   try {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    await api.delete(`/vendas/${id}`);
 
     return {
       sucesso: true,
@@ -234,27 +162,12 @@ export const excluirVenda = async (id) => {
 export const finalizarVendaSimples = async () => {
   try {
     // A URL correta, de acordo com o seu VendaController.java
-    const response = await fetch(`${BASE_URL}/finalizar/simples`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      // Não precisa de corpo, pois o backend já sabe qual é o carrinho da sessão.
-    });
-
-    if (!response.ok) {
-      const erroData = await response.json().catch(() => null);
-      const mensagemErro =
-        erroData?.mensagem || `Erro no servidor (status: ${response.status})`;
-      throw new Error(mensagemErro);
-    }
+    const response = await api.post("/vendas/finalizar/simples");
 
     // O backend retorna a venda criada, então podemos processá-la.
-    const data = await response.json();
-
     return {
       sucesso: true,
-      venda: data,
+      venda: response.data,
       mensagem: "Venda finalizada com sucesso!",
     };
   } catch (error) {

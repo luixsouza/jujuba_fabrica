@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8080/api/lotes";
+import api from "../../utils/api";
 
 const ESTADOS_CONSERVACAO = {
   Ótimo: "OTIMO",
@@ -111,58 +111,17 @@ const createLote = async (fornecedoraId, produtos) => {
     };
 
     console.log("=== DADOS FINAIS PARA ENVIO ===");
-    console.log("URL:", BASE_URL);
     console.log("Payload:", JSON.stringify(loteData, null, 2));
 
-    const response = await fetch(BASE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(loteData),
-    });
+    const response = await api.post("/lotes", loteData);
     console.log(response)
 
     console.log("Status da resposta:", response.status);
 
-    const responseText = await response.text();
-    console.log("Resposta completa (texto):", responseText);
-
-    if (!response.ok) {
-      let errorMessage = `Erro HTTP ${response.status}`;
-
-      if (responseText) {
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch (parseError) {
-          errorMessage = responseText;
-        }
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    if (!responseText) {
-      return {
-        success: true,
-        data: { message: "Lote criado com sucesso" },
-      };
-    }
-
-    try {
-      const data = JSON.parse(responseText);
-      return {
-        success: true,
-        data: data,
-      };
-    } catch (parseError) {
-      return {
-        success: true,
-        data: { message: "Lote criado com sucesso", raw: responseText },
-      };
-    }
+    return {
+      success: true,
+      data: response.data,
+    };
   } catch (error) {
     console.error("Erro ao cadastrar lote:", error);
     throw error;
@@ -172,16 +131,11 @@ const createLote = async (fornecedoraId, produtos) => {
 const getAllLotes = async () => {
   try {
     console.log("=== INÍCIO DEBUG GET ALL LOTES ===");
-    console.log("URL:", BASE_URL);
 
-    const response = await fetch(`${BASE_URL}`);
+    const response = await api.get("/lotes");
     console.log("getAllLotes: Status da resposta:", response.status);
 
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar os lotes. Status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = response.data;
     console.log(
       "getAllLotes: Dados recebidos do backend (antes da validação):",
       JSON.stringify(data, null, 2)
@@ -255,13 +209,9 @@ const getLoteById = async (id) => {
   try {
     console.log(`Buscando lote com ID: ${id}`);
 
-    const response = await fetch(`${BASE_URL}/${id}`);
+    const response = await api.get(`/lotes/${id}`);
 
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar lote ${id}. Status: ${response.status}`);
-    }
-
-    const lote = await response.json();
+    const lote = response.data;
     console.log("Lote encontrado:", lote);
 
     return {
@@ -313,36 +263,9 @@ const editLote = async (id, loteData) => {
         : [],
     };
 
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(formattedLoteData),
-    });
+    const response = await api.put(`/lotes/${id}`, formattedLoteData);
 
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      let errorMessage = `Erro HTTP ${response.status}`;
-      if (responseText) {
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch (parseError) {
-          errorMessage = responseText;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-
-    let data;
-    try {
-      data = responseText ? JSON.parse(responseText) : {};
-    } catch (e) {
-      data = { message: "Lote editado com sucesso" };
-    }
+    const data = response.data;
 
     return {
       id: data.id || id,
@@ -362,38 +285,11 @@ const editLote = async (id, loteData) => {
 
 const deletarLote = async (id) => {
   try {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: "DELETE",
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      let errorMessage = `Erro HTTP ${response.status}`;
-      if (responseText) {
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch (parseError) {
-          errorMessage = responseText;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-
-    let data;
-    try {
-      data = responseText ? JSON.parse(responseText) : {};
-    } catch (e) {
-      data = { message: "Lote deletado com sucesso" };
-    }
+    const response = await api.delete(`/lotes/${id}`);
 
     return {
       sucesso: true,
-      mensagem: data.message || "Lote deletado com sucesso.",
+      mensagem: response.data?.message || "Lote deletado com sucesso.",
       idDeletado: id,
     };
   } catch (error) {
@@ -404,25 +300,8 @@ const deletarLote = async (id) => {
 
 const getFornecedoras = async () => {
   try {
-    const response = await fetch("http://localhost:8080/api/fornecedoras");
-
-    if (!response.ok) {
-      throw new Error(`Erro HTTP: ${response.status}`);
-    }
-
-    const responseText = await response.text();
-
-    if (!responseText) {
-      return [];
-    }
-
-    try {
-      const data = JSON.parse(responseText);
-      return Array.isArray(data) ? data : [];
-    } catch (parseError) {
-      console.error("Erro ao fazer parse das fornecedoras:", responseText);
-      return [];
-    }
+    const response = await api.get("/fornecedoras");
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error("Erro ao buscar fornecedoras:", error);
     return [];
@@ -433,14 +312,9 @@ const testApiConnection = async () => {
   try {
     console.log("Testando conexão com a API...");
 
-    const response = await fetch(`${BASE_URL}`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    });
+    const response = await api.get("/lotes");
 
-    if (response.ok) {
+    if (response.status === 200) {
       console.log("Conexão com API estabelecida com sucesso");
       return {
         success: true,

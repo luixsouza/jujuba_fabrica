@@ -1,5 +1,4 @@
-// Define a URL base para a API do carrinho no seu backend.
-const BASE_URL = "http://localhost:8080/api/carrinho";
+import api from "../../utils/api";
 
 /**
  * Trata erros de requisição de forma padronizada para fornecer feedback claro.
@@ -42,25 +41,21 @@ export const listarCarrinho = async () => {
   try {
     // Faz duas chamadas em paralelo para os endpoints de itens e total
     const [itensResponse, totalResponse] = await Promise.all([
-      fetch(BASE_URL, { method: "GET" }),
-      fetch(`${BASE_URL}/total`, { method: "GET" }),
+      api.get("/carrinho"),
+      api.get("/carrinho/total"),
     ]);
 
     // Processa a resposta dos itens do carrinho
     let itens = [];
     // O status 204 significa "No Content" (carrinho vazio), então a resposta não tem corpo
     if (itensResponse.status !== 204) {
-      if (!itensResponse.ok)
-        throw new Error(`Erro ao buscar itens: ${itensResponse.status}`);
-      itens = await itensResponse.json();
+      itens = itensResponse.data;
     }
 
     // Processa a resposta do valor total
     let valorTotal = 0;
     if (totalResponse.status !== 204) {
-      if (!totalResponse.ok)
-        throw new Error(`Erro ao buscar total: ${totalResponse.status}`);
-      valorTotal = await totalResponse.json();
+      valorTotal = totalResponse.data;
     }
 
     // Monta o objeto de carrinho unificado que o resto do frontend espera
@@ -117,75 +112,30 @@ export const adicionarAoCarrinho = async (produto, quantidade = 1) => {
 
     // Preferir chamar endpoint atômico de quantidade quando disponível
     if (qty > 1) {
-      const url = `${BASE_URL}/adicionar/${produto.id}/${qty}`;
+      const url = `/carrinho/adicionar/${produto.id}/${qty}`;
       console.debug(`[carrinho] POST ${url} (atomic)`);
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
-
-      if (!response.ok) {
+      
+      try {
+        await api.post(url);
+      } catch (error) {
         // Fallback para chamadas unitárias caso o endpoint não exista ou falhe
         console.warn(
-          `[carrinho] atomic add failed, falling back to unit loop (${response.status})`
+          `[carrinho] atomic add failed, falling back to unit loop (${error.response?.status})`
         );
         // fallback: try looping single adds
         for (let i = 0; i < qty; i++) {
-          const urlSingle = `${BASE_URL}/adicionar/${produto.id}`;
+          const urlSingle = `/carrinho/adicionar/${produto.id}`;
           console.debug(
             `[carrinho] POST ${urlSingle} (attempt ${i + 1}/${qty})`
           );
-          const resSingle = await fetch(urlSingle, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          });
-          if (!resSingle.ok) {
-            let mensagemErro = `Erro no servidor (status: ${resSingle.status} ${resSingle.statusText})`;
-            try {
-              const erroData = await resSingle.json().catch(() => null);
-              if (erroData)
-                mensagemErro =
-                  erroData.mensagem ||
-                  erroData.message ||
-                  JSON.stringify(erroData);
-            } catch (e) {
-              try {
-                mensagemErro = await resSingle.text();
-              } catch (e2) {}
-            }
-            throw new Error(mensagemErro);
-          }
+          await api.post(urlSingle);
         }
       }
     } else {
       // Single unit — chama endpoint tradicional
-      const url = `${BASE_URL}/adicionar/${produto.id}`;
+      const url = `/carrinho/adicionar/${produto.id}`;
       console.debug(`[carrinho] POST ${url} (single)`);
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
-      if (!response.ok) {
-        let mensagemErro = `Erro no servidor (status: ${response.status} ${response.statusText})`;
-        try {
-          const erroData = await response.json().catch(() => null);
-          if (erroData)
-            mensagemErro =
-              erroData.mensagem || erroData.message || JSON.stringify(erroData);
-        } catch (e) {
-          try {
-            mensagemErro = await response.text();
-          } catch (e2) {}
-        }
-        throw new Error(mensagemErro);
-      }
+      await api.post(url);
     }
 
     // Depois de executar as chamadas, buscamos o estado atualizado do carrinho
@@ -202,14 +152,7 @@ export const adicionarAoCarrinho = async (produto, quantidade = 1) => {
  */
 export const removerDoCarrinho = async (produtoId) => {
   try {
-    const response = await fetch(`${BASE_URL}/remover/${produtoId}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao remover item: ${response.status}`);
-    }
+    await api.delete(`/carrinho/remover/${produtoId}`);
 
     // A resposta de remoção também é vazia, então buscamos o carrinho novamente
     // para que a interface do usuário seja atualizada corretamente.

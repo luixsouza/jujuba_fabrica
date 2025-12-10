@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Head from "next/head";
+import api from "../../utils/api";
 
 // Material-UI
 import {
@@ -118,14 +119,8 @@ export default function FornecedoresPage() {
     const fetchFornecedores = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:8080/api/fornecedoras", {
-          credentials: "include",
-        });
-        if (!response.ok) {
-          throw new Error("Falha ao buscar fornecedores");
-        }
-        const data = await response.json();
-        setFornecedores(data);
+        const response = await api.get("/fornecedoras");
+        setFornecedores(response.data);
       } catch (error) {
         console.error("Erro ao buscar fornecedores:", error);
         setError(error.message);
@@ -173,15 +168,8 @@ export default function FornecedoresPage() {
 
   const handleViewFornecedor = async (id) => {
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/fornecedoras/${id}`,
-        { credentials: "include" }
-      );
-      if (!response.ok) {
-        throw new Error("Falha ao buscar detalhes do fornecedor");
-      }
-
-      const fornecedor = await response.json();
+      const response = await api.get(`/fornecedoras/${id}`);
+      const fornecedor = response.data;
       setSelectedFornecedor(fornecedor);
       setOpenViewModal(true);
     } catch (error) {
@@ -203,17 +191,7 @@ export default function FornecedoresPage() {
   const handleConfirmDelete = async () => {
     if (fornecedorToDelete) {
       try {
-        const response = await fetch(
-          `http://localhost:8080/api/fornecedoras/${fornecedorToDelete.id}`,
-          {
-            method: "DELETE",
-            credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Falha ao excluir fornecedor");
-        }
+        await api.delete(`/fornecedoras/${fornecedorToDelete.id}`);
 
         setFornecedores(
           fornecedores.filter((f) => f.id !== fornecedorToDelete.id)
@@ -388,11 +366,8 @@ export default function FornecedoresPage() {
         typeof fornecedorOrId === "object" ? fornecedorOrId.id : fornecedorOrId;
       if (!id) return;
       // fetch detailed fornecedor data (includes creditoLoja)
-      const resp = await fetch(`http://localhost:8080/api/fornecedoras/${id}`, {
-        credentials: "include",
-      });
-      if (!resp.ok) throw new Error("Falha ao buscar dados da fornecedora");
-      const data = await resp.json();
+      const resp = await api.get(`/fornecedoras/${id}`);
+      const data = resp.data;
       setSelectedFornecedorForSale(data);
     } catch (e) {
       console.error("Erro ao selecionar fornecedora:", e);

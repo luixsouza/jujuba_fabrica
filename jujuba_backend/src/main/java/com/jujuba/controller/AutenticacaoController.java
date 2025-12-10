@@ -45,7 +45,7 @@ public class AutenticacaoController {
             log.warn("Bad Credentials from username '{}'", dto.getUsername());
         }
         return ResponseEntity
-                .badRequest()
-                .body(new ErrorMessageException(request, HttpStatus.BAD_REQUEST, "Credenciais Inválidas"));
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorMessageException(request, HttpStatus.UNAUTHORIZED, "Credenciais Inválidas"));
     }
 }

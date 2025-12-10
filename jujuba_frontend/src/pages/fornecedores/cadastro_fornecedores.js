@@ -19,8 +19,7 @@ import {
   Slide,
 } from "@mui/material";
 import Sidebar from "../../components/sidebar";
-import axios from "axios";
-const BASE_URL = "http://localhost:8080/api/fornecedoras";
+import api from "../../utils/api";
 import {
   ArrowBack,
   Home,
@@ -186,9 +185,9 @@ export default function FornecedoresCadastro() {
         console.log("Nenhum contrato selecionado - prosseguindo sem arquivo");
       }
 
-      console.log("Enviando para:", BASE_URL);
+      console.log("Enviando para:", "/fornecedoras");
       
-      const response = await axios.post(BASE_URL, formData, {
+      const response = await api.post("/fornecedoras", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

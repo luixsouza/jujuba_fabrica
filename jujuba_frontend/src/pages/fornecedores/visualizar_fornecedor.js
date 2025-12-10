@@ -22,10 +22,9 @@ import {
 import { ArrowBack, Home, Download, BugReport } from "@mui/icons-material";
 import Sidebar from "../../components/sidebar";
 import { useRouter } from "next/router";
-import axios from "axios";
+import api from "../../utils/api";
 
 const BACKEND_BASE_URL = "http://localhost:8080";
-const BASE_URL = "http://localhost:8080/api/fornecedoras";
 
 export default function FornecedoresVisualizar() {
   const theme = useTheme();
@@ -61,7 +60,7 @@ export default function FornecedoresVisualizar() {
   const fetchFornecedora = async (fornecedoraId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BASE_URL}/${fornecedoraId}`);
+      const response = await api.get(`/fornecedoras/${fornecedoraId}`);
       const data = response.data;
 
       setFornecedora({

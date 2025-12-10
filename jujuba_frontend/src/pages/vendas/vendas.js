@@ -36,14 +36,12 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import CloseIcon from "@mui/icons-material/Close";
 import PersonIcon from "@mui/icons-material/Person";
 import ReceiptIcon from "@mui/icons-material/Receipt";
-import axios from "axios";
+import api from "../../utils/api";
 import { useRouter } from "next/navigation";
 import SearchIcon from "@mui/icons-material/Search";
 import Sidebar from "../../components/sidebar";
 import { forwardRef } from "react";
 import Head from "next/head";
-
-const BASE_URL = "http://localhost:8080/api/vendas";
 
 // Transição personalizada para o modal
 const Transition = forwardRef(function Transition(props, ref) {
@@ -81,7 +79,7 @@ const VendasPage = () => {
   useEffect(() => {
     const fetchVendas = async () => {
       try {
-        const response = await axios.get(BASE_URL);
+        const response = await api.get("/vendas");
         const vendasOrdenadas = ordenarVendasPorData(response.data);
         setVendas(vendasOrdenadas);
       } catch (error) {
@@ -157,27 +155,6 @@ const VendasPage = () => {
     setPageTabValue(newValue);
   };
 
-  const filteredVendas = useMemo(() => {
-    if (
-      !searchTerm ||
-      typeof searchTerm !== "string" ||
-      searchTerm.trim() === ""
-    ) {
-      return vendas;
-    }
-    const searchLower = searchTerm.toLowerCase();
-    return vendas.filter((venda) => {
-      return (
-        venda.id.toString().includes(searchLower) ||
-        (venda.tipoVenda &&
-          venda.tipoVenda.toLowerCase().includes(searchLower)) ||
-        getFornecedoresDosItens(venda.itens || []).some(f => 
-          f.nome.toLowerCase().includes(searchLower)
-        )
-      );
-    });
-  }, [vendas, searchTerm]);
-
   // Função para obter todos os fornecedores únicos dos produtos vendidos
   const getFornecedoresDosItens = (itens) => {
     const fornecedoresMap = new Map();
@@ -202,6 +179,44 @@ const VendasPage = () => {
 
     return Array.from(fornecedoresMap.values());
   };
+
+  const filteredVendas = useMemo(() => {
+    if (
+      !searchTerm ||
+      typeof searchTerm !== "string" ||
+      searchTerm.trim() === ""
+    ) {
+      return vendas;
+    }
+    const searchLower = searchTerm.toLowerCase();
+
+    // Tenta extrair o ID se o formato for "#123 - ..." vindo do Autocomplete
+    const idMatch = searchLower.match(/^#(\d+)/);
+    const searchId = idMatch ? idMatch[1] : searchLower;
+
+    return vendas.filter((venda) => {
+      const idString = venda.id.toString();
+      const tipoString = venda.tipoVenda ? venda.tipoVenda.toLowerCase() : "";
+      const fornecedoraNome = venda.fornecedora ? venda.fornecedora.nome.toLowerCase() : "";
+
+      // Se for uma busca por ID (formato #123 ou apenas números)
+      if (idMatch || (!isNaN(searchId) && searchId.trim() !== "")) {
+         if (idString.includes(searchId)) return true;
+      }
+
+      return (
+        idString.includes(searchLower) ||
+        tipoString.includes(searchLower) ||
+        fornecedoraNome.includes(searchLower) ||
+        getFornecedoresDosItens(venda.itens || []).some(f => 
+          f.nome.toLowerCase().includes(searchLower)
+        ) ||
+        (venda.itens || []).some((item) =>
+          item.produto?.descricao?.toLowerCase().includes(searchLower)
+        )
+      );
+    });
+  }, [vendas, searchTerm]);
 
   return (
     <Box
@@ -284,81 +299,55 @@ const VendasPage = () => {
             marginBottom: "30px",
           }}
         >
-          <Autocomplete
-            freeSolo
-            open={false}
-            disableOpenOnFocus
-            options={[
-              ...new Set(
-                vendas
-                  .flatMap((v) => [
-                    `#${v.id} - ${v.tipoVenda}`,
-                    v.fornecedora ? v.fornecedora.nome : "",
-                  ])
-                  .filter(Boolean)
-              ),
-            ]}
+          <TextField
             value={search}
-            onChange={(event, newValue) => {
-              setSearch(newValue || "");
-              setSearchTerm(newValue || "");
+            onChange={(event) => {
+              const newValue = event.target.value;
+              setSearch(newValue);
+              setSearchTerm(newValue);
             }}
-            onInputChange={(event, newValue) => {
-              setSearch(newValue || "");
-              setSearchTerm(newValue || "");
+            placeholder="Pesquisar vendas por ID, tipo, fornecedora ou produto"
+            variant="outlined"
+            size="medium"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
+                </InputAdornment>
+              ),
+              sx: {
+                height: "60px",
+                display: "flex",
+                alignItems: "center",
+                pl: 1,
+              },
             }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Pesquisar vendas por ID, tipo ou fornecedora"
-                variant="outlined"
-                size="medium"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
-                    </InputAdornment>
-                  ),
-                  sx: {
-                    height: "60px",
-                    display: "flex",
-                    alignItems: "center",
-                    pl: 1,
-                  },
-                }}
-                sx={{
-                  width: "100%",
-                  maxWidth: "1800px",
-                  backgroundColor: "#F5F5F5",
-                  marginBottom: "50px",
-                  marginTop: "50px",
-                  borderRadius: "10px",
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#F5F5F5",
-                    color: "#000000",
-                    borderRadius: "10px",
-                    "& fieldset": {
-                      borderColor: "#CCCCCC",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#00509E",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#00509E",
-                    },
-                    boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
-                  },
-                  "& .MuiInputBase-input": {
-                    padding: "14px 20px",
-                    fontSize: "18px",
-                  },
-                }}
-              />
-            )}
             sx={{
               width: "100%",
               maxWidth: "1800px",
+              backgroundColor: "#F5F5F5",
+              marginBottom: "50px",
+              marginTop: "50px",
+              borderRadius: "10px",
+              "& .MuiOutlinedInput-root": {
+                backgroundColor: "#F5F5F5",
+                color: "#000000",
+                borderRadius: "10px",
+                "& fieldset": {
+                  borderColor: "#CCCCCC",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#00509E",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#00509E",
+                },
+                boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
+              },
+              "& .MuiInputBase-input": {
+                padding: "14px 20px",
+                fontSize: "18px",
+              },
             }}
           />
         </Box>

@@ -1,24 +1,22 @@
-import axios from "axios";
-
-const BASE_URL = "http://localhost:8080/api/produtos"; // url base para produtos
+import api from "../../utils/api";
 
 export default async function handler(req, res) {
   const { method, body, query } = req;
 
   try {
     if (method === "GET") {
-      const response = await axios.get(BASE_URL);
+      const response = await api.get("/produtos");
       return res.status(200).json(response.data);
     } else if (method === "POST") {
-      const response = await axios.post(BASE_URL, body);
+      const response = await api.post("/produtos", body);
       return res.status(201).json(response.data);
     } else if (method === "PUT") {
       const { id, ...data } = body;
-      const response = await axios.put(`${BASE_URL}/${id}`, data);
+      const response = await api.put(`/produtos/${id}`, data);
       return res.status(200).json(response.data);
     } else if (method === "DELETE") {
       const { id } = query;
-      await axios.delete(`${BASE_URL}/${id}`);
+      await api.delete(`/produtos/${id}`);
       return res.status(204).end();
     } else {
       return res
@@ -34,7 +32,7 @@ export default async function handler(req, res) {
 
 export const listarProdutos = async () => {
   try {
-    const response = await axios.get(BASE_URL);
+    const response = await api.get("/produtos");
     return {
       sucesso: true,
       mensagem: "produtos listados com sucesso.",
@@ -62,7 +60,7 @@ export const listarProdutos = async () => {
 
 export const buscarProdutoPorId = async (id) => {
   try {
-    const response = await axios.get(`${BASE_URL}/${id}`);
+    const response = await api.get(`/produtos/${id}`);
     const p = response.data;
     // ← ADICIONE ISSO AQUI! Converte pra número antes de retornar
     const quantidadeConvertida = parseInt(p.quantidade, 10) || 0;
@@ -92,7 +90,7 @@ export const buscarProdutoPorId = async (id) => {
 
 export const excluirProduto = async (id) => {
   try {
-    await axios.delete(`${BASE_URL}/${id}`);
+    await api.delete(`/produtos/${id}`);
     return {
       sucesso: true,
       mensagem: `Produto com ID ${id} excluído com sucesso.`,

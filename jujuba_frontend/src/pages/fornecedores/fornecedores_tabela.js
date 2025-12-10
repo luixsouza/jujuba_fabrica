@@ -32,14 +32,12 @@ import EditIcon from "@mui/icons-material/Edit";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import PersonIcon from "@mui/icons-material/Person";
 import CloseIcon from "@mui/icons-material/Close";
-import axios from "axios";
+import api from "../../utils/api";
 import { useRouter } from "next/navigation";
 import SearchIcon from "@mui/icons-material/Search";
 import Sidebar from "../../components/sidebar";
 import { forwardRef } from "react";
 import Head from "next/head";
-
-const BASE_URL = "http://localhost:8080/api/fornecedoras";
 
 // Transição personalizada para o modal
 const Transition = forwardRef(function Transition(props, ref) {
@@ -66,7 +64,7 @@ const FornecedoresPage = () => {
   useEffect(() => {
     const fetchFornecedores = async () => {
       try {
-        const response = await axios.get(BASE_URL);
+        const response = await api.get("/fornecedoras");
         setFornecedores(response.data);
       } catch (error) {
         console.error("Erro ao buscar fornecedores:", error.message);
@@ -82,7 +80,7 @@ const FornecedoresPage = () => {
 
   const deleteFornecedora = useCallback(async (id) => {
     try {
-      const response = await axios.delete(`${BASE_URL}/${id}`);
+      const response = await api.delete(`/fornecedoras/${id}`);
       console.log("Fornecedor deletado com sucesso:", response.data);
       setFornecedores((prev) =>
         prev.filter((fornecedora) => fornecedora.id !== id)
