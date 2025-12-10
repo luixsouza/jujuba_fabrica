@@ -231,25 +231,8 @@ export default function FornecedoresPage() {
     try {
       setIsLoading(true);
 
-      // Verifica estoque atual para cada item do carrinho
-      for (const item of carrinhoItems) {
-        try {
-          const resp = await buscarProdutoPorId(item.id);
-          if (resp?.sucesso && resp.produto) {
-            const estoqueAtual = Number(resp.produto.quantidade) || 0;
-            const qtdNoCarrinho = Number(item.quantidade) || 1;
-            if (estoqueAtual < qtdNoCarrinho) {
-              setError(
-                `Não é possível finalizar: "${item.descricao}" possui estoque insuficiente (${estoqueAtual}).`
-              );
-              setIsLoading(false);
-              return;
-            }
-          }
-        } catch (e) {
-          console.warn("Falha ao verificar estoque do produto", item.id, e);
-        }
-      }
+      // A validação de estoque já é feita no backend ao adicionar ao carrinho (reserva).
+      // Portanto, não devemos checar novamente aqui, pois o estoque retornado já estará decrementado.
 
       // Before finalizing, check if supplier credit is enough or payments were provided
       const deficit = calcularDeficit();

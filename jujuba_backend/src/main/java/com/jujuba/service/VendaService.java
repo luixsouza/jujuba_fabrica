@@ -6,6 +6,7 @@ import com.jujuba.exception.ProductUnavailableException;
 import com.jujuba.exception.SaleNotFoundException;
 import com.jujuba.mapper.VendaMapper;
 import com.jujuba.model.Fornecedora;
+import com.jujuba.model.ItemVenda;
 import com.jujuba.model.Produto;
 import com.jujuba.model.Venda;
 import com.jujuba.repository.FornecedoraRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -35,18 +37,25 @@ public class VendaService {
             throw new EmptyCartException("O carrinho está vazio. Adicione produtos antes de finalizar a venda.");
         }
 
-        for (Produto produto : produtosCarrinho) {
-            if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
-                throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produto.getDescricao());
+        List<ItemVenda> itens = new ArrayList<>();
+        for (Produto produtoCarrinho : produtosCarrinho) {
+            if (produtoCarrinho.getQuantidade() == null || produtoCarrinho.getQuantidade() <= 0) {
+                throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produtoCarrinho.getDescricao());
             }
+            
+            // Carrega a entidade real para evitar sobrescrever o estoque com a quantidade do carrinho
+            Produto produtoReal = produtoRepository.findById(produtoCarrinho.getId())
+                    .orElseThrow(() -> new ProductUnavailableException("Produto não encontrado: " + produtoCarrinho.getId()));
+            
+            itens.add(VendaMapper.criarItemVenda(produtoReal, produtoCarrinho.getQuantidade()));
         }
 
-    BigDecimal totalVenda = carrinhoService.calcularTotal();
-    Venda venda = VendaMapper.mapearVendaSimples(totalVenda, produtosCarrinho);
+        BigDecimal totalVenda = carrinhoService.calcularTotal();
+        Venda venda = VendaMapper.mapearVendaSimples(totalVenda, itens);
 
-    carrinhoService.limparCarrinho();
+        carrinhoService.limparCarrinho();
 
-    return vendaRepository.save(venda);
+        return vendaRepository.save(venda);
     }
 
     @Transactional
@@ -57,21 +66,28 @@ public class VendaService {
             throw new EmptyCartException("O carrinho está vazio. Adicione produtos antes de finalizar a venda.");
         }
 
-        for (Produto produto : produtosCarrinho) {
-            if (produto.getQuantidade() == null || produto.getQuantidade() <= 0) {
-                throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produto.getDescricao());
+        List<ItemVenda> itens = new ArrayList<>();
+        for (Produto produtoCarrinho : produtosCarrinho) {
+            if (produtoCarrinho.getQuantidade() == null || produtoCarrinho.getQuantidade() <= 0) {
+                throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produtoCarrinho.getDescricao());
             }
+
+            // Carrega a entidade real para evitar sobrescrever o estoque com a quantidade do carrinho
+            Produto produtoReal = produtoRepository.findById(produtoCarrinho.getId())
+                    .orElseThrow(() -> new ProductUnavailableException("Produto não encontrado: " + produtoCarrinho.getId()));
+            
+            itens.add(VendaMapper.criarItemVenda(produtoReal, produtoCarrinho.getQuantidade()));
         }
 
         Fornecedora fornecedora = fornecedoraRepository.findById(fornecedoraId)
                 .orElseThrow(() -> new FornecedoraNotFoundException("Fornecedora com ID " + fornecedoraId + " não encontrada."));
 
-    BigDecimal totalVenda = carrinhoService.calcularTotal();
-    Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora, produtosCarrinho);
+        BigDecimal totalVenda = carrinhoService.calcularTotal();
+        Venda venda = VendaMapper.mapearVendaFornecedora(totalVenda, fornecedora, itens);
 
-    carrinhoService.limparCarrinho();
+        carrinhoService.limparCarrinho();
 
-    return vendaRepository.save(venda);
+        return vendaRepository.save(venda);
     }
 
     public List<Venda> listarTodas() {

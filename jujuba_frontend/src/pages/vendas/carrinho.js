@@ -229,28 +229,9 @@ export default function CarrinhoPage() {
     try {
       setLoading(true);
       setError(null);
-      // Valida estoque atual antes de finalizar: evita vender produto sem estoque
-      for (const item of cartItems) {
-        try {
-          const resp = await buscarProdutoPorId(item.id);
-          if (resp?.sucesso && resp.produto) {
-            const estoqueAtual = Number(resp.produto.quantidade) || 0;
-            const qtdNoCarrinho = Number(item.quantidade) || 1;
-            if (estoqueAtual < qtdNoCarrinho) {
-              setSnackbar({
-                open: true,
-                message: `Não é possível finalizar: "${item.descricao}" possui estoque insuficiente (${estoqueAtual}).`,
-                severity: "error",
-              });
-              setLoading(false);
-              return;
-            }
-          }
-        } catch (e) {
-          // se falhar a checagem por qualquer motivo, continuar e deixar o backend validar
-          console.warn("Falha ao verificar estoque do produto", item.id, e);
-        }
-      }
+      
+      // A validação de estoque já é feita no backend ao adicionar ao carrinho (reserva).
+      // Portanto, não devemos checar novamente aqui, pois o estoque retornado já estará decrementado.
 
       const result = await finalizarVendaSimples();
       if (result.sucesso) {
@@ -445,6 +426,16 @@ export default function CarrinhoPage() {
                         borderRight: "2px solid #F5F5F5",
                       }}
                     >
+                      Quantidade
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontSize: "18px",
+                        backgroundColor: "#FADADD",
+                        borderRight: "2px solid #F5F5F5",
+                      }}
+                    >
                       Valor
                     </TableCell>
                     <TableCell
@@ -465,9 +456,11 @@ export default function CarrinhoPage() {
                           {item.estadoConservacao}
                         </TableCell>
                         <TableCell align="center">
+                          {item.quantidade || 1}
+                        </TableCell>
+                        <TableCell align="center">
                           R$ {formatarPreco(item.preco)}
                         </TableCell>
-                        <TableCell align="center">{item.lote || "-"}</TableCell>
                         <TableCell align="center">
                           <IconButton
                             size="small"

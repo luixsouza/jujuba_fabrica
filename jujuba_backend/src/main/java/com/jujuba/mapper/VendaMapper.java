@@ -19,7 +19,7 @@ public class VendaMapper {
     /**
      * Mapeia uma venda simples (sem fornecedora)
      */
-    public static Venda mapearVendaSimples(BigDecimal totalVenda, List<Produto> produtos) {
+    public static Venda mapearVendaSimples(BigDecimal totalVenda, List<ItemVenda> itens) {
         Venda venda = new Venda();
         venda.setTipoVenda(TipoVenda.VENDA_SIMPLES);
         venda.setTotal(totalVenda);
@@ -27,11 +27,8 @@ public class VendaMapper {
         venda.setValorFornecedora(BigDecimal.ZERO);
         venda.setFornecedora(null);
 
-        // Criar itens da venda
-        List<ItemVenda> itens = produtos.stream()
-                .map(produto -> criarItemVenda(produto, venda))
-                .collect(Collectors.toList());
-        
+        // Associar itens à venda
+        itens.forEach(item -> item.setVenda(venda));
         venda.setItens(itens);
         
         return venda;
@@ -40,7 +37,7 @@ public class VendaMapper {
     /**
      * Mapeia uma venda com fornecedora
      */
-    public static Venda mapearVendaFornecedora(BigDecimal totalVenda, Fornecedora fornecedora, List<Produto> produtos) {
+    public static Venda mapearVendaFornecedora(BigDecimal totalVenda, Fornecedora fornecedora, List<ItemVenda> itens) {
         Venda venda = new Venda();
         venda.setTipoVenda(TipoVenda.VENDA_FORNECEDOR);
         venda.setTotal(totalVenda);
@@ -53,26 +50,22 @@ public class VendaMapper {
         venda.setValorBrecho(valorBrecho);
         venda.setValorFornecedora(valorFornecedora);
 
-        // Criar itens da venda
-        List<ItemVenda> itens = produtos.stream()
-                .map(produto -> criarItemVenda(produto, venda))
-                .collect(Collectors.toList());
-        
+        // Associar itens à venda
+        itens.forEach(item -> item.setVenda(venda));
         venda.setItens(itens);
         
         return venda;
     }
 
     /**
-     * Cria um item de venda a partir de um produto
+     * Cria um item de venda a partir de um produto e quantidade
      */
-    private static ItemVenda criarItemVenda(Produto produto, Venda venda) {
+    public static ItemVenda criarItemVenda(Produto produto, Integer quantidade) {
         ItemVenda item = new ItemVenda();
         item.setProduto(produto);
-        item.setVenda(venda);
-        item.setQuantidade(1); // Por padrão, quantidade 1
+        item.setQuantidade(quantidade != null ? quantidade : 1);
         item.setPrecoUnitario(produto.getPreco());
-        item.setSubtotal(produto.getPreco());
+        item.setSubtotal(produto.getPreco().multiply(BigDecimal.valueOf(item.getQuantidade())));
         
         return item;
     }
