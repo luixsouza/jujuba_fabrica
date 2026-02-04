@@ -1,18 +1,15 @@
 "use client";
 
-import { useState, useEffect, forwardRef } from "react";
-import Head from "next/head";
+import { useState, useEffect, useMemo, useCallback, forwardRef } from "react";
 import { useRouter } from "next/navigation";
 
 // Material-UI
 import {
   Box,
   Typography,
-  TextField,
   Card,
   CardContent,
   IconButton,
-  InputAdornment,
   Table,
   TableBody,
   TableCell,
@@ -21,46 +18,50 @@ import {
   TableContainer,
   Paper,
   Button,
-  Autocomplete,
   Dialog,
   DialogContent,
   DialogTitle,
   DialogActions,
   Grid,
-  Divider,
   Chip,
-  DialogContentText,
   CircularProgress,
-  Snackbar,
-  Alert,
   Avatar,
   Slide,
+  Tabs,
+  Tab,
+  TextField,
 } from "@mui/material";
 
 // Ícones
 import {
-  Search as SearchIcon,
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
-  ArrowBack as ArrowBackIcon,
   Close as CloseIcon,
   CheckCircle as CheckCircleIcon,
-  AttachMoney as AttachMoneyIcon,
   Inventory as InventoryIcon,
-  QrCode as QrCodeIcon,
-  Category as CategoryIcon,
-  CalendarMonth as CalendarMonthIcon,
-  Warning as WarningIcon,
+  Add as AddIcon,
+  Remove as RemoveIcon,
 } from "@mui/icons-material";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 
-// Componentes e APIs
-import Sidebar from "../../components/sidebar";
-import { removerDoCarrinho, listarCarrinho } from "../api/carrinho";
+// Componentes padronizados
+import {
+  PageLayout,
+  PageTitle,
+  SearchBar,
+  SnackbarAlert,
+  ConfirmDialog,
+} from "../../components/ui";
+
+// Hooks padronizados
+import { useSnackbar } from "../../hooks";
+
+// Constantes
+import { COLORS, SHADOWS, SPACING } from "../../constants";
+
+// APIs
+import { removerDoCarrinho, listarCarrinho, incrementarQuantidade, decrementarQuantidade } from "../api/carrinho";
 import { finalizarVendaSimples } from "../api/vendas";
-import { listarProdutos, buscarProdutoPorId } from "../api/produtos";
+import { listarProdutos } from "../api/produtos";
 
 // Função de formatação segura
 const formatarPreco = (valor) => {
@@ -70,37 +71,76 @@ const formatarPreco = (valor) => {
   }
   return numero.toFixed(2).replace(".", ",");
 };
+
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
 export default function CarrinhoPage() {
   const router = useRouter();
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [openSellModal, setOpenSellModal] = useState(false);
-  const [openViewModal, setOpenViewModal] = useState(false);
-  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [itemToDelete, setItemToDelete] = useState(null);
+  const [openProductModal, setOpenProductModal] = useState(false);
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ open: false, item: null });
   const [cartItems, setCartItems] = useState([]);
   const [totalValue, setTotalValue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchOptions, setSearchOptions] = useState([]);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
   const [tabValue, setTabValue] = useState(0);
+  const [nomeCliente, setNomeCliente] = useState("");
+
+  const { snackbar, showSuccess, showError, closeSnackbar } = useSnackbar();
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
-  const Transition = forwardRef(function Transition(props, ref) {
-    return <Slide direction="up" ref={ref} {...props} />;
-  });
+  // Buscar itens do carrinho
+  useEffect(() => {
+    const fetchCartItems = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await listarCarrinho();
+        if (response.sucesso && response.carrinho) {
+          setCartItems(response.carrinho.itens || []);
+          setTotalValue(Number(response.carrinho.valorTotal) || 0);
+        } else {
+          setError("Não foi possível carregar os itens do carrinho: " + response.mensagem);
+          setCartItems([]);
+          setTotalValue(0);
+        }
+      } catch (err) {
+        setError("Não foi possível carregar os itens do carrinho. Verifique a conexão com o servidor.");
+        setCartItems([]);
+        setTotalValue(0);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const [openProductModal, setOpenProductModal] = useState(false);
-  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+    fetchCartItems();
+  }, []);
 
+  // Opções de busca
+  const searchOptions = useMemo(() => {
+    return [...new Set(cartItems.map((item) => item.descricao).filter(Boolean))];
+  }, [cartItems]);
+
+  // Filtro de busca
+  const filteredCartItems = useMemo(() => {
+    if (!searchTerm?.trim()) return cartItems;
+    const s = searchTerm.toLowerCase();
+    return cartItems.filter((item) =>
+      item?.descricao?.toLowerCase().includes(s)
+    );
+  }, [cartItems, searchTerm]);
+
+  // Navegações
+  const handleVenderParaFornecedor = () => router.push("/vendas/vender_fornecedor");
+
+  // Modal de produto
   const handleOpenProductModal = (produto) => {
     setProdutoSelecionado(produto);
     setOpenProductModal(true);
@@ -111,299 +151,215 @@ export default function CarrinhoPage() {
     setProdutoSelecionado(null);
   };
 
-  useEffect(() => {
-    const fetchCartItems = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await listarCarrinho();
-        if (response.sucesso && response.carrinho) {
-          setCartItems(response.carrinho.itens || []);
-          setTotalValue(Number(response.carrinho.valorTotal) || 0);
-
-          // CORREÇÃO: Acessar a descrição diretamente do item
-          const options = (response.carrinho.itens || []).map(
-            (item) => item.descricao
-          );
-          setSearchOptions([...new Set(options)]);
-        } else {
-          console.error(
-            "Erro ao carregar itens do carrinho:",
-            response.mensagem
-          );
-          setError(
-            "Não foi possível carregar os itens do carrinho: " +
-              response.mensagem
-          );
-          setCartItems([]);
-          setTotalValue(0);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar itens do carrinho:", error);
-        setError(
-          "Não foi possível carregar os itens do carrinho. Verifique a conexão com o servidor."
-        );
-        setCartItems([]);
-        setTotalValue(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCartItems();
-  }, []);
-  console.log(cartItems)
+  // Modal de venda
   const handleOpenSellModal = () => setOpenSellModal(true);
   const handleCloseSellModal = () => setOpenSellModal(false);
-  const handleVenderParaFornecedor = () =>
-    router.push("/vendas/vender_fornecedor");
 
-  const handleConfirmDeleteItem = (id) => {
-    // CORREÇÃO: Acessar o ID diretamente do item
-    const item = cartItems.find((item) => item.id === id);
-    setItemToDelete(item);
-    setOpenDeleteConfirmation(true);
-  };
+  // Modal de exclusão
+  const handleDeleteClick = (item) => setDeleteModal({ open: true, item });
+  const handleCloseDeleteModal = () => setDeleteModal({ open: false, item: null });
 
-  const handleDeleteItem = async () => {
-    if (itemToDelete) {
+  const handleConfirmDelete = useCallback(async () => {
+    if (deleteModal.item) {
       try {
         setLoading(true);
-        setError(null);
-        // CORREÇÃO: Enviar o ID diretamente do item a ser deletado
-        const result = await removerDoCarrinho(itemToDelete.id);
+        const result = await removerDoCarrinho(deleteModal.item.id);
 
         if (result.sucesso && result.carrinho) {
           setCartItems(result.carrinho.itens || []);
           setTotalValue(Number(result.carrinho.valorTotal) || 0);
-          setSnackbar({
-            open: true,
-            message: `"${itemToDelete.descricao}" removido do carrinho!`,
-            severity: "success",
-          });
+          showSuccess(`"${deleteModal.item.descricao}" removido do carrinho!`);
           try {
             window.dispatchEvent(new Event("estoque-atualizado"));
           } catch (e) {
             console.warn("Falha ao despachar evento estoque-atualizado:", e);
           }
         } else {
-          console.error("Erro ao remover item do carrinho:", result.mensagem);
-          setSnackbar({
-            open: true,
-            message: `Erro ao remover item: ${result.mensagem}`,
-            severity: "error",
-          });
+          showError(`Erro ao remover item: ${result.mensagem}`);
         }
-
-        if (selectedItem && selectedItem.id === itemToDelete.id) {
-          setOpenViewModal(false);
-        }
-      } catch (error) {
-        console.error("Erro ao remover item do carrinho:", error);
-        setSnackbar({
-          open: true,
-          message: "Erro ao remover item. Verifique a conexão.",
-          severity: "error",
-        });
+      } catch (err) {
+        showError("Erro ao remover item. Verifique a conexão.");
       } finally {
         setLoading(false);
       }
     }
-    setOpenDeleteConfirmation(false);
-    setItemToDelete(null);
-  };
+    handleCloseDeleteModal();
+  }, [deleteModal.item, showSuccess, showError]);
 
-  const handleCancelDelete = () => {
-    setOpenDeleteConfirmation(false);
-    setItemToDelete(null);
-  };
+  // Incrementar quantidade (+1)
+  const handleIncrement = useCallback(async (item) => {
+    try {
+      setLoading(true);
+      const result = await incrementarQuantidade(item.id);
 
-  const handleViewItem = (item) => {
-    setSelectedItem(item);
-    setOpenViewModal(true);
-  };
+      if (result.sucesso && result.carrinho) {
+        setCartItems(result.carrinho.itens || []);
+        setTotalValue(Number(result.carrinho.valorTotal) || 0);
+      } else {
+        showError(`Erro ao aumentar quantidade: ${result.mensagem}`);
+      }
+    } catch (err) {
+      showError("Erro ao aumentar quantidade. Verifique a conexão.");
+    } finally {
+      setLoading(false);
+    }
+  }, [showError]);
 
-  const handleCloseViewModal = () => setOpenViewModal(false);
+  // Decrementar quantidade (-1)
+  const handleDecrement = useCallback(async (item) => {
+    const quantidade = item.quantidade || 1;
 
+    if (quantidade <= 1) {
+      // Se só tem 1, abre modal de confirmação para remover
+      handleDeleteClick(item);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const result = await decrementarQuantidade(item.id, quantidade);
+
+      if (result.sucesso && result.carrinho) {
+        setCartItems(result.carrinho.itens || []);
+        setTotalValue(Number(result.carrinho.valorTotal) || 0);
+      } else {
+        showError(`Erro ao diminuir quantidade: ${result.mensagem}`);
+      }
+    } catch (err) {
+      showError("Erro ao diminuir quantidade. Verifique a conexão.");
+    } finally {
+      setLoading(false);
+    }
+  }, [showError]);
+
+  // Finalizar venda
   const handleFinalizarVenda = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // A validação de estoque já é feita no backend ao adicionar ao carrinho (reserva).
-      // Portanto, não devemos checar novamente aqui, pois o estoque retornado já estará decrementado.
 
-      const result = await finalizarVendaSimples();
+      const result = await finalizarVendaSimples(nomeCliente);
       if (result.sucesso) {
         setCartItems([]);
         setTotalValue(0);
+        setNomeCliente("");
         setOpenSellModal(false);
-        setSnackbar({
-          open: true,
-          message: "Venda finalizada com sucesso!",
-          severity: "success",
-        });
-        // Recarrega o estoque no frontend (faz uma chamada ao backend) e notifica outras páginas
+        showSuccess("Venda finalizada com sucesso!");
+
         try {
           await listarProdutos();
         } catch (e) {
-          // Não crítico — apenas log
           console.warn("Falha ao atualizar produtos após venda:", e);
         }
-        // Dispara evento global para que a página de estoque possa escutar e recarregar
+
         try {
           window.dispatchEvent(new Event("estoque-atualizado"));
         } catch (e) {
-          console.warn(
-            "Não foi possível disparar evento de estoque atualizado:",
-            e
-          );
+          console.warn("Não foi possível disparar evento de estoque atualizado:", e);
         }
         router.push("/vendas");
       } else {
-        console.error("Erro ao finalizar venda:", result.mensagem);
-        setSnackbar({
-          open: true,
-          message: `Erro ao finalizar venda: ${result.mensagem}`,
-          severity: "error",
-        });
+        showError(`Erro ao finalizar venda: ${result.mensagem}`);
       }
-    } catch (error) {
-      console.error("Erro ao finalizar venda:", error);
-      setSnackbar({
-        open: true,
-        message: "Erro ao finalizar venda. Verifique a conexão.",
-        severity: "error",
-      });
+    } catch (err) {
+      showError("Erro ao finalizar venda. Verifique a conexão.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (event, newValue) => setSearch(newValue || "");
-  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
-
-  // CORREÇÃO: Filtrar usando item.descricao diretamente
-  const filteredCartItems = (cartItems || []).filter((item) =>
-    item?.descricao?.toLowerCase().includes(search.toLowerCase())
+  // Conteúdo do modal de confirmação de exclusão
+  const deleteModalContent = deleteModal.item && (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        backgroundColor: "rgba(255, 255, 255, 0.7)",
+        padding: "16px 24px",
+        borderRadius: "15px",
+        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+        border: `2px solid rgba(154, 228, 255, 0.5)`,
+      }}
+    >
+      <Avatar sx={{ backgroundColor: COLORS.primaryBlue, width: 50, height: 50 }}>
+        <InventoryIcon sx={{ color: "white" }} />
+      </Avatar>
+      <Box sx={{ textAlign: "left" }}>
+        <Typography variant="h6" sx={{ fontWeight: "bold", color: COLORS.textSecondary, mb: 0.5 }}>
+          {deleteModal.item.descricao}
+        </Typography>
+        <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: "14px" }}>
+          R$ {formatarPreco(deleteModal.item.preco)} | Qtd: {deleteModal.item.quantidade || 1}
+        </Typography>
+      </Box>
+    </Box>
   );
 
   return (
-    <Box
-      sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
-    >
-      <Head>
-        <title>Jujuba - Carrinho</title>
-      </Head>
-      <Sidebar />
-      <Box
-        component="main"
+    <PageLayout title="Carrinho">
+      <PageTitle title="Carrinho" />
+
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 3 }}>
+        <SearchBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Pesquisar produto no carrinho"
+          useAutocomplete
+          options={searchOptions}
+        />
+      </Box>
+
+      <Card
         sx={{
-          flex: 1,
-          marginLeft: { xs: 0, sm: "290px" },
-          maxHeight: "1000px",
-          overflow: "auto",
-          backgroundColor: "#9AE4FF",
-          paddingTop: "3rem",
-          paddingX: { xs: "1rem", sm: "2rem" },
+          padding: SPACING.cardPadding,
+          boxShadow: SHADOWS.card,
+          borderRadius: SPACING.cardBorderRadius,
+          backgroundColor: COLORS.backgroundPaper,
+          border: `2px solid ${COLORS.borderMedium}`,
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: "80px",
-          }}
-        >
+        <CardContent sx={{ p: 1 }}>
           <Typography
-            variant="h4"
-            sx={{ fontWeight: "bold", fontSize: "50px", color: "#000000" }}
+            variant="h6"
+            sx={{ mb: 2, fontWeight: 700, color: COLORS.textSecondary, fontSize: "1.5rem" }}
           >
-            Carrinho
+            Itens no carrinho ({filteredCartItems.length})
           </Typography>
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: "30px",
-            width: "100%",
-          }}
-        >
-          <Autocomplete
-            open={false}
-            disableOpenOnFocus
-            freeSolo
-            options={searchOptions}
-            value={search}
-            onChange={handleSearch}
-            onInputChange={(event, newValue) => setSearch(newValue || "")}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Pesquisar produto no carrinho"
-                variant="outlined"
-                size="medium"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: "#000000" }} />
-                    </InputAdornment>
-                  ),
-                  sx: { height: "60px" },
-                }}
-                sx={{
-                  width: "100%",
-                  maxWidth: "1800px",
-                  backgroundColor: "#F5F5F5",
-                  my: "50px",
-                  borderRadius: "10px",
-                  "& .MuiOutlinedInput-root": { borderRadius: "10px" },
-                }}
-              />
-            )}
-            sx={{ width: "100%", maxWidth: "1800px" }}
-          />
-        </Box>
-        <Card
-          sx={{
-            padding: "20px",
-            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-            borderRadius: "25px",
-            backgroundColor: "#F5F5F5",
-            border: "2px solid #B0B0B0",
-          }}
-        >
-          <CardContent sx={{ p: 1 }}>
-            <Typography
-              variant="h6"
-              sx={{ mb: 2, fontWeight: 700, color: "#333", fontSize: "2rem" }}
+
+          {loading && (
+            <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+              <CircularProgress sx={{ color: COLORS.primaryPink }} />
+            </Box>
+          )}
+
+          {error && (
+            <Box sx={{ bgcolor: "#ffebee", p: 2, borderRadius: 2, mb: 3 }}>
+              <Typography color="error">{error}</Typography>
+            </Box>
+          )}
+
+          {!loading && !error && (
+            <TableContainer
+              component={Paper}
+              sx={{
+                mb: 3,
+                borderRadius: "12px",
+                boxShadow: "none",
+                border: `1px solid ${COLORS.borderLight}`,
+              }}
             >
-              Itens no carrinho
-            </Typography>
-            {loading && (
-              <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-                <CircularProgress sx={{ color: "#ffccd5" }} />
-              </Box>
-            )}
-            {error && (
-              <Box sx={{ bgcolor: "#ffebee", p: 2, borderRadius: 2, mb: 3 }}>
-                <Typography color="error">{error}</Typography>
-              </Box>
-            )}
-            {!loading && !error && (
-              <Table sx={{ mb: 3 }}>
+              <Table>
                 <TableHead>
                   <TableRow>
                     <TableCell
                       align="center"
                       sx={{
-                        fontSize: "18px",
-                        backgroundColor: "#FADADD",
-                        borderRight: "2px solid #F5F5F5",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        backgroundColor: COLORS.primaryPink,
+                        borderRight: `2px solid ${COLORS.backgroundPaper}`,
+                        color: COLORS.textSecondary,
                       }}
                     >
                       Descrição
@@ -411,19 +367,23 @@ export default function CarrinhoPage() {
                     <TableCell
                       align="center"
                       sx={{
-                        fontSize: "18px",
-                        backgroundColor: "#FADADD",
-                        borderRight: "2px solid #F5F5F5",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        backgroundColor: COLORS.primaryPink,
+                        borderRight: `2px solid ${COLORS.backgroundPaper}`,
+                        color: COLORS.textSecondary,
                       }}
                     >
-                      Estado de conservação
+                      Estado
                     </TableCell>
                     <TableCell
                       align="center"
                       sx={{
-                        fontSize: "18px",
-                        backgroundColor: "#FADADD",
-                        borderRight: "2px solid #F5F5F5",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        backgroundColor: COLORS.primaryPink,
+                        borderRight: `2px solid ${COLORS.backgroundPaper}`,
+                        color: COLORS.textSecondary,
                       }}
                     >
                       Quantidade
@@ -431,16 +391,23 @@ export default function CarrinhoPage() {
                     <TableCell
                       align="center"
                       sx={{
-                        fontSize: "18px",
-                        backgroundColor: "#FADADD",
-                        borderRight: "2px solid #F5F5F5",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        backgroundColor: COLORS.primaryPink,
+                        borderRight: `2px solid ${COLORS.backgroundPaper}`,
+                        color: COLORS.textSecondary,
                       }}
                     >
                       Valor
                     </TableCell>
                     <TableCell
                       align="center"
-                      sx={{ fontSize: "18px", backgroundColor: "#FADADD" }}
+                      sx={{
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        backgroundColor: COLORS.primaryPink,
+                        color: COLORS.textSecondary,
+                      }}
                     >
                       Ações
                     </TableCell>
@@ -449,30 +416,59 @@ export default function CarrinhoPage() {
                 <TableBody>
                   {filteredCartItems.length > 0 ? (
                     filteredCartItems.map((item) => (
-                      // CORREÇÃO: Usar item.id e acessar propriedades diretamente
-                      <TableRow key={item.id}>
-                        <TableCell>{item.descricao}</TableCell>
+                      <TableRow key={item.id} hover>
+                        <TableCell align="center">{item.descricao}</TableCell>
+                        <TableCell align="center">{item.estadoConservacao}</TableCell>
                         <TableCell align="center">
-                          {item.estadoConservacao}
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDecrement(item)}
+                              disabled={loading}
+                              sx={{
+                                bgcolor: COLORS.primaryBlue,
+                                color: COLORS.textSecondary,
+                                width: 28,
+                                height: 28,
+                                "&:hover": { bgcolor: COLORS.actionBlueHover },
+                                "&.Mui-disabled": { bgcolor: COLORS.borderLight },
+                              }}
+                            >
+                              <RemoveIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                            <Typography sx={{ fontWeight: "bold", minWidth: 24, textAlign: "center" }}>
+                              {item.quantidade || 1}
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleIncrement(item)}
+                              disabled={loading}
+                              sx={{
+                                bgcolor: COLORS.primaryBlue,
+                                color: COLORS.textSecondary,
+                                width: 28,
+                                height: 28,
+                                "&:hover": { bgcolor: COLORS.actionBlueHover },
+                                "&.Mui-disabled": { bgcolor: COLORS.borderLight },
+                              }}
+                            >
+                              <AddIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Box>
                         </TableCell>
-                        <TableCell align="center">
-                          {item.quantidade || 1}
-                        </TableCell>
-                        <TableCell align="center">
-                          R$ {formatarPreco(item.preco)}
-                        </TableCell>
+                        <TableCell align="center">R$ {formatarPreco(item.preco)}</TableCell>
                         <TableCell align="center">
                           <IconButton
                             size="small"
                             onClick={() => handleOpenProductModal(item)}
-                            sx={{ color: "#00509E" }}
+                            sx={{ color: COLORS.actionBlue }}
                           >
                             <VisibilityIcon fontSize="small" />
                           </IconButton>
                           <IconButton
                             size="small"
-                            onClick={() => handleConfirmDeleteItem(item.id)}
-                            sx={{ color: "#00509E" }}
+                            onClick={() => handleDeleteClick(item)}
+                            sx={{ color: COLORS.warning }}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -481,73 +477,77 @@ export default function CarrinhoPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                      <TableCell colSpan={5} align="center" sx={{ py: 3, color: COLORS.textMuted }}>
                         Nenhum item no carrinho
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
-            )}
-            {!loading && !error && (
-              <Box
-                sx={{
-                  display: "inline-block",
-                  bgcolor: "#b3e5fc",
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: 1,
-                  mb: 3,
-                }}
-              >
-                <Typography
-                  sx={{ fontWeight: 500, fontSize: "0.9rem", color: "#333" }}
-                >
-                  Valor Total: R$ {formatarPreco(totalValue)}
-                </Typography>
-              </Box>
-            )}
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}
-            >
-              <Button
-                variant="contained"
-                onClick={handleVenderParaFornecedor}
-                sx={{
-                  bgcolor: "#ffc1cc",
-                  color: "black",
-                  "&:hover": { bgcolor: "#ffb6c1" },
-                  borderRadius: 10,
-                  px: 4,
-                  py: 1.5,
-                  fontSize: "1rem",
-                }}
-              >
-                Vender para fornecedor
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleOpenSellModal}
-                disabled={cartItems.length === 0 || loading}
-                sx={{
-                  bgcolor: "#ffc1cc",
-                  color: "black",
-                  "&:hover": { bgcolor: "#ffb6c1" },
-                  borderRadius: 10,
-                  px: 5,
-                  py: 1.5,
-                  fontSize: "1rem",
-                  "&.Mui-disabled": { bgcolor: "#f5f5f5", color: "#999" },
-                }}
-              >
-                Vender
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
+            </TableContainer>
+          )}
 
-      {/* Modals (com as mesmas correções) */}
+          {!loading && !error && (
+            <Box
+              sx={{
+                display: "inline-block",
+                bgcolor: COLORS.primaryBlue,
+                px: 2,
+                py: 0.5,
+                borderRadius: 1,
+                mb: 3,
+              }}
+            >
+              <Typography sx={{ fontWeight: 500, fontSize: "0.9rem", color: COLORS.textSecondary }}>
+                Valor Total: R$ {formatarPreco(totalValue)}
+              </Typography>
+            </Box>
+          )}
+
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2, flexWrap: "wrap", gap: 2 }}>
+            <Button
+              variant="contained"
+              onClick={handleVenderParaFornecedor}
+              sx={{
+                bgcolor: COLORS.primaryPink,
+                color: COLORS.textSecondary,
+                "&:hover": { bgcolor: COLORS.actionPinkHover },
+                borderRadius: SPACING.buttonBorderRadius,
+                px: 4,
+                py: 1.5,
+                fontSize: "1rem",
+                fontWeight: "bold",
+                textTransform: "none",
+                boxShadow: SHADOWS.button,
+              }}
+            >
+              Vender para fornecedor
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleOpenSellModal}
+              disabled={cartItems.length === 0 || loading}
+              sx={{
+                bgcolor: COLORS.primaryPink,
+                color: COLORS.textSecondary,
+                "&:hover": { bgcolor: COLORS.actionPinkHover },
+                borderRadius: SPACING.buttonBorderRadius,
+                px: 5,
+                py: 1.5,
+                fontSize: "1rem",
+                fontWeight: "bold",
+                textTransform: "none",
+                boxShadow: SHADOWS.button,
+                "&.Mui-disabled": { bgcolor: COLORS.backgroundPaper, color: COLORS.textMuted },
+              }}
+            >
+              Vender
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Modal de Visualização de Produto */}
       <Dialog
         open={openProductModal}
         keepMounted
@@ -557,63 +557,40 @@ export default function CarrinhoPage() {
         PaperProps={{
           sx: {
             borderRadius: "20px",
-            background: "#F5F5F5",
-            boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+            background: COLORS.backgroundPaper,
+            boxShadow: SHADOWS.modal,
             overflow: "visible",
             maxHeight: "90vh",
           },
         }}
       >
-        <DialogTitle
-          sx={{
-            textAlign: "center",
-            pb: 2,
-            pt: 4,
-            position: "relative",
-          }}
-        >
+        <DialogTitle sx={{ textAlign: "center", pb: 2, pt: 4, position: "relative" }}>
           <IconButton
             onClick={handleCloseProductModal}
             sx={{
               position: "absolute",
               right: 8,
               top: 8,
-              color: "#666",
-              "&:hover": {
-                backgroundColor: "rgba(0, 0, 0, 0.1)",
-              },
+              color: COLORS.textMuted,
+              "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.1)" },
             }}
           >
             <CloseIcon />
           </IconButton>
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
             <Avatar
               sx={{
                 width: 80,
                 height: 80,
-                backgroundColor: "#9AE4FF",
+                backgroundColor: COLORS.primaryBlue,
                 boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
               }}
             >
               <InventoryIcon sx={{ fontSize: 40, color: "white" }} />
             </Avatar>
 
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: "bold",
-                color: "#333",
-                textAlign: "center",
-              }}
-            >
+            <Typography variant="h5" sx={{ fontWeight: "bold", color: COLORS.textSecondary, textAlign: "center" }}>
               {produtoSelecionado?.descricao || "Produto"}
             </Typography>
           </Box>
@@ -626,33 +603,21 @@ export default function CarrinhoPage() {
             centered
             sx={{
               mb: 3,
-              "& .MuiTab-root": {
-                fontWeight: "bold",
-                fontSize: "16px",
-                color: "#333", // cor padrão quando não selecionado
-              },
-              "& .MuiTab-root.Mui-selected": {
-                color: "#9AE4FF", // cor azul quando ativo
-              },
-              "& .MuiTabs-indicator": {
-                backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
-              },
+              "& .MuiTab-root": { fontWeight: "bold", fontSize: "16px", color: COLORS.textSecondary },
+              "& .MuiTab-root.Mui-selected": { color: COLORS.primaryBlue },
+              "& .MuiTabs-indicator": { backgroundColor: COLORS.primaryBlue },
             }}
           >
             <Tab label="Informações Básicas" />
             <Tab label="Detalhes Adicionais" />
           </Tabs>
 
-          {/* Tab 0: Informações Básicas */}
           {tabValue === 0 && produtoSelecionado && (
             <Box>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                    <Typography
-                      variant="h6"
-                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
-                    >
+                  <Paper sx={{ p: 2, backgroundColor: COLORS.primaryPink }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: COLORS.textSecondary }}>
                       Dados do Produto
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
@@ -663,38 +628,24 @@ export default function CarrinhoPage() {
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Estado:</strong>{" "}
-                      <Chip
-                        label={produtoSelecionado.estadoConservacao}
-                        color="success"
-                        size="small"
-                      />
+                      <Chip label={produtoSelecionado.estadoConservacao} color="success" size="small" />
                     </Typography>
                   </Paper>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                    <Typography
-                      variant="h6"
-                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
-                    >
+                  <Paper sx={{ p: 2, backgroundColor: COLORS.primaryPink }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: COLORS.textSecondary }}>
                       Preço e Estoque
                     </Typography>
                     <Typography
                       variant="body1"
-                      sx={{
-                        mb: 1,
-                        fontSize: "18px",
-                        fontWeight: "bold",
-                        color: "#4CAF50",
-                      }}
+                      sx={{ mb: 1, fontSize: "18px", fontWeight: "bold", color: "#4CAF50" }}
                     >
-                      <strong>Preço:</strong> R${" "}
-                      {formatarPreco(produtoSelecionado.preco)}
+                      <strong>Preço:</strong> R$ {formatarPreco(produtoSelecionado.preco)}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Quantidade:</strong>{" "}
-                      {produtoSelecionado.quantidade} unidades
+                      <strong>Quantidade:</strong> {produtoSelecionado.quantidade} unidades
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Tamanho:</strong> {produtoSelecionado.tamanho}
@@ -705,16 +656,12 @@ export default function CarrinhoPage() {
             </Box>
           )}
 
-          {/* Tab 1: Detalhes Adicionais */}
           {tabValue === 1 && produtoSelecionado && (
             <Box>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
-                    <Typography
-                      variant="h6"
-                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
-                    >
+                  <Paper sx={{ p: 3, backgroundColor: COLORS.primaryPink }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: COLORS.textSecondary }}>
                       Características
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
@@ -727,19 +674,14 @@ export default function CarrinhoPage() {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 3, backgroundColor: "#FADADD" }}>
-                    <Typography
-                      variant="h6"
-                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
-                    >
+                  <Paper sx={{ p: 3, backgroundColor: COLORS.primaryPink }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: COLORS.textSecondary }}>
                       Controle
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       <strong>Data de Adição:</strong>{" "}
                       {produtoSelecionado.dataAdicao
-                        ? new Date(
-                            produtoSelecionado.dataAdicao
-                          ).toLocaleDateString("pt-BR")
+                        ? new Date(produtoSelecionado.dataAdicao).toLocaleDateString("pt-BR")
                         : "Não informada"}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
@@ -757,30 +699,22 @@ export default function CarrinhoPage() {
           )}
         </DialogContent>
 
-        <DialogActions
-          sx={{
-            justifyContent: "center",
-            gap: 2,
-            px: 4,
-            pb: 4,
-          }}
-        >
+        <DialogActions sx={{ justifyContent: "center", gap: 2, px: 4, pb: 4 }}>
           <Button
             onClick={handleCloseProductModal}
             sx={{
-              backgroundColor: "#FADADD",
-              color: "#333",
+              backgroundColor: COLORS.primaryPink,
+              color: COLORS.textSecondary,
               fontWeight: "bold",
               fontSize: "16px",
               borderRadius: "25px",
               padding: "12px 32px",
               minWidth: "120px",
               textTransform: "none",
-              boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+              boxShadow: SHADOWS.button,
               "&:hover": {
-                backgroundColor: "#FFB6C1",
+                backgroundColor: COLORS.actionPinkHover,
                 transform: "translateY(-2px)",
-                boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
               },
               transition: "all 0.3s ease",
             }}
@@ -790,66 +724,7 @@ export default function CarrinhoPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog
-        open={openDeleteConfirmation}
-        onClose={handleCancelDelete}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "#FFE4E1",
-            boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
-            overflow: "visible",
-            textAlign: "center",
-            p: 3,
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{ fontWeight: "bold", fontSize: "1.5rem", color: "#000" }}
-        >
-          <WarningIcon sx={{ fontSize: 50, color: "orange", mb: 2 }} />
-          <br />
-          Confirmar Remoção
-        </DialogTitle>
-
-        <DialogContent>
-          <Typography sx={{ fontSize: "1.2rem", mb: 2 }}>
-            Tem certeza que deseja remover{" "}
-            <strong>{itemToDelete?.descricao}</strong> do carrinho?
-          </Typography>
-        </DialogContent>
-
-        <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 3 }}>
-          <Button
-            onClick={handleCancelDelete}
-            sx={{
-              backgroundColor: "#9AE4FF",
-              color: "#000",
-              borderRadius: "25px",
-              px: 4,
-              fontWeight: "bold",
-              "&:hover": { backgroundColor: "#7ed3f9" },
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleDeleteItem}
-            sx={{
-              backgroundColor: "#FF6347",
-              color: "white",
-              borderRadius: "25px",
-              px: 4,
-              fontWeight: "bold",
-              "&:hover": { backgroundColor: "#e5533d" },
-            }}
-          >
-            Confirmar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Modal de Finalizar Venda */}
       <Dialog
         open={openSellModal}
         onClose={handleCloseSellModal}
@@ -858,68 +733,45 @@ export default function CarrinhoPage() {
         PaperProps={{
           sx: {
             borderRadius: "20px",
-            background: "#F5F5F5",
-            boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+            background: COLORS.backgroundPaper,
+            boxShadow: SHADOWS.modal,
             overflow: "visible",
             maxHeight: "90vh",
           },
         }}
       >
-        {/* Cabeçalho */}
-        <DialogTitle
-          sx={{
-            textAlign: "center",
-            pb: 2,
-            pt: 4,
-            position: "relative",
-          }}
-        >
+        <DialogTitle sx={{ textAlign: "center", pb: 2, pt: 4, position: "relative" }}>
           <IconButton
             onClick={handleCloseSellModal}
             sx={{
               position: "absolute",
               right: 8,
               top: 8,
-              color: "#666",
+              color: COLORS.textMuted,
               "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.1)" },
             }}
           >
             <CloseIcon />
           </IconButton>
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
             <Avatar
               sx={{
                 width: 80,
                 height: 80,
-                backgroundColor: "#9AE4FF",
+                backgroundColor: COLORS.primaryBlue,
                 boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
               }}
             >
               <CheckCircleIcon sx={{ fontSize: 40, color: "white" }} />
             </Avatar>
 
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: "bold",
-                color: "#333",
-                textAlign: "center",
-              }}
-            >
+            <Typography variant="h5" sx={{ fontWeight: "bold", color: COLORS.textSecondary, textAlign: "center" }}>
               Finalizar Venda
             </Typography>
           </Box>
         </DialogTitle>
 
-        {/* Conteúdo */}
         <DialogContent sx={{ px: 4, pb: 2 }}>
           <Tabs
             value={tabValue}
@@ -927,20 +779,15 @@ export default function CarrinhoPage() {
             centered
             sx={{
               mb: 3,
-              "& .MuiTab-root": {
-                fontWeight: "bold",
-                fontSize: "16px",
-                color: "#333",
-              },
-              "& .MuiTab-root.Mui-selected": { color: "#9AE4FF" },
-              "& .MuiTabs-indicator": { backgroundColor: "#9AE4FF" },
+              "& .MuiTab-root": { fontWeight: "bold", fontSize: "16px", color: COLORS.textSecondary },
+              "& .MuiTab-root.Mui-selected": { color: COLORS.primaryBlue },
+              "& .MuiTabs-indicator": { backgroundColor: COLORS.primaryBlue },
             }}
           >
             <Tab label="Itens da Venda" />
             <Tab label="Resumo e Total" />
           </Tabs>
 
-          {/* Tab 0: Itens da Venda */}
           {tabValue === 0 && (
             <TableContainer
               component={Paper}
@@ -949,43 +796,32 @@ export default function CarrinhoPage() {
                 mb: 2,
                 borderRadius: 2,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                backgroundColor: "#fff", // fundo branco igual ao segundo modal
+                backgroundColor: "#fff",
               }}
             >
               <Table stickyHeader>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: "#FADADD" }}>
-                    <TableCell sx={{ fontWeight: "bold" }}>Descrição</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: "bold", backgroundColor: COLORS.primaryPink }}>Descrição</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold", backgroundColor: COLORS.primaryPink }}>
                       Quantidade
                     </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                    <TableCell align="center" sx={{ fontWeight: "bold", backgroundColor: COLORS.primaryPink }}>
                       Preço Unitário
                     </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                    <TableCell align="center" sx={{ fontWeight: "bold", backgroundColor: COLORS.primaryPink }}>
                       Valor Total
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {cartItems.map((item) => (
-                    <TableRow
-                      key={item.id}
-                      sx={{ "&:hover": { bgcolor: "#E0E0E0" } }}
-                    >
+                    <TableRow key={item.id} sx={{ "&:hover": { bgcolor: "#E0E0E0" } }}>
                       <TableCell>{item.descricao}</TableCell>
+                      <TableCell align="center">{item.quantidade != null ? item.quantidade : 1}</TableCell>
+                      <TableCell align="center">R$ {formatarPreco(item.preco)}</TableCell>
                       <TableCell align="center">
-                        {item.quantidade != null ? item.quantidade : 1}
-                      </TableCell>
-                      <TableCell align="center">
-                        R$ {formatarPreco(item.preco)}
-                      </TableCell>
-                      <TableCell align="center">
-                        R${" "}
-                        {formatarPreco(
-                          (item.preco || 0) *
-                            (item.quantidade != null ? item.quantidade : 1)
-                        )}
+                        R$ {formatarPreco((item.preco || 0) * (item.quantidade != null ? item.quantidade : 1))}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -994,46 +830,50 @@ export default function CarrinhoPage() {
             </TableContainer>
           )}
 
-          {/* Tab 1: Resumo e Total */}
           {tabValue === 1 && (
-            <Box sx={{ textAlign: "right", mt: 2 }}>
-              <Typography
-                sx={{ fontWeight: "bold", fontSize: "1.2rem", mb: 2 }}
-              >
-                Valor Total: R$ {formatarPreco(totalValue)}
-              </Typography>
-              <Typography sx={{ fontSize: "1rem", color: "#555" }}>
-                Confirme os detalhes antes de finalizar a venda.
-              </Typography>
+            <Box sx={{ mt: 2 }}>
+              <TextField
+                label="Nome do Cliente (opcional)"
+                value={nomeCliente}
+                onChange={(e) => setNomeCliente(e.target.value)}
+                fullWidth
+                variant="outlined"
+                placeholder="Ex: Maria Silva"
+                sx={{
+                  mb: 3,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                  },
+                }}
+              />
+              <Box sx={{ textAlign: "right" }}>
+                <Typography sx={{ fontWeight: "bold", fontSize: "1.2rem", mb: 2 }}>
+                  Valor Total: R$ {formatarPreco(totalValue)}
+                </Typography>
+                <Typography sx={{ fontSize: "1rem", color: COLORS.textMuted }}>
+                  Confirme os detalhes antes de finalizar a venda.
+                </Typography>
+              </Box>
             </Box>
           )}
         </DialogContent>
 
-        {/* Ações */}
-        <DialogActions
-          sx={{
-            justifyContent: "center",
-            gap: 2,
-            px: 4,
-            pb: 4,
-          }}
-        >
+        <DialogActions sx={{ justifyContent: "center", gap: 2, px: 4, pb: 4 }}>
           <Button
             onClick={handleCloseSellModal}
             sx={{
-              backgroundColor: "#FADADD",
-              color: "#333",
+              backgroundColor: COLORS.primaryPink,
+              color: COLORS.textSecondary,
               fontWeight: "bold",
               fontSize: "16px",
               borderRadius: "25px",
               padding: "12px 32px",
               minWidth: "120px",
               textTransform: "none",
-              boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+              boxShadow: SHADOWS.button,
               "&:hover": {
-                backgroundColor: "#FFB6C1",
+                backgroundColor: COLORS.actionPinkHover,
                 transform: "translateY(-2px)",
-                boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
               },
               transition: "all 0.3s ease",
             }}
@@ -1043,6 +883,7 @@ export default function CarrinhoPage() {
 
           <Button
             onClick={handleFinalizarVenda}
+            disabled={loading}
             sx={{
               backgroundColor: "#4caf50",
               color: "#fff",
@@ -1058,30 +899,30 @@ export default function CarrinhoPage() {
                 transform: "translateY(-2px)",
                 boxShadow: "0px 6px 16px rgba(76, 175, 80, 0.6)",
               },
+              "&.Mui-disabled": { bgcolor: COLORS.backgroundPaper, color: COLORS.textMuted },
               transition: "all 0.3s ease",
             }}
           >
-            Confirmar
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Confirmar"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-          variant="filled"
-          elevation={6}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmDialog
+        open={deleteModal.open}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Remoção"
+        message={`Tem certeza que deseja remover "${deleteModal.item?.descricao}" do carrinho?`}
+        subMessage="O item será devolvido ao estoque."
+        confirmText="Remover"
+        confirmColor="danger"
+        content={deleteModalContent}
+      />
+
+      {/* Snackbar de notificações */}
+      <SnackbarAlert {...snackbar} onClose={closeSnackbar} />
+    </PageLayout>
   );
 }

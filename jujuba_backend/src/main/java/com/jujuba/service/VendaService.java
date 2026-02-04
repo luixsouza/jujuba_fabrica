@@ -31,6 +31,11 @@ public class VendaService {
 
     @Transactional
     public Venda finalizarVendaSimples() {
+        return finalizarVendaSimples(null);
+    }
+
+    @Transactional
+    public Venda finalizarVendaSimples(String nomeCliente) {
         List<Produto> produtosCarrinho = carrinhoService.listarProdutos();
 
         if (produtosCarrinho.isEmpty()) {
@@ -42,16 +47,17 @@ public class VendaService {
             if (produtoCarrinho.getQuantidade() == null || produtoCarrinho.getQuantidade() <= 0) {
                 throw new ProductUnavailableException("Produto indisponível ou fora de estoque: " + produtoCarrinho.getDescricao());
             }
-            
+
             // Carrega a entidade real para evitar sobrescrever o estoque com a quantidade do carrinho
             Produto produtoReal = produtoRepository.findById(produtoCarrinho.getId())
                     .orElseThrow(() -> new ProductUnavailableException("Produto não encontrado: " + produtoCarrinho.getId()));
-            
+
             itens.add(VendaMapper.criarItemVenda(produtoReal, produtoCarrinho.getQuantidade()));
         }
 
         BigDecimal totalVenda = carrinhoService.calcularTotal();
         Venda venda = VendaMapper.mapearVendaSimples(totalVenda, itens);
+        venda.setNomeCliente(nomeCliente);
 
         carrinhoService.limparCarrinho();
 

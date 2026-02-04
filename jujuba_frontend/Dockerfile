@@ -1,23 +1,43 @@
-# Use imagem oficial Node.js slim
-FROM node:18-alpine
-
-# Define diretório de trabalho
+# Build stage
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copia package.json e package-lock.json para instalar dependências
-COPY package*.json ./
+# Copy package files
+COPY package.json yarn.lock* package-lock.json* ./
 
-# Instala dependências
-RUN npm install
+# Install dependencies
+RUN npm ci --legacy-peer-deps
 
-# Copia todo o código fonte para o container
+# Copy source code
 COPY . .
 
-# Expõe porta 3000 (Next.js)
+# Set build-time environment variable
+ARG NEXT_PUBLIC_API_URL=http://localhost:8080
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
+# Build the application
+RUN npm run build
+
+# Runtime stage
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -u 1001 -S nextjs -G nodejs
+
+# Copy built assets
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+USER nextjs
+
 EXPOSE 3000
 
-# Define variável de ambiente (caso queira passar direto no Dockerfile)
-ENV NEXT_PUBLIC_API_URL=http://backend:8080/
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-# Comando para iniciar o Next.js em modo dev
-CMD ["npm", "run", "dev"]
+CMD ["node", "server.js"]

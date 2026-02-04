@@ -28,8 +28,14 @@ public class VendaController {
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
     })
     @PostMapping("/finalizar/simples")
+    public ResponseEntity<Venda> finalizarVendaSimples(
+            @RequestParam(required = false) String nomeCliente) {
+        return ResponseEntity.ok(vendaService.finalizarVendaSimples(nomeCliente));
+    }
+
+    // Método overloaded para compatibilidade com testes
     public ResponseEntity<Venda> finalizarVendaSimples() {
-        return ResponseEntity.ok(vendaService.finalizarVendaSimples());
+        return finalizarVendaSimples(null);
     }
 
     @Operation(summary = "Finaliza uma venda com fornecedora")

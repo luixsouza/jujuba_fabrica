@@ -1,33 +1,36 @@
-# Etapa 1: Build
-FROM maven:3.8.5-openjdk-17 AS build
-
+# Build stage
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copiar apenas o pom.xml primeiro e baixar dependências para cache
+# Copy pom.xml and download dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copiar o restante do código
+# Copy source code and build
 COPY src ./src
-
-# Compilar o projeto (sem testes para agilizar a build)
 RUN mvn clean package -DskipTests -B
 
-# Etapa 2: Imagem final para produção
-FROM openjdk:17-jdk-slim
-
-# Criar um usuário não-root por segurança
-RUN addgroup --system spring && adduser --system --ingroup spring spring
-
+# Runtime stage
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-# Copiar apenas o JAR final da etapa de build
-COPY --from=build /app/target/jujuba-0.0.1-SNAPSHOT.jar app.jar
+# Create non-root user for security
+RUN addgroup -g 1001 -S jujuba && \
+    adduser -u 1001 -S jujuba -G jujuba
 
-# Trocar para o usuário não-root
-USER spring:spring
+# Create uploads directory
+RUN mkdir -p /app/uploads && chown -R jujuba:jujuba /app
+
+# Copy jar from build stage
+COPY --from=build /app/target/*.jar app.jar
+RUN chown jujuba:jujuba app.jar
+
+USER jujuba
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
 EXPOSE 8080
 
-# Evita a substituição do ENTRYPOINT em ambientes como Kubernetes
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

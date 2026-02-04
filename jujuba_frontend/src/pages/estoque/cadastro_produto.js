@@ -16,7 +16,7 @@ import {
 import { ArrowBack, Home } from "@mui/icons-material";
 import Sidebar from "../../components/sidebar";
 import { useRouter } from "next/router";
-import { ProdutoService } from "../services/produto-service";
+import { ProdutoService } from "../../services/produto-service";
 
 export default function ProdutoCadastro() {
   const [produto, setProduto] = useState({

@@ -158,11 +158,13 @@ export const excluirVenda = async (id) => {
 /**
  * Finaliza a venda atual do carrinho (venda simples).
  * Esta função chama o endpoint POST /api/vendas/finalizar/simples.
+ * @param {string} nomeCliente - Nome do cliente (opcional)
  */
-export const finalizarVendaSimples = async () => {
+export const finalizarVendaSimples = async (nomeCliente = "") => {
   try {
-    // A URL correta, de acordo com o seu VendaController.java
-    const response = await api.post("/vendas/finalizar/simples");
+    // Monta a URL com o parâmetro opcional
+    const params = nomeCliente ? `?nomeCliente=${encodeURIComponent(nomeCliente)}` : "";
+    const response = await api.post(`/vendas/finalizar/simples${params}`);
 
     // O backend retorna a venda criada, então podemos processá-la.
     return {

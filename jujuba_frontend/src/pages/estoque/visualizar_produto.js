@@ -14,7 +14,7 @@ import {
 import { ArrowBack, Home, Edit } from "@mui/icons-material";
 import Sidebar from "../../components/sidebar";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ProdutoService } from "../services/produto-service";
+import { ProdutoService } from "../../services/produto-service";
 
 export default function ProdutoVisualizacao() {
   const [produto, setProduto] = useState(null);

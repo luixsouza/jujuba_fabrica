@@ -17,7 +17,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@JsonIgnoreProperties({"contato", "endereco", "chavePix", "creditoLoja", "contratoUrl", "lotes"})
+@JsonIgnoreProperties({"endereco", "creditoLoja", "contratoUrl", "lotes"})
 @Table(name = "fornecedora")
 public class Fornecedora {
 

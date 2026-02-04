@@ -14,8 +14,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Service
 public class JwtUserDetailsService implements UserDetailsService {
-    
+
     private final UsuarioService usuarioService;
+    private final JwtUtils jwtUtils;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -25,6 +26,6 @@ public class JwtUserDetailsService implements UserDetailsService {
 
     public JwtToken getTokenAuthenticated(String username) {
         Role role = usuarioService.buscarRolePorUsername(username);
-        return JwtUtils.createToken(username, role.name().substring("ROLE_".length()));
+        return jwtUtils.createToken(username, role.name().substring("ROLE_".length()));
     }
 }

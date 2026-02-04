@@ -3,6 +3,7 @@ package com.jujuba.model;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,4 +34,16 @@ public class ItemVenda {
 
     @Column(name = "subtotal", nullable = false)
     private BigDecimal subtotal;
+
+    /**
+     * Expõe a fornecedora do produto via JSON.
+     * A fornecedora vem do lote ao qual o produto pertence.
+     */
+    @JsonProperty("fornecedora")
+    public Fornecedora getFornecedora() {
+        if (produto != null && produto.getLote() != null) {
+            return produto.getLote().getFornecedora();
+        }
+        return null;
+    }
 }

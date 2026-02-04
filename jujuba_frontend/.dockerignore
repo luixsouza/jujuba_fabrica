@@ -1,5 +1,10 @@
-node_modules
-.next
-.DS_Store
+node_modules/
+.next/
 .git
-.env
+.gitignore
+*.log
+npm-debug.log*
+.env*.local
+README.md
+.idea/
+coverage/

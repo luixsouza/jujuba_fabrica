@@ -129,11 +129,13 @@ const VendasPage = () => {
   const handlePageTabChange = (event, newValue) => setPageTabValue(newValue);
 
   // Obter fornecedores dos itens
+  // A fornecedora agora vem diretamente do item (item.fornecedora) via endpoint atualizado
   const getFornecedoresDosItens = (itens) => {
     const fornecedoresMap = new Map();
     itens.forEach((item) => {
-      if (item.produto?.lote?.fornecedora) {
-        const fornecedora = item.produto.lote.fornecedora;
+      // Tenta obter a fornecedora diretamente do item ou via produto.lote (fallback)
+      const fornecedora = item.fornecedora || item.produto?.lote?.fornecedora;
+      if (fornecedora) {
         if (!fornecedoresMap.has(fornecedora.id)) {
           fornecedoresMap.set(fornecedora.id, { ...fornecedora, produtos: [] });
         }
@@ -280,8 +282,9 @@ const VendasPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell sx={headerCellStyle}>Itens</TableCell>
-                  <TableCell sx={{ ...headerCellStyle, display: { xs: 'none', sm: 'table-cell' } }}>Data/Hora</TableCell>
-                  <TableCell sx={{ ...headerCellStyle, display: { xs: 'none', md: 'table-cell' } }}>Tipo</TableCell>
+                  <TableCell sx={{ ...headerCellStyle, display: { xs: 'none', sm: 'table-cell' } }}>Comprador</TableCell>
+                  <TableCell sx={{ ...headerCellStyle, display: { xs: 'none', md: 'table-cell' } }}>Data/Hora</TableCell>
+                  <TableCell sx={{ ...headerCellStyle, display: { xs: 'none', lg: 'table-cell' } }}>Tipo</TableCell>
                   <TableCell sx={headerCellStyle}>Total</TableCell>
                   <TableCell sx={{ ...headerCellStyle, borderRight: "none" }}>Ações</TableCell>
                 </TableRow>
@@ -289,13 +292,13 @@ const VendasPage = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} sx={{ textAlign: "center", py: { xs: 2, md: 4 } }}>
+                    <TableCell colSpan={6} sx={{ textAlign: "center", py: { xs: 2, md: 4 } }}>
                       <Typography sx={{ fontSize: FONT_SIZES.body }}>Carregando...</Typography>
                     </TableCell>
                   </TableRow>
                 ) : filteredVendas.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} sx={{ textAlign: "center", py: { xs: 2, md: 4 } }}>
+                    <TableCell colSpan={6} sx={{ textAlign: "center", py: { xs: 2, md: 4 } }}>
                       <Typography sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.body }}>
                         Nenhuma venda encontrada
                       </Typography>
@@ -344,9 +347,14 @@ const VendasPage = () => {
                             </Box>
                           </TableCell>
                           <TableCell sx={{ ...bodyCellStyle, fontWeight: isRecente ? "bold" : "normal", display: { xs: 'none', sm: 'table-cell' } }}>
+                            {venda.tipoVenda === "VENDA_FORNECEDOR"
+                              ? (venda.fornecedora?.nome || "-")
+                              : (venda.nomeCliente || "-")}
+                          </TableCell>
+                          <TableCell sx={{ ...bodyCellStyle, fontWeight: isRecente ? "bold" : "normal", display: { xs: 'none', md: 'table-cell' } }}>
                             {formatarData(venda.dataVenda)}
                           </TableCell>
-                          <TableCell sx={{ ...bodyCellStyle, display: { xs: 'none', md: 'table-cell' } }}>
+                          <TableCell sx={{ ...bodyCellStyle, display: { xs: 'none', lg: 'table-cell' } }}>
                             <Chip
                               label={venda.tipoVenda === "VENDA_SIMPLES" ? "Simples" : "Fornecedor"}
                               color={venda.tipoVenda === "VENDA_SIMPLES" ? "primary" : "secondary"}
@@ -561,15 +569,16 @@ const VendasPage = () => {
               "& .MuiTabs-indicator": { backgroundColor: COLORS.primaryBlue },
             }}
           >
-            <Tab label="Geral" />
+            <Tab label="Resumo" />
             <Tab label="Itens" />
-            <Tab label="Fornecedores" />
+            <Tab label="Repasse" />
           </Tabs>
 
-          {/* Tab 0: Informações Gerais */}
+          {/* Tab 0: Resumo da Venda */}
           {tabValue === 0 && detailsModal.venda && (
             <Box>
               <Grid container spacing={{ xs: 2, md: 3 }}>
+                {/* Dados da Venda */}
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: { xs: 1.5, md: 2 }, backgroundColor: COLORS.primaryPink }}>
                     <Typography variant="h6" sx={{ mb: { xs: 1, md: 2 }, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
@@ -582,50 +591,92 @@ const VendasPage = () => {
                       <strong>Data/Hora:</strong> {formatarData(detailsModal.venda.dataVenda)}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
-                      <strong>Tipo:</strong>{" "}
-                      <Chip
-                        label={detailsModal.venda.tipoVenda === "VENDA_SIMPLES" ? "Venda Simples" : "Venda Fornecedor"}
-                        color={detailsModal.venda.tipoVenda === "VENDA_SIMPLES" ? "primary" : "secondary"}
-                        size="small"
-                        sx={{ fontSize: FONT_SIZES.chip }}
-                      />
+                      <strong>Qtd. Itens:</strong> {detailsModal.venda.itens?.length || 0}
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontSize: FONT_SIZES.body }}>
+                      <strong>{detailsModal.venda.tipoVenda === "VENDA_FORNECEDOR" ? "Comprador (Fornecedor):" : "Cliente:"}</strong>{" "}
+                      {detailsModal.venda.tipoVenda === "VENDA_FORNECEDOR"
+                        ? (detailsModal.venda.fornecedora?.nome || "Não identificado")
+                        : (detailsModal.venda.nomeCliente || "Não identificado")}
                     </Typography>
                   </Paper>
                 </Grid>
+
+                {/* Resumo Financeiro */}
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: { xs: 1.5, md: 2 }, backgroundColor: COLORS.primaryPink }}>
                     <Typography variant="h6" sx={{ mb: { xs: 1, md: 2 }, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
-                      Valores
+                      Resumo Financeiro
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body, fontWeight: "bold", color: COLORS.success }}>
-                      <strong>Total:</strong> {formatarValor(detailsModal.venda.total)}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
-                      <strong>Valor Brechó:</strong> {formatarValor(detailsModal.venda.valorBrecho)}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
-                      <strong>Valor Fornecedora:</strong> {formatarValor(detailsModal.venda.valorFornecedora)}
-                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                      <Typography variant="body1" sx={{ fontSize: FONT_SIZES.body }}>Total da Venda:</Typography>
+                      <Typography variant="body1" sx={{ fontSize: FONT_SIZES.body, fontWeight: "bold", color: COLORS.success }}>
+                        {formatarValor(detailsModal.venda.total)}
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ my: 1 }} />
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall, color: COLORS.textMuted }}>
+                        Lucro Brechó:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall, fontWeight: "bold", color: COLORS.info }}>
+                        {formatarValor(detailsModal.venda.valorBrecho)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall, color: COLORS.textMuted }}>
+                        Repasse Fornecedora:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall, fontWeight: "bold", color: COLORS.warning }}>
+                        {formatarValor(detailsModal.venda.valorFornecedora)}
+                      </Typography>
+                    </Box>
                   </Paper>
                 </Grid>
-                {detailsModal.venda.fornecedora && (
-                  <Grid item xs={12}>
-                    <Paper sx={{ p: { xs: 1.5, md: 2 }, backgroundColor: COLORS.primaryPink }}>
-                      <Typography variant="h6" sx={{ mb: { xs: 1, md: 2 }, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
-                        Fornecedora Principal
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
-                        <strong>Nome:</strong> {detailsModal.venda.fornecedora.nome}
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
-                        <strong>Contato:</strong> {detailsModal.venda.fornecedora.contato}
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
-                        <strong>Chave Pix:</strong> {detailsModal.venda.fornecedora.chavePix}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                )}
+
+                {/* Tipo de Venda - Card explicativo */}
+                <Grid item xs={12}>
+                  <Paper sx={{
+                    p: { xs: 1.5, md: 2 },
+                    backgroundColor: detailsModal.venda.tipoVenda === "VENDA_SIMPLES" ? COLORS.primaryBlue : COLORS.info,
+                    color: "white"
+                  }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                      <Chip
+                        label={detailsModal.venda.tipoVenda === "VENDA_SIMPLES" ? "Venda Simples" : "Venda Fornecedor"}
+                        sx={{
+                          backgroundColor: "rgba(255,255,255,0.2)",
+                          color: "white",
+                          fontWeight: "bold",
+                          fontSize: FONT_SIZES.chip
+                        }}
+                      />
+                      {detailsModal.venda.tipoVenda === "VENDA_SIMPLES" ? (
+                        <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall, textAlign: "center" }}>
+                          Venda para cliente comum
+                          {(() => {
+                            const fornecedores = getFornecedoresDosItens(detailsModal.venda.itens || []);
+                            if (fornecedores.length > 0) {
+                              return `. Produtos de: ${fornecedores.map(f => f.nome).join(", ")}`;
+                            }
+                            return ". Produtos próprios do brechó";
+                          })()}
+                        </Typography>
+                      ) : (
+                        <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall, textAlign: "center" }}>
+                          Compra feita por: <strong>{detailsModal.venda.fornecedora?.nome || "Não identificado"}</strong>
+                          {(() => {
+                            const fornecedores = getFornecedoresDosItens(detailsModal.venda.itens || []);
+                            if (fornecedores.length > 0) {
+                              return <><br />Produtos fornecidos por: <strong>{fornecedores.map(f => f.nome).join(", ")}</strong></>;
+                            }
+                            return null;
+                          })()}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Paper>
+                </Grid>
               </Grid>
             </Box>
           )}
@@ -633,98 +684,179 @@ const VendasPage = () => {
           {/* Tab 1: Itens Vendidos */}
           {tabValue === 1 && detailsModal.venda && (
             <Box>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
-                Produtos Vendidos ({detailsModal.venda.itens?.length || 0} itens)
-              </Typography>
-              {detailsModal.venda.itens?.map((item, index) => (
-                <Paper key={index} sx={{ p: { xs: 1.5, md: 2 }, mb: 2, backgroundColor: COLORS.primaryPink }}>
-                  <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body1" sx={{ fontWeight: "bold", mb: 0.5, fontSize: FONT_SIZES.body }}>
-                        {item.produto?.descricao || "Produto sem descrição"}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.bodySmall }}>
-                        {item.produto?.marca || "N/A"} | {item.produto?.tamanho || "N/A"}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall }}>
-                        <strong>Qtd:</strong> {item.quantidade}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall }}>
-                        <strong>Unit:</strong> {formatarValor(item.precoUnitario)}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Typography sx={{ fontWeight: "bold", color: COLORS.success, textAlign: { xs: 'left', sm: 'right' }, fontSize: FONT_SIZES.body }}>
-                        {formatarValor(item.subtotal)}
-                      </Typography>
-                    </Grid>
-                  </Grid>
+              {detailsModal.venda.itens?.length === 0 ? (
+                <Paper sx={{ p: 3, backgroundColor: COLORS.primaryPink, textAlign: "center" }}>
+                  <Typography variant="body1" sx={{ color: COLORS.textMuted }}>
+                    Nenhum item registrado nesta venda.
+                  </Typography>
                 </Paper>
-              ))}
+              ) : (
+                detailsModal.venda.itens?.map((item, index) => (
+                  <Paper key={index} sx={{ p: { xs: 1.5, md: 2 }, mb: 1.5, backgroundColor: COLORS.primaryPink }}>
+                    <Grid container spacing={1} alignItems="center">
+                      <Grid item xs={7} sm={6}>
+                        <Typography variant="body1" sx={{ fontWeight: "bold", fontSize: FONT_SIZES.body }}>
+                          {item.produto?.descricao || "Produto"}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.bodySmall }}>
+                          {item.produto?.marca || "-"} • Tam: {item.produto?.tamanho || "-"}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={2} sm={3} sx={{ textAlign: "center" }}>
+                        <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall, color: COLORS.textMuted }}>
+                          {item.quantidade}x {formatarValor(item.precoUnitario)}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={3} sm={3} sx={{ textAlign: "right" }}>
+                        <Typography sx={{ fontWeight: "bold", color: COLORS.success, fontSize: FONT_SIZES.body }}>
+                          {formatarValor(item.subtotal)}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                ))
+              )}
+
+              {/* Total */}
+              {detailsModal.venda.itens?.length > 0 && (
+                <Paper sx={{ p: 2, backgroundColor: COLORS.primaryBlue, color: "white", mt: 2 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                      Total ({detailsModal.venda.itens?.length} {detailsModal.venda.itens?.length === 1 ? "item" : "itens"})
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                      {formatarValor(detailsModal.venda.total)}
+                    </Typography>
+                  </Box>
+                </Paper>
+              )}
             </Box>
           )}
 
-          {/* Tab 2: Fornecedores dos Produtos */}
+          {/* Tab 2: Repasse */}
           {tabValue === 2 && detailsModal.venda && (
             <Box>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
-                Fornecedores dos Produtos
-              </Typography>
               {(() => {
-                const fornecedores = getFornecedoresDosItens(detailsModal.venda.itens || []);
-                if (fornecedores.length === 0) {
+                const fornecedoresDasVendas = getFornecedoresDosItens(detailsModal.venda.itens || []);
+                const temFornecedores = fornecedoresDasVendas.length > 0;
+
+                if (!temFornecedores) {
+                  // Nenhuma fornecedora nos itens - produtos próprios do brechó
                   return (
-                    <Paper sx={{ p: { xs: 2, md: 3 }, backgroundColor: COLORS.primaryPink, textAlign: "center" }}>
-                      <Typography variant="body1" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.body }}>
-                        Nenhum fornecedor associado.
-                      </Typography>
-                    </Paper>
+                    <Box>
+                      <Paper sx={{ p: 3, backgroundColor: COLORS.primaryBlue, color: "white", textAlign: "center", mb: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+                          Produtos Próprios do Brechó
+                        </Typography>
+                        <Typography variant="body2">
+                          Não há repasse para fornecedoras. Todo o valor fica com o brechó.
+                        </Typography>
+                      </Paper>
+
+                      <Paper sx={{ p: 2, backgroundColor: COLORS.primaryPink }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                          <Typography variant="body1">Total da Venda:</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                            {formatarValor(detailsModal.venda.total)}
+                          </Typography>
+                        </Box>
+                        <Divider sx={{ my: 1 }} />
+                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                          <Typography variant="body1" sx={{ fontWeight: "bold", color: COLORS.success }}>
+                            Lucro do Brechó:
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: "bold", color: COLORS.success }}>
+                            {formatarValor(detailsModal.venda.total)}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    </Box>
                   );
                 }
-                return fornecedores.map((fornecedora) => (
-                  <Paper key={fornecedora.id} sx={{ p: { xs: 2, md: 3 }, mb: 2, backgroundColor: COLORS.primaryPink }}>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                      <Avatar sx={{ backgroundColor: COLORS.actionBlue, mr: 2, width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}>
-                        <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
-                      </Avatar>
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.body }}>
-                          {fornecedora.nome}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.bodySmall }}>
-                          {fornecedora.contato} | {fornecedora.chavePix}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Divider sx={{ mb: 2 }} />
-                    {fornecedora.produtos.map((produtoInfo, prodIndex) => (
-                      <Box key={prodIndex} sx={{ mb: 1, p: 1 }}>
-                        <Grid container spacing={1} alignItems="center">
-                          <Grid item xs={6}>
-                            <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: FONT_SIZES.bodySmall }}>
-                              {produtoInfo.produto.descricao}
+
+                // Há fornecedoras - mostrar repasse para cada uma
+                return (
+                  <Box>
+                    {/* Lista de Fornecedoras que receberão repasse */}
+                    {fornecedoresDasVendas.map((fornecedora, index) => (
+                      <Paper key={fornecedora.id || index} sx={{ p: { xs: 2, md: 3 }, backgroundColor: COLORS.primaryPink, mb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                          <Avatar sx={{ backgroundColor: COLORS.actionBlue, mr: 2, width: 48, height: 48 }}>
+                            <PersonIcon />
+                          </Avatar>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="h6" sx={{ fontWeight: "bold", color: COLORS.textSecondary }}>
+                              {fornecedora.nome}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.bodySmall }}>
+                              Fornecedora dos produtos ({fornecedora.produtos.length} {fornecedora.produtos.length === 1 ? "item" : "itens"})
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <Divider sx={{ my: 2 }} />
+
+                        {/* Dados de Contato */}
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.bodySmall }}>
+                              Contato
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                              {fornecedora.contato || "Não informado"}
                             </Typography>
                           </Grid>
-                          <Grid item xs={3}>
-                            <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall }}>Qtd: {produtoInfo.quantidade}</Typography>
-                          </Grid>
-                          <Grid item xs={3}>
-                            <Typography variant="body2" sx={{ fontWeight: "bold", color: COLORS.success, fontSize: FONT_SIZES.bodySmall }}>
-                              {formatarValor(produtoInfo.subtotal)}
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.bodySmall }}>
+                              Chave Pix
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                              {fornecedora.chavePix || "Não informado"}
                             </Typography>
                           </Grid>
                         </Grid>
-                      </Box>
+
+                        {/* Valor do repasse desta fornecedora */}
+                        <Box sx={{ mt: 2, p: 1.5, backgroundColor: "rgba(255,255,255,0.5)", borderRadius: 1 }}>
+                          <Typography variant="body2" sx={{ color: COLORS.textMuted, mb: 0.5 }}>
+                            Valor dos produtos desta fornecedora:
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: "bold", color: COLORS.warning }}>
+                            {formatarValor(fornecedora.produtos.reduce((sum, p) => sum + (p.subtotal || 0), 0) * 0.7)}
+                            <Typography component="span" variant="body2" sx={{ ml: 1, color: COLORS.textMuted }}>
+                              (70% repasse)
+                            </Typography>
+                          </Typography>
+                        </Box>
+                      </Paper>
                     ))}
-                    <Box sx={{ mt: 2, p: 1, borderTop: `1px solid ${COLORS.borderLight}` }}>
-                      <Typography variant="body1" sx={{ fontWeight: "bold", textAlign: "right", fontSize: FONT_SIZES.body }}>
-                        Total: {formatarValor(fornecedora.produtos.reduce((sum, p) => sum + (p.subtotal || 0), 0))}
+
+                    {/* Resumo do Repasse */}
+                    <Paper sx={{ p: 2, backgroundColor: COLORS.info, color: "white" }}>
+                      <Typography variant="body2" sx={{ mb: 2, textAlign: "center", opacity: 0.9 }}>
+                        Divisão do valor da venda
                       </Typography>
-                    </Box>
-                  </Paper>
-                ));
+                      <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                          <Box sx={{ textAlign: "center", p: 1, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 1 }}>
+                            <Typography variant="body2" sx={{ opacity: 0.9 }}>Brechó recebe</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                              {formatarValor(detailsModal.venda.valorBrecho)}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Box sx={{ textAlign: "center", p: 1, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 1 }}>
+                            <Typography variant="body2" sx={{ opacity: 0.9 }}>Fornecedoras recebem</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                              {formatarValor(detailsModal.venda.valorFornecedora)}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Box>
+                );
               })()}
             </Box>
           )}

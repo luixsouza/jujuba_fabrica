@@ -162,3 +162,41 @@ export const removerDoCarrinho = async (produtoId) => {
     return tratarErro(error);
   }
 };
+
+/**
+ * Incrementa a quantidade de um produto no carrinho (+1).
+ * @param {number} produtoId - O ID do produto.
+ */
+export const incrementarQuantidade = async (produtoId) => {
+  try {
+    await api.post(`/carrinho/adicionar/${produtoId}`);
+    return await listarCarrinho();
+  } catch (error) {
+    console.error("Erro ao incrementar quantidade:", error);
+    return tratarErro(error);
+  }
+};
+
+/**
+ * Decrementa a quantidade de um produto no carrinho (-1).
+ * Se a quantidade for 1, remove o item completamente.
+ * @param {number} produtoId - O ID do produto.
+ * @param {number} quantidadeAtual - A quantidade atual do item.
+ */
+export const decrementarQuantidade = async (produtoId, quantidadeAtual) => {
+  try {
+    if (quantidadeAtual <= 1) {
+      // Se quantidade é 1, remover o item
+      return await removerDoCarrinho(produtoId);
+    }
+
+    // Remover item e re-adicionar com quantidade-1
+    await api.delete(`/carrinho/remover/${produtoId}`);
+    await api.post(`/carrinho/adicionar/${produtoId}/${quantidadeAtual - 1}`);
+
+    return await listarCarrinho();
+  } catch (error) {
+    console.error("Erro ao decrementar quantidade:", error);
+    return tratarErro(error);
+  }
+};

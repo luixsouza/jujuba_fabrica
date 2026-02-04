@@ -21,24 +21,27 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtUserDetailsService detailsService;
 
+    @Autowired
+    private JwtUtils jwtUtils;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         final String token = request.getHeader(JwtUtils.JWT_AUTHORIZATION);
 
         if (token == null || !token.startsWith(JwtUtils.JWT_BEARER)) {
-            log.info("JWT Token está nulo, vazio ou não iniciado com 'Bearer '.");
+            log.info("JWT Token esta nulo, vazio ou nao iniciado com 'Bearer '.");
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (!JwtUtils.isTokenValid(token)) {
-            log.warn("JWT Token está inválido ou expirado.");
+        if (!jwtUtils.isTokenValid(token)) {
+            log.warn("JWT Token esta invalido ou expirado.");
             filterChain.doFilter(request, response);
             return;
         }
 
-        String username = JwtUtils.getUsernameFromToken(token);
+        String username = jwtUtils.getUsernameFromToken(token);
 
         toAuthentication(request, username);
 
@@ -56,4 +59,3 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
     }
 }
-

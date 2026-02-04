@@ -16,7 +16,7 @@ import {
 import { ArrowBack, Home, Save } from "@mui/icons-material";
 import Sidebar from "../../components/sidebar";
 import { useRouter } from "next/router";
-import { ProdutoService } from "../services/produto-service";
+import { ProdutoService } from "../../services/produto-service";
 import { getAllLotes, deleteLote } from "../api/lotes";
 
 // Enums baseados no backend

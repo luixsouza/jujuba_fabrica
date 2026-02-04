@@ -32,6 +32,9 @@ public class Venda {
     private BigDecimal valorBrecho;
     private BigDecimal valorFornecedora;
 
+    @Column(length = 200)
+    private String nomeCliente;
+
     @ManyToOne
     private Fornecedora fornecedora;
 
