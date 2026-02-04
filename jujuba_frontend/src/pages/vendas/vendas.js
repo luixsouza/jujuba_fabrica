@@ -1,47 +1,53 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, forwardRef } from "react";
 import {
   Box,
   Card,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   IconButton,
-  TextField,
-  Button,
-  TablePagination,
-  InputAdornment,
-  Autocomplete,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Avatar,
-  Slide,
-  Snackbar,
-  Alert,
   Chip,
   Tabs,
   Tab,
   Grid,
   Divider,
   Paper,
+  Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Slide,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CloseIcon from "@mui/icons-material/Close";
 import PersonIcon from "@mui/icons-material/Person";
 import ReceiptIcon from "@mui/icons-material/Receipt";
+
+// Componentes padronizados
+import {
+  PageLayout,
+  PageTitle,
+  SearchBar,
+  SnackbarAlert,
+} from "../../components/ui";
+
+// Hooks padronizados
+import { useSnackbar } from "../../hooks";
+
+// Constantes
+import { COLORS, SHADOWS, SPACING, FONT_SIZES, TABLE_CELL_PADDING } from "../../constants";
+
+// API
 import api from "../../utils/api";
-import { useRouter } from "next/navigation";
-import SearchIcon from "@mui/icons-material/Search";
-import Sidebar from "../../components/sidebar";
-import { forwardRef } from "react";
-import Head from "next/head";
 
 // Transição personalizada para o modal
 const Transition = forwardRef(function Transition(props, ref) {
@@ -49,52 +55,40 @@ const Transition = forwardRef(function Transition(props, ref) {
 });
 
 const VendasPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
   const [vendas, setVendas] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [search, setSearch] = useState("");
-  const [detailsModal, setDetailsModal] = useState({
-    open: false,
-    venda: null,
-  });
+  const [detailsModal, setDetailsModal] = useState({ open: false, venda: null });
   const [tabValue, setTabValue] = useState(0);
   const [pageTabValue, setPageTabValue] = useState(0);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
-  const router = useRouter();
 
-  // Função para ordenar vendas por data (mais recente primeiro)
+  const { snackbar, showError, closeSnackbar } = useSnackbar();
+
+  // Ordenar vendas por data (mais recente primeiro)
   const ordenarVendasPorData = (vendas) => {
-    return vendas.sort((a, b) => {
-      const dataA = new Date(a.dataVenda);
-      const dataB = new Date(b.dataVenda);
-      return dataB - dataA; // Ordem decrescente (mais recente primeiro)
-    });
+    return vendas.sort((a, b) => new Date(b.dataVenda) - new Date(a.dataVenda));
   };
 
+  // Buscar vendas
   useEffect(() => {
     const fetchVendas = async () => {
+      setLoading(true);
       try {
         const response = await api.get("/vendas");
         const vendasOrdenadas = ordenarVendasPorData(response.data);
         setVendas(vendasOrdenadas);
       } catch (error) {
-        console.error("Erro ao buscar vendas:", error.message);
-        setSnackbar({
-          open: true,
-          message: "Erro ao carregar vendas",
-          severity: "error",
-        });
+        showError("Erro ao carregar vendas");
+      } finally {
+        setLoading(false);
       }
     };
     fetchVendas();
   }, []);
 
-  // Função para formatar data
+  // Formatadores
   const formatarData = (dataString) => {
     const data = new Date(dataString);
     return data.toLocaleString("pt-BR", {
@@ -106,7 +100,6 @@ const VendasPage = () => {
     });
   };
 
-  // Função para formatar valor monetário
   const formatarValor = (valor) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -114,59 +107,35 @@ const VendasPage = () => {
     }).format(valor || 0);
   };
 
-  // Função para determinar se uma venda é recente (últimas 3)
-  const isVendaRecente = (index) => {
-    return index < 3;
-  };
+  // Verificar se venda é recente (últimas 3)
+  const isVendaRecente = (index) => index < 3;
 
-  const handleDetailsClick = (venda) => {
-    setDetailsModal({
-      open: true,
-      venda: venda,
-    });
-  };
-
+  // Handlers do modal
+  const handleDetailsClick = (venda) => setDetailsModal({ open: true, venda });
   const handleCloseDetailsModal = () => {
-    setDetailsModal({
-      open: false,
-      venda: null,
-    });
-    setTabValue(0); // Reset tab
+    setDetailsModal({ open: false, venda: null });
+    setTabValue(0);
   };
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
+  // Handlers de paginação
+  const handleChangePage = (event, newPage) => setPage(newPage);
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(Number.parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
+  // Handlers de tabs
+  const handleTabChange = (event, newValue) => setTabValue(newValue);
+  const handlePageTabChange = (event, newValue) => setPageTabValue(newValue);
 
-  const handlePageTabChange = (event, newValue) => {
-    setPageTabValue(newValue);
-  };
-
-  // Função para obter todos os fornecedores únicos dos produtos vendidos
+  // Obter fornecedores dos itens
   const getFornecedoresDosItens = (itens) => {
     const fornecedoresMap = new Map();
-
     itens.forEach((item) => {
-      if (item.produto && item.produto.lote && item.produto.lote.fornecedora) {
+      if (item.produto?.lote?.fornecedora) {
         const fornecedora = item.produto.lote.fornecedora;
         if (!fornecedoresMap.has(fornecedora.id)) {
-          fornecedoresMap.set(fornecedora.id, {
-            ...fornecedora,
-            produtos: [],
-          });
+          fornecedoresMap.set(fornecedora.id, { ...fornecedora, produtos: [] });
         }
         fornecedoresMap.get(fornecedora.id).produtos.push({
           produto: item.produto,
@@ -176,39 +145,30 @@ const VendasPage = () => {
         });
       }
     });
-
     return Array.from(fornecedoresMap.values());
   };
 
+  // Filtro de busca
   const filteredVendas = useMemo(() => {
-    if (
-      !searchTerm ||
-      typeof searchTerm !== "string" ||
-      searchTerm.trim() === ""
-    ) {
-      return vendas;
-    }
-    const searchLower = searchTerm.toLowerCase();
-
-    // Tenta extrair o ID se o formato for "#123 - ..." vindo do Autocomplete
+    if (!search?.trim()) return vendas;
+    const searchLower = search.toLowerCase();
     const idMatch = searchLower.match(/^#(\d+)/);
     const searchId = idMatch ? idMatch[1] : searchLower;
 
     return vendas.filter((venda) => {
       const idString = venda.id.toString();
-      const tipoString = venda.tipoVenda ? venda.tipoVenda.toLowerCase() : "";
-      const fornecedoraNome = venda.fornecedora ? venda.fornecedora.nome.toLowerCase() : "";
+      const tipoString = venda.tipoVenda?.toLowerCase() || "";
+      const fornecedoraNome = venda.fornecedora?.nome?.toLowerCase() || "";
 
-      // Se for uma busca por ID (formato #123 ou apenas números)
       if (idMatch || (!isNaN(searchId) && searchId.trim() !== "")) {
-         if (idString.includes(searchId)) return true;
+        if (idString.includes(searchId)) return true;
       }
 
       return (
         idString.includes(searchLower) ||
         tipoString.includes(searchLower) ||
         fornecedoraNome.includes(searchLower) ||
-        getFornecedoresDosItens(venda.itens || []).some(f => 
+        getFornecedoresDosItens(venda.itens || []).some((f) =>
           f.nome.toLowerCase().includes(searchLower)
         ) ||
         (venda.itens || []).some((item) =>
@@ -216,358 +176,200 @@ const VendasPage = () => {
         )
       );
     });
-  }, [vendas, searchTerm]);
+  }, [vendas, search]);
+
+  // Opções de busca
+  const searchOptions = useMemo(() => {
+    return [
+      ...new Set(
+        vendas.flatMap((venda) => [
+          `#${venda.id}`,
+          venda.fornecedora?.nome,
+          ...(venda.itens || []).map((item) => item.produto?.descricao),
+        ]).filter(Boolean)
+      ),
+    ];
+  }, [vendas]);
+
+  // Estilos de célula da tabela (responsivos)
+  const headerCellStyle = {
+    fontSize: FONT_SIZES.tableHeader,
+    textAlign: "center",
+    backgroundColor: COLORS.primaryPink,
+    borderRight: `2px solid ${COLORS.backgroundPaper}`,
+    fontWeight: "bold",
+    color: COLORS.textSecondary,
+    padding: TABLE_CELL_PADDING.default,
+    whiteSpace: 'nowrap',
+  };
+
+  const bodyCellStyle = {
+    fontSize: FONT_SIZES.tableCell,
+    padding: TABLE_CELL_PADDING.default,
+    textAlign: "center",
+  };
 
   return (
-    <Box
-      sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
-    >
-      <Head>
-        <title>Jujuba - Vendas</title>
-      </Head>
-      <Sidebar />
-      <Box
-        sx={{
-          flex: 1,
-          marginLeft: { xs: 0, sm: "290px" },
-          maxHeight: "1000px",
-          overflow: "auto",
-          backgroundColor: "#9AE4FF",
-          paddingTop: "3rem",
-          paddingX: { xs: "1rem", sm: "2rem" },
-          transition: "margin-left 0.3s ease",
-        }}
-      >
-        <Box
+    <PageLayout title="Vendas">
+      <PageTitle title="Histórico de Vendas" />
+
+      {/* Abas principais */}
+      <Box sx={{ mb: { xs: 2, md: 3 }, display: "flex", justifyContent: "center" }}>
+        <Tabs
+          value={pageTabValue}
+          onChange={handlePageTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: "20px",
+            "& .MuiTab-root": {
+              fontWeight: "bold",
+              fontSize: FONT_SIZES.button,
+              color: COLORS.textSecondary,
+              minWidth: { xs: 120, sm: 160, md: 200 },
+              backgroundColor: "white",
+              margin: "0 3px",
+              borderRadius: "10px 10px 0 0",
+              padding: { xs: '8px 12px', sm: '12px 16px' },
+            },
+            "& .MuiTab-root.Mui-selected": {
+              color: COLORS.actionBlue,
+              backgroundColor: COLORS.backgroundPaper,
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: COLORS.actionBlue,
+              height: 3,
+            },
+          }}
+        >
+          <Tab label="Vendas" />
+          <Tab label="Relatório Fornecedores" />
+        </Tabs>
+      </Box>
+
+      {/* Barra de pesquisa */}
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: { xs: 2, md: 3 } }}>
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Pesquisar vendas..."
+          useAutocomplete
+          options={searchOptions}
+        />
+      </Box>
+
+      {/* Aba de Vendas */}
+      {pageTabValue === 0 && (
+        <Card
+          sx={{
+            padding: SPACING.cardPadding,
+            boxShadow: SHADOWS.card,
+            borderRadius: SPACING.cardBorderRadius,
+            backgroundColor: COLORS.backgroundPaper,
+            border: `2px solid ${COLORS.borderMedium}`,
           }}
         >
           <Typography
-            variant="h4"
-            sx={{
-              justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
-              fontWeight: "bold",
-              fontSize: "50px",
-              color: "#000000",
-            }}
+            variant="h6"
+            sx={{ mb: 2, fontWeight: 700, color: COLORS.textSecondary, fontSize: FONT_SIZES.sectionTitle }}
           >
-            Histórico de Vendas
+            Vendas realizadas ({filteredVendas.length})
           </Typography>
-        </Box>
 
-        {/* Abas */}
-        <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
-          <Tabs
-            value={pageTabValue}
-            onChange={handlePageTabChange}
-            sx={{
-              "& .MuiTab-root": {
-                fontWeight: "bold",
-                fontSize: "18px",
-                color: "#333",
-                minWidth: 200,
-                backgroundColor: "white",
-                margin: "0 5px",
-                borderRadius: "10px 10px 0 0",
-              },
-              "& .MuiTab-root.Mui-selected": {
-                color: "#00509E",
-                backgroundColor: "#F5F5F5",
-              },
-              "& .MuiTabs-indicator": {
-                backgroundColor: "#00509E",
-                height: 3,
-              },
-            }}
-          >
-            <Tab label="Vendas" />
-            <Tab label="Relatório Fornecedores" />
-          </Tabs>
-        </Box>
-
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: "30px",
-          }}
-        >
-          <TextField
-            value={search}
-            onChange={(event) => {
-              const newValue = event.target.value;
-              setSearch(newValue);
-              setSearchTerm(newValue);
-            }}
-            placeholder="Pesquisar vendas por ID, tipo, fornecedora ou produto"
-            variant="outlined"
-            size="medium"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
-                </InputAdornment>
-              ),
-              sx: {
-                height: "60px",
-                display: "flex",
-                alignItems: "center",
-                pl: 1,
-              },
-            }}
-            sx={{
-              width: "100%",
-              maxWidth: "1800px",
-              backgroundColor: "#F5F5F5",
-              marginBottom: "50px",
-              marginTop: "50px",
-              borderRadius: "10px",
-              "& .MuiOutlinedInput-root": {
-                backgroundColor: "#F5F5F5",
-                color: "#000000",
-                borderRadius: "10px",
-                "& fieldset": {
-                  borderColor: "#CCCCCC",
-                },
-                "&:hover fieldset": {
-                  borderColor: "#00509E",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#00509E",
-                },
-                boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
-              },
-              "& .MuiInputBase-input": {
-                padding: "14px 20px",
-                fontSize: "18px",
-              },
-            }}
-          />
-        </Box>
-
-
-
-        {/* Conteúdo das Abas */}
-        {pageTabValue === 0 && (
-        <Card
-          sx={{
-            padding: "20px",
-            bgcolor: "white",
-            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-            borderRadius: "25px",
-            backgroundColor: "#F5F5F5",
-            width: "100%",
-            margin: "0 auto",
-            border: "2px solid #B0B0B0",
-          }}
-        >
-          <TableContainer
-            sx={{
-              maxHeight: "600px",
-              borderRadius: "10px",
-              overflow: "auto",
-              backgroundColor: "#F5F5F5",
-              width: "100%",
-            }}
-          >
-            <Table>
+          <TableContainer sx={{ maxHeight: { xs: 400, sm: 500, md: 600 }, borderRadius: "10px", overflow: "auto" }}>
+            <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Itens
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Data/Hora ↓
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Tipo
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Total
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Ações
-                  </TableCell>
+                  <TableCell sx={headerCellStyle}>Itens</TableCell>
+                  <TableCell sx={{ ...headerCellStyle, display: { xs: 'none', sm: 'table-cell' } }}>Data/Hora</TableCell>
+                  <TableCell sx={{ ...headerCellStyle, display: { xs: 'none', md: 'table-cell' } }}>Tipo</TableCell>
+                  <TableCell sx={headerCellStyle}>Total</TableCell>
+                  <TableCell sx={{ ...headerCellStyle, borderRight: "none" }}>Ações</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredVendas
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((venda, index) => (
-                    <TableRow
-                      key={venda.id}
-                      sx={{
-                        backgroundColor: isVendaRecente(
-                          page * rowsPerPage + index
-                        )
-                          ? "#E3F2FD"
-                          : "inherit",
-                        "&:hover": {
-                          backgroundColor: isVendaRecente(
-                            page * rowsPerPage + index
-                          )
-                            ? "#BBDEFB"
-                            : "#f5f5f5",
-                        },
-                      }}
-                    >
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                          fontWeight: isVendaRecente(page * rowsPerPage + index)
-                            ? "bold"
-                            : "normal",
-                        }}
-                      >
-                        <Box
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} sx={{ textAlign: "center", py: { xs: 2, md: 4 } }}>
+                      <Typography sx={{ fontSize: FONT_SIZES.body }}>Carregando...</Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredVendas.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} sx={{ textAlign: "center", py: { xs: 2, md: 4 } }}>
+                      <Typography sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.body }}>
+                        Nenhuma venda encontrada
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredVendas
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((venda, index) => {
+                      const globalIndex = page * rowsPerPage + index;
+                      const isRecente = isVendaRecente(globalIndex);
+                      return (
+                        <TableRow
+                          key={venda.id}
                           sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 0.5,
+                            backgroundColor: isRecente ? COLORS.recentItemBackground : "inherit",
+                            "&:hover": {
+                              backgroundColor: isRecente ? COLORS.recentItemHover : "#f5f5f5",
+                            },
                           }}
                         >
-                          {venda.itens?.slice(0, 2).map((item, idx) => (
-                            <Typography key={idx} variant="body2" sx={{ fontSize: "12px" }}>
-                              {item.produto?.descricao || "Produto"}
-                            </Typography>
-                          ))}
-                          {venda.itens?.length > 2 && (
-                            <Typography variant="body2" sx={{ fontSize: "10px", color: "#666" }}>
-                              +{venda.itens.length - 2} mais
-                            </Typography>
-                          )}
-                          {isVendaRecente(page * rowsPerPage + index) && (
+                          <TableCell sx={{ ...bodyCellStyle, fontWeight: isRecente ? "bold" : "normal" }}>
+                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}>
+                              {venda.itens?.slice(0, 2).map((item, idx) => (
+                                <Typography key={idx} variant="body2" sx={{ fontSize: FONT_SIZES.tableCellSmall }}>
+                                  {item.produto?.descricao || "Produto"}
+                                </Typography>
+                              ))}
+                              {venda.itens?.length > 2 && (
+                                <Typography variant="body2" sx={{ fontSize: { xs: '9px', sm: '10px' }, color: COLORS.textMuted }}>
+                                  +{venda.itens.length - 2} mais
+                                </Typography>
+                              )}
+                              {isRecente && (
+                                <Chip
+                                  label="Nova"
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: COLORS.success,
+                                    color: "white",
+                                    fontSize: FONT_SIZES.chip,
+                                    height: { xs: '18px', sm: '20px' }
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ ...bodyCellStyle, fontWeight: isRecente ? "bold" : "normal", display: { xs: 'none', sm: 'table-cell' } }}>
+                            {formatarData(venda.dataVenda)}
+                          </TableCell>
+                          <TableCell sx={{ ...bodyCellStyle, display: { xs: 'none', md: 'table-cell' } }}>
                             <Chip
-                              label="Nova"
+                              label={venda.tipoVenda === "VENDA_SIMPLES" ? "Simples" : "Fornecedor"}
+                              color={venda.tipoVenda === "VENDA_SIMPLES" ? "primary" : "secondary"}
                               size="small"
-                              sx={{
-                                backgroundColor: "#4CAF50",
-                                color: "white",
-                                fontSize: "10px",
-                                height: "20px",
-                              }}
+                              sx={{ fontSize: FONT_SIZES.chip }}
                             />
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                          fontWeight: isVendaRecente(page * rowsPerPage + index)
-                            ? "bold"
-                            : "normal",
-                        }}
-                      >
-                        {formatarData(venda.dataVenda)}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        <Chip
-                          label={
-                            venda.tipoVenda === "VENDA_SIMPLES"
-                              ? "Venda Simples"
-                              : "Venda Fornecedor"
-                          }
-                          color={
-                            venda.tipoVenda === "VENDA_SIMPLES"
-                              ? "primary"
-                              : "secondary"
-                          }
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                          fontWeight: "bold",
-                          color: "#4CAF50",
-                        }}
-                      >
-                        {formatarValor(venda.total)}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          gap: 1,
-                          padding: "8px",
-                          minWidth: "100px",
-                        }}
-                      >
-                        <IconButton
-                          onClick={() => handleDetailsClick(venda)}
-                          sx={{ color: "#00509E" }}
-                        >
-                          <VisibilityIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          </TableCell>
+                          <TableCell sx={{ ...bodyCellStyle, fontWeight: "bold", color: COLORS.success }}>
+                            {formatarValor(venda.total)}
+                          </TableCell>
+                          <TableCell sx={{ ...bodyCellStyle, minWidth: { xs: '50px', sm: '80px' } }}>
+                            <IconButton
+                              onClick={() => handleDetailsClick(venda)}
+                              sx={{ color: COLORS.actionBlue, padding: { xs: '4px', sm: '8px' } }}
+                              size="small"
+                            >
+                              <VisibilityIcon sx={{ fontSize: { xs: 18, sm: 22, md: 24 } }} />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -579,201 +381,106 @@ const VendasPage = () => {
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25]}
-            labelRowsPerPage="Linhas por página:"
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}-${to} de ${count}`
-            }
+            labelRowsPerPage="Por página:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+            sx={{
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                fontSize: FONT_SIZES.bodySmall,
+              },
+              '& .MuiTablePagination-select': {
+                fontSize: FONT_SIZES.bodySmall,
+              },
+            }}
           />
         </Card>
-        )}
+      )}
 
-        {/* Segunda Aba - Tabela de Fornecedores */}
-        {pageTabValue === 1 && (
+      {/* Aba de Relatório Fornecedores */}
+      {pageTabValue === 1 && (
         <Card
           sx={{
-            padding: "20px",
-            bgcolor: "white",
-            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-            borderRadius: "25px",
-            backgroundColor: "#F5F5F5",
-            width: "100%",
-            margin: "0 auto",
-            border: "2px solid #B0B0B0",
+            padding: SPACING.cardPadding,
+            boxShadow: SHADOWS.card,
+            borderRadius: SPACING.cardBorderRadius,
+            backgroundColor: COLORS.backgroundPaper,
+            border: `2px solid ${COLORS.borderMedium}`,
           }}
         >
-          <TableContainer
-            sx={{
-              maxHeight: "600px",
-              borderRadius: "10px",
-              overflow: "auto",
-              backgroundColor: "#F5F5F5",
-              width: "100%",
-            }}
+          <Typography
+            variant="h6"
+            sx={{ mb: 2, fontWeight: 700, color: COLORS.textSecondary, fontSize: FONT_SIZES.sectionTitle }}
           >
-            <Table>
+            Relatório por Fornecedores
+          </Typography>
+
+          <TableContainer sx={{ maxHeight: { xs: 400, sm: 500, md: 600 }, borderRadius: "10px", overflow: "auto" }}>
+            <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Fornecedor
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Valor Fornecedor
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Valor Brechó
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      borderRight: "2px solid #F5F5F5",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Total
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontSize: "18px",
-                      textAlign: "center",
-                      backgroundColor: "#FADADD",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Ações
-                  </TableCell>
+                  <TableCell sx={headerCellStyle}>Fornecedor</TableCell>
+                  <TableCell sx={{ ...headerCellStyle, display: { xs: 'none', sm: 'table-cell' } }}>Valor Forn.</TableCell>
+                  <TableCell sx={{ ...headerCellStyle, display: { xs: 'none', md: 'table-cell' } }}>Valor Brechó</TableCell>
+                  <TableCell sx={headerCellStyle}>Total</TableCell>
+                  <TableCell sx={{ ...headerCellStyle, borderRight: "none" }}>Ações</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {(() => {
-                  // Lista cada venda com fornecedor separadamente
                   const vendasComFornecedor = [];
-                  
-                  vendas.forEach(venda => {
-                    // Verifica se há fornecedora diretamente na venda
+                  vendas.forEach((venda) => {
                     if (venda.fornecedora) {
                       vendasComFornecedor.push({
                         fornecedor: venda.fornecedora.nome,
                         valorFornecedor: venda.valorFornecedora || 0,
                         valorBrecho: venda.valorBrecho || 0,
                         total: venda.total || 0,
-                        venda: venda
+                        venda,
                       });
                     }
-                    
-                    // Também verifica fornecedores dos produtos
                     const fornecedores = getFornecedoresDosItens(venda.itens || []);
-                    fornecedores.forEach(fornecedora => {
+                    fornecedores.forEach((fornecedora) => {
                       const valorProdutos = fornecedora.produtos.reduce((sum, p) => sum + (p.subtotal || 0), 0);
                       vendasComFornecedor.push({
                         fornecedor: fornecedora.nome,
                         valorFornecedor: valorProdutos * 0.7,
                         valorBrecho: valorProdutos * 0.3,
                         total: valorProdutos,
-                        venda: venda
+                        venda,
                       });
                     });
                   });
-                  
+
                   if (vendasComFornecedor.length === 0) {
                     return (
                       <TableRow>
-                        <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4 }}>
-                          <Typography variant="body1" sx={{ color: '#666' }}>
+                        <TableCell colSpan={5} sx={{ textAlign: "center", py: { xs: 2, md: 4 } }}>
+                          <Typography sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.body }}>
                             Nenhuma venda com fornecedor encontrada
                           </Typography>
                         </TableCell>
                       </TableRow>
                     );
                   }
-                  
+
                   return vendasComFornecedor.map((item, index) => (
                     <TableRow key={index}>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
-                        {item.fornecedor}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                          fontWeight: "bold",
-                          color: "#2196F3",
-                        }}
-                      >
+                      <TableCell sx={bodyCellStyle}>{item.fornecedor}</TableCell>
+                      <TableCell sx={{ ...bodyCellStyle, fontWeight: "bold", color: COLORS.info, display: { xs: 'none', sm: 'table-cell' } }}>
                         {formatarValor(item.valorFornecedor)}
                       </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                        }}
-                      >
+                      <TableCell sx={{ ...bodyCellStyle, display: { xs: 'none', md: 'table-cell' } }}>
                         {formatarValor(item.valorBrecho)}
                       </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: { xs: "14px", sm: "16px", md: "18px" },
-                          padding: { xs: "8px 4px", sm: "16px 8px" },
-                          textAlign: "center",
-                          fontWeight: "bold",
-                          color: "#4CAF50",
-                        }}
-                      >
+                      <TableCell sx={{ ...bodyCellStyle, fontWeight: "bold", color: COLORS.success }}>
                         {formatarValor(item.total)}
                       </TableCell>
-                      <TableCell
-                        sx={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          gap: 1,
-                          padding: "8px",
-                          minWidth: "100px",
-                        }}
-                      >
+                      <TableCell sx={{ ...bodyCellStyle, minWidth: { xs: '50px', sm: '80px' } }}>
                         <IconButton
                           onClick={() => handleDetailsClick(item.venda)}
-                          sx={{ color: "#00509E" }}
+                          sx={{ color: COLORS.actionBlue, padding: { xs: '4px', sm: '8px' } }}
+                          size="small"
                         >
-                          <VisibilityIcon />
+                          <VisibilityIcon sx={{ fontSize: { xs: 18, sm: 22, md: 24 } }} />
                         </IconButton>
                       </TableCell>
                     </TableRow>
@@ -783,10 +490,9 @@ const VendasPage = () => {
             </Table>
           </TableContainer>
         </Card>
-        )}
-      </Box>
+      )}
 
-      {/* Modal de Detalhes da Venda */}
+      {/* Modal de Detalhes */}
       <Dialog
         open={detailsModal.open}
         TransitionComponent={Transition}
@@ -796,183 +502,126 @@ const VendasPage = () => {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: "20px",
-            background: "#F5F5F5",
-            boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
+            borderRadius: { xs: '12px', md: '20px' },
+            background: COLORS.backgroundPaper,
+            boxShadow: SHADOWS.card,
             overflow: "visible",
             maxHeight: "90vh",
+            margin: { xs: '16px', sm: '32px' },
           },
         }}
       >
-        <DialogTitle
-          sx={{
-            textAlign: "center",
-            pb: 2,
-            pt: 4,
-            position: "relative",
-          }}
-        >
+        <DialogTitle sx={{ textAlign: "center", pb: 2, pt: { xs: 2, md: 4 }, position: "relative" }}>
           <IconButton
             onClick={handleCloseDetailsModal}
             sx={{
               position: "absolute",
               right: 8,
               top: 8,
-              color: "#666",
-              "&:hover": {
-                backgroundColor: "rgba(0, 0, 0, 0.1)",
-              },
+              color: COLORS.textMuted,
+              "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.1)" },
             }}
           >
             <CloseIcon />
           </IconButton>
-
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: { xs: 1, md: 2 } }}>
             <Avatar
               sx={{
-                width: 80,
-                height: 80,
-                backgroundColor: "#9AE4FF",
+                width: { xs: 50, sm: 60, md: 80 },
+                height: { xs: 50, sm: 60, md: 80 },
+                backgroundColor: COLORS.primaryBlue,
                 boxShadow: "0px 8px 20px rgba(0, 80, 158, 0.3)",
               }}
             >
-              <ReceiptIcon sx={{ fontSize: 40, color: "white" }} />
+              <ReceiptIcon sx={{ fontSize: { xs: 24, sm: 30, md: 40 }, color: "white" }} />
             </Avatar>
-
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: "bold",
-                color: "#333",
-                textAlign: "center",
-              }}
-            >
+            <Typography variant="h5" sx={{ fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.sectionTitle }}>
               Detalhes da Venda #{detailsModal.venda?.id}
             </Typography>
           </Box>
         </DialogTitle>
 
-        <DialogContent sx={{ px: 4, pb: 2 }}>
+        <DialogContent sx={{ px: { xs: 2, sm: 3, md: 4 }, pb: 2 }}>
           <Tabs
             value={tabValue}
             onChange={handleTabChange}
             centered
+            variant="scrollable"
+            scrollButtons="auto"
             sx={{
-              mb: 3,
+              mb: { xs: 2, md: 3 },
               "& .MuiTab-root": {
                 fontWeight: "bold",
-                fontSize: "16px",
-                color: "#333", // cor padrão quando não selecionado
+                fontSize: FONT_SIZES.bodySmall,
+                color: COLORS.textSecondary,
+                minWidth: { xs: 80, sm: 120 },
+                padding: { xs: '6px 8px', sm: '12px 16px' },
               },
-              "& .MuiTab-root.Mui-selected": {
-                color: "#9AE4FF", // cor azul quando ativo
-              },
-              "& .MuiTabs-indicator": {
-                backgroundColor: "#9AE4FF", // cor da linha embaixo da aba ativa
-              },
+              "& .MuiTab-root.Mui-selected": { color: COLORS.primaryBlue },
+              "& .MuiTabs-indicator": { backgroundColor: COLORS.primaryBlue },
             }}
           >
-            <Tab label="Informações Gerais" />
-            <Tab label="Itens Vendidos" />
-            <Tab label="Fornecedores dos Produtos" />
+            <Tab label="Geral" />
+            <Tab label="Itens" />
+            <Tab label="Fornecedores" />
           </Tabs>
 
           {/* Tab 0: Informações Gerais */}
           {tabValue === 0 && detailsModal.venda && (
             <Box>
-              <Grid container spacing={3}>
+              <Grid container spacing={{ xs: 2, md: 3 }}>
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                    <Typography
-                      variant="h6"
-                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
-                    >
+                  <Paper sx={{ p: { xs: 1.5, md: 2 }, backgroundColor: COLORS.primaryPink }}>
+                    <Typography variant="h6" sx={{ mb: { xs: 1, md: 2 }, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
                       Dados da Venda
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
+                    <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
                       <strong>ID:</strong> #{detailsModal.venda.id}
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Data/Hora:</strong>{" "}
-                      {formatarData(detailsModal.venda.dataVenda)}
+                    <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
+                      <strong>Data/Hora:</strong> {formatarData(detailsModal.venda.dataVenda)}
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
+                    <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
                       <strong>Tipo:</strong>{" "}
                       <Chip
-                        label={
-                          detailsModal.venda.tipoVenda === "VENDA_SIMPLES"
-                            ? "Venda Simples"
-                            : "Venda Fornecedor"
-                        }
-                        color={
-                          detailsModal.venda.tipoVenda === "VENDA_SIMPLES"
-                            ? "primary"
-                            : "secondary"
-                        }
+                        label={detailsModal.venda.tipoVenda === "VENDA_SIMPLES" ? "Venda Simples" : "Venda Fornecedor"}
+                        color={detailsModal.venda.tipoVenda === "VENDA_SIMPLES" ? "primary" : "secondary"}
                         size="small"
+                        sx={{ fontSize: FONT_SIZES.chip }}
                       />
                     </Typography>
                   </Paper>
                 </Grid>
-
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                    <Typography
-                      variant="h6"
-                      sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
-                    >
+                  <Paper sx={{ p: { xs: 1.5, md: 2 }, backgroundColor: COLORS.primaryPink }}>
+                    <Typography variant="h6" sx={{ mb: { xs: 1, md: 2 }, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
                       Valores
                     </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        mb: 1,
-                        fontSize: "18px",
-                        fontWeight: "bold",
-                        color: "#4CAF50",
-                      }}
-                    >
-                      <strong>Total:</strong>{" "}
-                      {formatarValor(detailsModal.venda.total)}
+                    <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body, fontWeight: "bold", color: COLORS.success }}>
+                      <strong>Total:</strong> {formatarValor(detailsModal.venda.total)}
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Valor Brechó:</strong>{" "}
-                      {formatarValor(detailsModal.venda.valorBrecho)}
+                    <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
+                      <strong>Valor Brechó:</strong> {formatarValor(detailsModal.venda.valorBrecho)}
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>Valor Fornecedora:</strong>{" "}
-                      {formatarValor(detailsModal.venda.valorFornecedora)}
+                    <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
+                      <strong>Valor Fornecedora:</strong> {formatarValor(detailsModal.venda.valorFornecedora)}
                     </Typography>
                   </Paper>
                 </Grid>
-
                 {detailsModal.venda.fornecedora && (
                   <Grid item xs={12}>
-                    <Paper sx={{ p: 2, backgroundColor: "#FADADD" }}>
-                      <Typography
-                        variant="h6"
-                        sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
-                      >
+                    <Paper sx={{ p: { xs: 1.5, md: 2 }, backgroundColor: COLORS.primaryPink }}>
+                      <Typography variant="h6" sx={{ mb: { xs: 1, md: 2 }, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
                         Fornecedora Principal
                       </Typography>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Nome:</strong>{" "}
-                        {detailsModal.venda.fornecedora.nome}
+                      <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
+                        <strong>Nome:</strong> {detailsModal.venda.fornecedora.nome}
                       </Typography>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Contato:</strong>{" "}
-                        {detailsModal.venda.fornecedora.contato}
+                      <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
+                        <strong>Contato:</strong> {detailsModal.venda.fornecedora.contato}
                       </Typography>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Chave Pix:</strong>{" "}
-                        {detailsModal.venda.fornecedora.chavePix}
+                      <Typography variant="body1" sx={{ mb: 1, fontSize: FONT_SIZES.body }}>
+                        <strong>Chave Pix:</strong> {detailsModal.venda.fornecedora.chavePix}
                       </Typography>
                     </Paper>
                   </Grid>
@@ -984,54 +633,30 @@ const VendasPage = () => {
           {/* Tab 1: Itens Vendidos */}
           {tabValue === 1 && detailsModal.venda && (
             <Box>
-              <Typography
-                variant="h6"
-                sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
-              >
-                Produtos Vendidos ({detailsModal.venda.itens?.length || 0}{" "}
-                itens)
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
+                Produtos Vendidos ({detailsModal.venda.itens?.length || 0} itens)
               </Typography>
               {detailsModal.venda.itens?.map((item, index) => (
-                <Paper
-                  key={index}
-                  sx={{ p: 2, mb: 2, backgroundColor: "#FADADD" }}
-                >
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={6}>
-                      <Typography
-                        variant="body1"
-                        sx={{ fontWeight: "bold", mb: 1 }}
-                      >
+                <Paper key={index} sx={{ p: { xs: 1.5, md: 2 }, mb: 2, backgroundColor: COLORS.primaryPink }}>
+                  <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body1" sx={{ fontWeight: "bold", mb: 0.5, fontSize: FONT_SIZES.body }}>
                         {item.produto?.descricao || "Produto sem descrição"}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-                        <strong>Marca:</strong> {item.produto?.marca || "N/A"} |
-                        <strong> Tamanho:</strong>{" "}
-                        {item.produto?.tamanho || "N/A"}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "#666" }}>
-                        <strong>Estado:</strong>{" "}
-                        {item.produto?.estadoConservacao || "N/A"}
+                      <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.bodySmall }}>
+                        {item.produto?.marca || "N/A"} | {item.produto?.tamanho || "N/A"}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} md={3}>
-                      <Typography variant="body1">
-                        <strong>Quantidade:</strong> {item.quantidade}
+                    <Grid item xs={6} sm={3}>
+                      <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall }}>
+                        <strong>Qtd:</strong> {item.quantidade}
                       </Typography>
-                      <Typography variant="body1">
-                        <strong>Preço Unit.:</strong>{" "}
-                        {formatarValor(item.precoUnitario)}
+                      <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall }}>
+                        <strong>Unit:</strong> {formatarValor(item.precoUnitario)}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} md={3}>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: "bold",
-                          color: "#4CAF50",
-                          textAlign: "right",
-                        }}
-                      >
+                    <Grid item xs={6} sm={3}>
+                      <Typography sx={{ fontWeight: "bold", color: COLORS.success, textAlign: { xs: 'left', sm: 'right' }, fontSize: FONT_SIZES.body }}>
                         {formatarValor(item.subtotal)}
                       </Typography>
                     </Grid>
@@ -1044,128 +669,58 @@ const VendasPage = () => {
           {/* Tab 2: Fornecedores dos Produtos */}
           {tabValue === 2 && detailsModal.venda && (
             <Box>
-              <Typography
-                variant="h6"
-                sx={{ mb: 2, fontWeight: "bold", color: "#333" }}
-              >
-                Fornecedores dos Produtos (Donos)
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.cardTitle }}>
+                Fornecedores dos Produtos
               </Typography>
               {(() => {
-                const fornecedores = getFornecedoresDosItens(
-                  detailsModal.venda.itens || []
-                );
-
+                const fornecedores = getFornecedoresDosItens(detailsModal.venda.itens || []);
                 if (fornecedores.length === 0) {
                   return (
-                    <Paper
-                      sx={{
-                        p: 3,
-                        backgroundColor: "#FADADD",
-                        textAlign: "center",
-                      }}
-                    >
-                      <Typography variant="body1" sx={{ color: "#666" }}>
-                        Nenhum produto possui fornecedor associado nesta venda.
+                    <Paper sx={{ p: { xs: 2, md: 3 }, backgroundColor: COLORS.primaryPink, textAlign: "center" }}>
+                      <Typography variant="body1" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.body }}>
+                        Nenhum fornecedor associado.
                       </Typography>
                     </Paper>
                   );
                 }
-
-                return fornecedores.map((fornecedora, index) => (
-                  <Paper
-                    key={fornecedora.id}
-                    sx={{ p: 3, mb: 2, backgroundColor: "#FADADD" }}
-                  >
+                return fornecedores.map((fornecedora) => (
+                  <Paper key={fornecedora.id} sx={{ p: { xs: 2, md: 3 }, mb: 2, backgroundColor: COLORS.primaryPink }}>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                      <Avatar sx={{ backgroundColor: "#00509E", mr: 2 }}>
-                        <PersonIcon />
+                      <Avatar sx={{ backgroundColor: COLORS.actionBlue, mr: 2, width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}>
+                        <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
                       </Avatar>
                       <Box>
-                        <Typography
-                          variant="h6"
-                          sx={{ fontWeight: "bold", color: "#333" }}
-                        >
+                        <Typography variant="h6" sx={{ fontWeight: "bold", color: COLORS.textSecondary, fontSize: FONT_SIZES.body }}>
                           {fornecedora.nome}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: "#666" }}>
-                          Contato: {fornecedora.contato} | Pix:{" "}
-                          {fornecedora.chavePix}
+                        <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: FONT_SIZES.bodySmall }}>
+                          {fornecedora.contato} | {fornecedora.chavePix}
                         </Typography>
                       </Box>
                     </Box>
-
                     <Divider sx={{ mb: 2 }} />
-
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ fontWeight: "bold", mb: 1 }}
-                    >
-                      Produtos desta fornecedora:
-                    </Typography>
-
                     {fornecedora.produtos.map((produtoInfo, prodIndex) => (
-                      <Box
-                        key={prodIndex}
-                        sx={{
-                          ml: 2,
-                          mb: 1,
-                          p: 1,
-                          backgroundColor: "#FADADD",
-                          borderRadius: 1,
-                        }}
-                      >
-                        <Grid container spacing={2} alignItems="center">
-                          <Grid item xs={12} md={6}>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: "bold" }}
-                            >
+                      <Box key={prodIndex} sx={{ mb: 1, p: 1 }}>
+                        <Grid container spacing={1} alignItems="center">
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: FONT_SIZES.bodySmall }}>
                               {produtoInfo.produto.descricao}
                             </Typography>
-                            <Typography
-                              variant="caption"
-                              sx={{ color: "#666" }}
-                            >
-                              {produtoInfo.produto.marca} -{" "}
-                              {produtoInfo.produto.tamanho}
-                            </Typography>
                           </Grid>
-                          <Grid item xs={6} md={3}>
-                            <Typography variant="body2">
-                              Qtd: {produtoInfo.quantidade}
-                            </Typography>
+                          <Grid item xs={3}>
+                            <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall }}>Qtd: {produtoInfo.quantidade}</Typography>
                           </Grid>
-                          <Grid item xs={6} md={3}>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: "bold", color: "#4CAF50" }}
-                            >
+                          <Grid item xs={3}>
+                            <Typography variant="body2" sx={{ fontWeight: "bold", color: COLORS.success, fontSize: FONT_SIZES.bodySmall }}>
                               {formatarValor(produtoInfo.subtotal)}
                             </Typography>
                           </Grid>
                         </Grid>
                       </Box>
                     ))}
-
-                    <Box
-                      sx={{
-                        mt: 2,
-                        p: 1,
-                        backgroundColor: "#FADADD",
-                        borderRadius: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="body1"
-                        sx={{ fontWeight: "bold", textAlign: "right" }}
-                      >
-                        Total desta fornecedora:{" "}
-                        {formatarValor(
-                          fornecedora.produtos.reduce(
-                            (sum, p) => sum + (p.subtotal || 0),
-                            0
-                          )
-                        )}
+                    <Box sx={{ mt: 2, p: 1, borderTop: `1px solid ${COLORS.borderLight}` }}>
+                      <Typography variant="body1" sx={{ fontWeight: "bold", textAlign: "right", fontSize: FONT_SIZES.body }}>
+                        Total: {formatarValor(fornecedora.produtos.reduce((sum, p) => sum + (p.subtotal || 0), 0))}
                       </Typography>
                     </Box>
                   </Paper>
@@ -1175,30 +730,22 @@ const VendasPage = () => {
           )}
         </DialogContent>
 
-        <DialogActions
-          sx={{
-            justifyContent: "center",
-            gap: 2,
-            px: 4,
-            pb: 4,
-          }}
-        >
+        <DialogActions sx={{ justifyContent: "center", gap: 2, px: { xs: 2, md: 4 }, pb: { xs: 2, md: 4 } }}>
           <Button
             onClick={handleCloseDetailsModal}
             sx={{
-              backgroundColor: "#FADADD",
-              color: "#333",
+              backgroundColor: COLORS.primaryPink,
+              color: COLORS.textSecondary,
               fontWeight: "bold",
-              fontSize: "16px",
-              borderRadius: "25px",
-              padding: "12px 32px",
-              minWidth: "120px",
+              fontSize: FONT_SIZES.button,
+              borderRadius: SPACING.buttonBorderRadius,
+              padding: { xs: '8px 20px', md: '12px 32px' },
+              minWidth: { xs: '100px', md: '120px' },
               textTransform: "none",
-              boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
+              boxShadow: SHADOWS.button,
               "&:hover": {
-                backgroundColor: "#FADADD",
+                backgroundColor: COLORS.actionPinkHover,
                 transform: "translateY(-2px)",
-                boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
               },
               transition: "all 0.3s ease",
             }}
@@ -1208,25 +755,8 @@ const VendasPage = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{
-            width: "100%",
-            borderRadius: "10px",
-            fontWeight: "bold",
-          }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      <SnackbarAlert {...snackbar} onClose={closeSnackbar} />
+    </PageLayout>
   );
 };
 

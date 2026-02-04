@@ -15,7 +15,9 @@ import {
   ListItemIcon,
   ListItemText,
   List,
+  Box,
 } from "@mui/material";
+import { COLORS, SIDEBAR_WIDTH, SHADOWS } from "../constants";
 
 const menuItems = [
   {
@@ -72,22 +74,59 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="sidebar">
-      <div className="logo-container">
-        <div className="logo">
+    <Box
+      component="nav"
+      sx={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        height: "100vh",
+        width: `${SIDEBAR_WIDTH - 46}px`,
+        backgroundColor: COLORS.sidebarBackground,
+        display: "flex",
+        flexDirection: "column",
+        padding: "20px",
+        boxShadow: SHADOWS.sidebar,
+        zIndex: 1200,
+      }}
+    >
+      {/* Logo Container */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          margin: "20px 0 40px",
+        }}
+      >
+        <Box
+          sx={{
+            width: "120px",
+            height: "120px",
+            borderRadius: "50%",
+            background: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+            overflow: "hidden",
+          }}
+        >
           <Image
             src="/Imagens/LogoJujuba.png"
             alt="Jujuba Logo"
             width={245}
             height={142}
             priority
+            style={{ objectFit: "contain" }}
           />
-        </div>
-      </div>
+        </Box>
+      </Box>
 
+      {/* Menu Items */}
       <List sx={{ width: "100%", padding: "0 8px" }}>
         {menuItems.map((item) => {
-          const isActive = pathname.includes(item.id);
+          const isActive = pathname?.includes(item.id);
 
           return (
             <Tooltip title={item.tooltip} placement="right" arrow key={item.id}>
@@ -113,37 +152,6 @@ export default function Sidebar() {
           );
         })}
       </List>
-
-      <style jsx>{`
-        .sidebar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          height: 100vh;
-          width: 244px;
-          background-color: #f8c0e0;
-          display: flex;
-          flex-direction: column;
-          padding: 20px;
-          box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .logo-container {
-          display: flex;
-          justify-content: center;
-          margin: 20px 0 40px;
-        }
-        .logo {
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          background: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-      `}</style>
-    </div>
+    </Box>
   );
 }

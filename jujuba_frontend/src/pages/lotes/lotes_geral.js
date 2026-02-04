@@ -1,66 +1,39 @@
 "use client";
 
-import { useState, useEffect, useMemo, forwardRef } from "react";
-import {
-  Box,
-  Card,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  TablePagination,
-  TextField,
-  Button,
-  Autocomplete,
-  InputAdornment,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Snackbar,
-  Alert,
-  CircularProgress,
-  Avatar,
-  Slide,
-} from "@mui/material";
-import Sidebar from "../../components/sidebar";
-import Head from "next/head";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import SearchIcon from "@mui/icons-material/Search";
+import { useState, useEffect, useMemo } from "react";
+import { Box, Card, Button, Avatar, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import CloseIcon from "@mui/icons-material/Close";
 
-// Importando as funções da API
+// Componentes padronizados
+import {
+  PageLayout,
+  PageTitle,
+  SearchBar,
+  DataTable,
+  ActionButtons,
+  ConfirmDialog,
+  SnackbarAlert,
+} from "../../components/ui";
+
+// Hooks padronizados
+import { useSnackbar } from "../../hooks";
+
+// Constantes
+import { COLORS, SHADOWS, SPACING } from "../../constants";
+
+// API
 import { getAllLotes, deletarLote } from "../api/lotes";
-
-// Transição personalizada para o modal
-const Transition = forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
 
 const LotePage = () => {
   const [lotes, setLotes] = useState([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [loteToDelete, setLoteToDelete] = useState(null);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
+  const [deleteModal, setDeleteModal] = useState({ open: false, lote: null });
 
   const router = useRouter();
+  const { snackbar, showSuccess, showError, closeSnackbar } = useSnackbar();
 
+  // Buscar lotes
   useEffect(() => {
     fetchLotes();
   }, []);
@@ -81,76 +54,40 @@ const LotePage = () => {
         setLotes([]);
       }
     } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Erro ao carregar lotes",
-        severity: "error",
-      });
+      showError("Erro ao carregar lotes");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteClick = (id) => {
-    setLoteToDelete(id);
-    setOpenDialog(true);
-  };
-
+  // Deletar lote
   const handleConfirmDelete = async () => {
+    if (!deleteModal.lote) return;
     try {
       setLoading(true);
-      await deletarLote(loteToDelete);
-      setLotes((prev) => prev.filter((lote) => lote.id !== loteToDelete));
-      setSnackbar({
-        open: true,
-        message: "Lote excluído com sucesso",
-        severity: "success",
-      });
+      await deletarLote(deleteModal.lote.id);
+      setLotes((prev) => prev.filter((l) => l.id !== deleteModal.lote.id));
+      showSuccess("Lote excluído com sucesso");
     } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Falha ao excluir lote",
-        severity: "error",
-      });
+      showError("Falha ao excluir lote");
     } finally {
       setLoading(false);
-      setOpenDialog(false);
-      setLoteToDelete(null);
+      setDeleteModal({ open: false, lote: null });
     }
   };
 
-  const handleCancelDelete = () => {
-    setOpenDialog(false);
-    setLoteToDelete(null);
-  };
+  // Navegações
+  const handleNavigateToRegister = () => router.push("/lotes/cadastrar_lote");
+  const handleView = (lote) => router.push(`/lotes/visualizar_lote?id=${lote.id}`);
+  const handleEdit = (lote) => router.push(`/lotes/editar_lote?id=${lote.id}`);
 
-  const handleNavigateToRegister = () => {
-    router.push("/lotes/cadastrar_lote");
-  };
+  // Modal de exclusão
+  const handleDeleteClick = (lote) => setDeleteModal({ open: true, lote });
+  const handleCloseDeleteModal = () => setDeleteModal({ open: false, lote: null });
 
-  const handleNavigateToView = (lote) => {
-    router.push(`/lotes/visualizar_lote?id=${lote.id}`);
-  };
-
-  const handleNavigateToEdit = (id) => {
-    router.push(`/lotes/editar_lote?id=${id}`);
-  }; ///parametro id atelrado
-
-  const handleChangePage = (event, newPage) => setPage(newPage);
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(Number.parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
-
+  // Filtro de busca
   const lotesFiltrados = useMemo(() => {
-    if (!search || typeof search !== "string" || search.trim() === "") {
-      return lotes;
-    }
+    if (!search?.trim()) return lotes;
     const s = search.toLowerCase();
     return lotes.filter(
       (lote) =>
@@ -159,538 +96,140 @@ const LotePage = () => {
     );
   }, [lotes, search]);
 
+  // Opções de busca
   const searchOptions = useMemo(() => {
-    return [
-      ...new Set(
-        lotes.flatMap((lote) => [lote.numero, lote.fornecedora]).filter(Boolean)
-      ),
-    ];
+    return [...new Set(
+      lotes.flatMap((lote) => [lote.numero, lote.fornecedora]).filter(Boolean)
+    )];
   }, [lotes]);
 
+  // Configuração das colunas da tabela
+  const columns = [
+    { id: "numero", label: "Número do Lote" },
+    {
+      id: "data",
+      label: "Data de Criação",
+      render: (row) => new Date(row.data).toLocaleDateString("pt-BR"),
+    },
+    { id: "fornecedora", label: "Fornecedora" },
+    {
+      id: "acoes",
+      label: "Ações",
+      width: 150,
+      render: (row) => (
+        <ActionButtons
+          onView={() => handleView(row)}
+          onEdit={() => handleEdit(row)}
+          onDelete={() => handleDeleteClick(row)}
+        />
+      ),
+    },
+  ];
+
+  // Conteúdo do modal de confirmação
+  const deleteModalContent = deleteModal.lote && (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        backgroundColor: "rgba(255, 255, 255, 0.7)",
+        padding: "16px 24px",
+        borderRadius: "15px",
+        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+        border: `2px solid rgba(154, 228, 255, 0.5)`,
+      }}
+    >
+      <Avatar sx={{ backgroundColor: COLORS.primaryBlue, width: 50, height: 50 }}>
+        <Typography sx={{ fontWeight: "bold", color: COLORS.textSecondary }}>L</Typography>
+      </Avatar>
+      <Box sx={{ textAlign: "left" }}>
+        <Typography variant="h6" sx={{ fontWeight: "bold", color: COLORS.textSecondary, mb: 0.5 }}>
+          Lote {deleteModal.lote.numero}
+        </Typography>
+        <Typography variant="body2" sx={{ color: COLORS.textMuted, fontSize: "14px" }}>
+          ID: {deleteModal.lote.id}
+        </Typography>
+      </Box>
+    </Box>
+  );
+
   return (
-    <>
-      <Head>
-        <title>Jujuba - Lotes</title>
-      </Head>
-      <Box
-        sx={{ display: "flex", backgroundColor: "#9AE4FF", minHeight: "100vh" }}
+    <PageLayout title="Lotes">
+      <PageTitle title="Lotes" />
+
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 3 }}>
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Pesquisar lote"
+          useAutocomplete
+          options={searchOptions}
+        />
+      </Box>
+
+      <Card
+        sx={{
+          padding: SPACING.cardPadding,
+          boxShadow: SHADOWS.card,
+          borderRadius: SPACING.cardBorderRadius,
+          backgroundColor: COLORS.backgroundPaper,
+          border: `2px solid ${COLORS.borderMedium}`,
+        }}
       >
-        <Sidebar />
-        <Box
+        <Typography
+          variant="h6"
+          sx={{ mb: 2, fontWeight: 700, color: COLORS.textSecondary, fontSize: "1.5rem" }}
+        >
+          Lotes cadastrados ({lotesFiltrados.length})
+        </Typography>
+
+        <DataTable
+          columns={columns}
+          data={lotesFiltrados}
+          loading={loading}
+          emptyMessage="Nenhum lote encontrado"
+          rowKeyExtractor={(row) => row.id}
+        />
+      </Card>
+
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+        <Button
+          onClick={handleNavigateToRegister}
           sx={{
-            flex: 1,
-            marginLeft: { xs: 0, sm: "290px" },
-            paddingTop: "3rem",
-            paddingX: { xs: "1rem", sm: "2rem" },
-            transition: "margin-left 0.3s ease",
+            backgroundColor: COLORS.primaryPink,
+            color: COLORS.textSecondary,
+            boxShadow: SHADOWS.button,
+            fontWeight: "bold",
+            fontSize: "17px",
+            borderRadius: SPACING.buttonBorderRadius,
+            padding: "12px 40px",
+            textTransform: "none",
+            "&:hover": {
+              backgroundColor: COLORS.actionPinkHover,
+              transform: "translateY(-2px)",
+            },
+            transition: "all 0.3s ease",
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "80px",
-            }}
-          >
-            <Typography
-              variant="h4"
-              sx={{
-                textAlign: "center",
-                fontWeight: "bold",
-                fontSize: "50px",
-                color: "#000000",
-              }}
-            >
-              Lotes
-            </Typography>
-          </Box>
-
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              marginBottom: "30px",
-              width: "100%",
-            }}
-          >
-            <Autocomplete
-              freeSolo
-              open={false}
-              disableOpenOnFocus
-              options={searchOptions}
-              value={search}
-              onChange={(event, newValue) => {
-                setSearch(newValue || "");
-              }}
-              onInputChange={(event, newValue) => {
-                setSearch(newValue || "");
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Pesquisar lote"
-                  variant="outlined"
-                  size="medium"
-                  InputProps={{
-                    ...params.InputProps,
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon sx={{ color: "#000000", fontSize: 24 }} />
-                      </InputAdornment>
-                    ),
-                    sx: {
-                      height: "60px",
-                      display: "flex",
-                      alignItems: "center",
-                      pl: 1,
-                    },
-                  }}
-                  sx={{
-                    width: "100%",
-                    maxWidth: "1800px",
-                    backgroundColor: "#F5F5F5",
-                    marginBottom: "50px",
-                    marginTop: "50px",
-                    borderRadius: "10px",
-                    "& .MuiOutlinedInput-root": {
-                      backgroundColor: "#F5F5F5",
-                      color: "#000000",
-                      borderRadius: "10px",
-                      "& fieldset": {
-                        borderColor: "#CCCCCC",
-                      },
-                      "&:hover fieldset": {
-                        borderColor: "#00509E",
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "#00509E",
-                      },
-                      boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.1)",
-                    },
-                    "& .MuiInputBase-input": {
-                      padding: "14px 20px",
-                      fontSize: "18px",
-                    },
-                  }}
-                />
-              )}
-              sx={{
-                width: "100%",
-                maxWidth: "1800px",
-              }}
-            />
-          </Box>
-
-          <Card
-            sx={{
-              padding: "20px",
-              bgcolor: "white",
-              boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-              borderRadius: "25px",
-              backgroundColor: "#F5F5F5",
-              width: "100%",
-              margin: "0 auto",
-              border: "2px solid #F5F5F5",
-            }}
-          >
-            <TableContainer
-              sx={{
-                maxHeight: "600px",
-                borderRadius: "10px",
-                overflow: "auto",
-                backgroundColor: "#F5F5F5",
-                width: "100%",
-              }}
-            >
-              <Table stickyHeader aria-label="lotes table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: "18px",
-                        textAlign: "center",
-                        backgroundColor: "#FADADD",
-                        borderRight: "2px solid #F5F5F5",
-                      }}
-                    >
-                      Número do Lote
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: "18px",
-                        textAlign: "center",
-                        backgroundColor: "#FADADD",
-                        borderRight: "2px solid #F5F5F5",
-                      }}
-                    >
-                      Data de Criação
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: "18px",
-                        textAlign: "center",
-                        backgroundColor: "#FADADD",
-                        borderRight: "2px solid #F5F5F5",
-                      }}
-                    >
-                      Fornecedora
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: "18px",
-                        textAlign: "center",
-                        backgroundColor: "#FADADD",
-                      }}
-                    >
-                      Ações
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} align="center">
-                        <CircularProgress sx={{ color: "#FADADD" }} />
-                      </TableCell>
-                    </TableRow>
-                  ) : lotesFiltrados.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        align="center"
-                        sx={{ fontSize: "16px" }}
-                      >
-                        Nenhum lote encontrado
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    lotesFiltrados
-                      .slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
-                      .map((lote) => (
-                        <TableRow key={lote.id}>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              fontSize: "18px",
-                              padding: { xs: "8px 4px", sm: "16px 8px" },
-                            }}
-                          >
-                            {lote.numero}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              fontSize: "18px",
-                              padding: { xs: "8px 4px", sm: "16px 8px" },
-                            }}
-                          >
-                            {new Date(lote.data).toLocaleDateString("pt-BR")}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              fontSize: "18px",
-                              padding: { xs: "8px 4px", sm: "16px 8px" },
-                            }}
-                          >
-                            {lote.fornecedora}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              gap: 1,
-                              padding: "8px",
-                            }}
-                          >
-                            <IconButton
-                              onClick={() => handleNavigateToView(lote)}
-                              sx={{ color: "#00509E" }}
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                            <IconButton
-                              onClick={() => handleNavigateToEdit(lote.id)}
-                              sx={{ color: "#00509E" }}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton
-                              onClick={() => handleDeleteClick(lote.id)}
-                              sx={{ color: "#d32f2f" }}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={lotesFiltrados.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </Card>
-
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              marginTop: "30px",
-            }}
-          >
-            <Button
-              sx={{
-                backgroundColor: "#FADADD",
-                color: "black",
-                boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
-                border: "2px solid #FADADD",
-                fontWeight: "bold",
-                fontSize: "17px",
-                borderRadius: "60px",
-                padding: "10px 0",
-                width: "300px",
-                height: "50px",
-                textTransform: "none",
-              }}
-              onClick={handleNavigateToRegister}
-            >
-              Cadastrar Lote
-            </Button>
-          </Box>
-
-          <Dialog
-            open={openDialog}
-            TransitionComponent={Transition}
-            keepMounted
-            onClose={handleCancelDelete}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{
-              sx: {
-                borderRadius: "20px",
-                background: "linear-gradient(135deg, #FADADD 0%, #FFE4E1 100%)",
-                boxShadow: "0px 20px 40px rgba(0, 0, 0, 0.3)",
-                overflow: "visible",
-              },
-            }}
-          >
-            <DialogTitle
-              sx={{
-                textAlign: "center",
-                pb: 2,
-                pt: 4,
-                position: "relative",
-              }}
-            >
-              <IconButton
-                onClick={handleCancelDelete}
-                sx={{
-                  position: "absolute",
-                  right: 8,
-                  top: 8,
-                  color: "#666",
-                  "&:hover": {
-                    backgroundColor: "rgba(0, 0, 0, 0.1)",
-                  },
-                }}
-              >
-                <CloseIcon />
-              </IconButton>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 2,
-                }}
-              >
-                <Avatar
-                  sx={{
-                    width: 80,
-                    height: 80,
-                    backgroundColor: "#ff5722",
-                    boxShadow: "0px 8px 20px rgba(255, 87, 34, 0.3)",
-                  }}
-                >
-                  <WarningAmberIcon sx={{ fontSize: 40, color: "white" }} />
-                </Avatar>
-
-                <Typography
-                  variant="h5"
-                  sx={{
-                    fontWeight: "bold",
-                    color: "#333",
-                    textAlign: "center",
-                  }}
-                >
-                  Confirmar Exclusão
-                </Typography>
-              </Box>
-            </DialogTitle>
-
-            <DialogContent sx={{ textAlign: "center", px: 4, pb: 2 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 3,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    backgroundColor: "rgba(255, 255, 255, 0.7)",
-                    padding: "16px 24px",
-                    borderRadius: "15px",
-                    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-                    border: "2px solid rgba(154, 228, 255, 0.5)",
-                  }}
-                >
-                  <Avatar
-                    sx={{
-                      backgroundColor: "#9AE4FF",
-                      width: 50,
-                      height: 50,
-                    }}
-                  >
-                    <Typography sx={{ fontWeight: "bold", color: "#333" }}>
-                      L
-                    </Typography>
-                  </Avatar>
-                  <Box sx={{ textAlign: "left" }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: "bold",
-                        color: "#333",
-                        mb: 0.5,
-                      }}
-                    >
-                      Lote L{loteToDelete}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#666",
-                        fontSize: "14px",
-                      }}
-                    >
-                      ID: {loteToDelete}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: "#555",
-                    fontSize: "18px",
-                    lineHeight: 1.6,
-                    maxWidth: "400px",
-                  }}
-                >
-                  Tem certeza que deseja excluir este lote?
-                  <br />
-                  <strong>Esta ação não pode ser desfeita.</strong>
-                </Typography>
-              </Box>
-            </DialogContent>
-
-            <DialogActions
-              sx={{
-                justifyContent: "center",
-                gap: 2,
-                px: 4,
-                pb: 4,
-              }}
-            >
-              <Button
-                onClick={handleCancelDelete}
-                sx={{
-                  backgroundColor: "#9AE4FF",
-                  color: "#333",
-                  fontWeight: "bold",
-                  fontSize: "16px",
-                  borderRadius: "25px",
-                  padding: "12px 32px",
-                  minWidth: "120px",
-                  textTransform: "none",
-                  boxShadow: "0px 4px 12px rgba(154, 228, 255, 0.4)",
-                  "&:hover": {
-                    backgroundColor: "#7DD3FC",
-                    transform: "translateY(-2px)",
-                    boxShadow: "0px 6px 16px rgba(154, 228, 255, 0.6)",
-                  },
-                  transition: "all 0.3s ease",
-                }}
-              >
-                Cancelar
-              </Button>
-
-              <Button
-                onClick={handleConfirmDelete}
-                sx={{
-                  backgroundColor: "#ff5722",
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "16px",
-                  borderRadius: "25px",
-                  padding: "12px 32px",
-                  minWidth: "120px",
-                  textTransform: "none",
-                  boxShadow: "0px 4px 12px rgba(255, 87, 34, 0.4)",
-                  "&:hover": {
-                    backgroundColor: "#e64a19",
-                    transform: "translateY(-2px)",
-                    boxShadow: "0px 6px 16px rgba(255, 87, 34, 0.6)",
-                  },
-                  transition: "all 0.3s ease",
-                }}
-              >
-                Excluir
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Snackbar
-            open={snackbar.open}
-            autoHideDuration={6000}
-            onClose={handleCloseSnackbar}
-          >
-            <Alert
-              onClose={handleCloseSnackbar}
-              severity={snackbar.severity}
-              sx={{ width: "100%" }}
-            >
-              {snackbar.message}
-            </Alert>
-          </Snackbar>
-        </Box>
+          Cadastrar Lote
+        </Button>
       </Box>
-    </>
+
+      <ConfirmDialog
+        open={deleteModal.open}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir este lote?"
+        subMessage="Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        confirmColor="danger"
+        content={deleteModalContent}
+      />
+
+      <SnackbarAlert {...snackbar} onClose={closeSnackbar} />
+    </PageLayout>
   );
 };
 

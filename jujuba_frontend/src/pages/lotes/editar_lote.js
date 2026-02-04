@@ -591,28 +591,37 @@ export default function EditarLotePage() {
         )}
 
         <Box sx={{ mx: "auto", mt: 2, width: "100%", maxWidth: "1200px" }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <Select
-              value={selectedFornecedora}
-              onChange={(e) => setSelectedFornecedora(e.target.value)}
+          <Box
+            sx={{
+              bgcolor: "white",
+              border: "2px solid #9AE4FF",
+              borderRadius: "12px",
+              padding: "16px 20px",
+              mb: 2,
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Typography
               sx={{
-                bgcolor: "white",
-                border: "1px solid #ccc", // borda padrão
-                "&:hover": {
-                  border: "1px solid black", // borda preta ao passar mouse
-                },
+                color: "#666",
+                fontWeight: 500,
+                fontSize: "14px",
               }}
             >
-              {fornecedoras.map((fornecedora) => (
-                <MenuItem
-                  key={fornecedora.id}
-                  value={fornecedora.id.toString()}
-                >
-                  {fornecedora.nome}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              Fornecedor:
+            </Typography>
+            <Typography
+              sx={{
+                color: "#333",
+                fontWeight: "bold",
+                fontSize: "16px",
+              }}
+            >
+              {fornecedoras.find((f) => f.id.toString() === selectedFornecedora)?.nome || "Carregando..."}
+            </Typography>
+          </Box>
         </Box>
 
         {/* Products Table */}

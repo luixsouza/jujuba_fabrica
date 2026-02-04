@@ -2,6 +2,9 @@ import "@/styles/globals.css";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/router";
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import theme from "../theme";
 
 const routeTitleMap = [
   { match: /^\/fornecedores/, title: "Jujuba - Fornecedoras" },
@@ -21,8 +24,10 @@ function getTitleForPath(path) {
 
 const publicRoutes = [
   "/auth/login",
-  "/singup/singup",
+  "/signup/signup",
   "/reset_password/reset_password",
+  // Mantém compatibilidade com a rota antiga
+  "/singup/singup",
 ];
 
 export default function App({ Component, pageProps }) {
@@ -49,5 +54,10 @@ export default function App({ Component, pageProps }) {
     }
   }, [pathname, router]);
 
-  return <Component {...pageProps} />;
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Component {...pageProps} />
+    </ThemeProvider>
+  );
 }

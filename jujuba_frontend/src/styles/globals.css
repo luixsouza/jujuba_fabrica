@@ -1,15 +1,69 @@
+/* =========================================
+   Jujuba Fábrica - Variáveis CSS Globais
+   ========================================= */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Cores principais */
+  --color-primary-blue: #9AE4FF;
+  --color-primary-pink: #FADADD;
+  --color-primary-yellow: #FFF9AC;
+
+  /* Backgrounds */
+  --color-background: #9AE4FF;
+  --color-background-paper: #F5F5F5;
+  --color-background-white: #ffffff;
+
+  /* Texto */
+  --color-text-primary: #000000;
+  --color-text-secondary: #333333;
+  --color-text-muted: #666666;
+
+  /* Ações */
+  --color-action-blue: #00509E;
+  --color-action-blue-hover: #7BC8FF;
+  --color-action-pink-hover: #F5C6CB;
+
+  /* Estados */
+  --color-success: #4CAF50;
+  --color-error: #D32F2F;
+  --color-warning: #FF5722;
+  --color-info: #2196F3;
+
+  /* Bordas */
+  --color-border-light: #E0E0E0;
+  --color-border-medium: #B0B0B0;
+  --color-border-dark: #808080;
+
+  /* Layout */
+  --sidebar-width: 290px;
+
+  /* Espaçamento */
+  --spacing-page-padding-top: 3rem;
+  --spacing-card-padding: 20px;
+  --spacing-card-border-radius: 25px;
+  --spacing-button-border-radius: 25px;
+  --spacing-input-border-radius: 10px;
+
+  /* Sombras */
+  --shadow-card: 0px 8px 20px rgba(0, 0, 0, 0.3);
+  --shadow-button: 0px 4px 12px rgba(154, 228, 255, 0.4);
+  --shadow-hover: 0px 6px 16px rgba(154, 228, 255, 0.6);
+
+  /* Tipografia */
+  --font-family-primary: 'Roboto', 'Arial', sans-serif;
+  --font-size-title: 50px;
+  --font-size-subtitle: 1.5rem;
+  --font-size-body: 16px;
+  --font-size-small: 14px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* Transições */
+  --transition-default: all 0.3s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Reset e estilos base */
 html,
 body {
   max-width: 100vw;
@@ -17,9 +71,10 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--color-text-secondary);
+  background: var(--color-background);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -35,8 +90,59 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background-paper);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-blue);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-action-blue-hover);
+}
+
+/* Classes utilitárias */
+.text-center {
+  text-align: center;
+}
+
+.text-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-error {
+  color: var(--color-error);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
 }
