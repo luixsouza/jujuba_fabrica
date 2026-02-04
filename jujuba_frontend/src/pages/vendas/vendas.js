@@ -320,29 +320,17 @@ const VendasPage = () => {
                             },
                           }}
                         >
-                          <TableCell sx={{ ...bodyCellStyle, fontWeight: isRecente ? "bold" : "normal" }}>
+                          <TableCell sx={{ ...bodyCellStyle }}>
                             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}>
                               {venda.itens?.slice(0, 2).map((item, idx) => (
-                                <Typography key={idx} variant="body2" sx={{ fontSize: FONT_SIZES.tableCellSmall }}>
+                                <Typography key={idx} variant="body2" sx={{ fontSize: FONT_SIZES.tableCell, fontWeight: isRecente ? "bold" : "normal" }}>
                                   {item.produto?.descricao || "Produto"}
                                 </Typography>
                               ))}
                               {venda.itens?.length > 2 && (
-                                <Typography variant="body2" sx={{ fontSize: { xs: '9px', sm: '10px' }, color: COLORS.textMuted }}>
+                                <Typography variant="body2" sx={{ fontSize: FONT_SIZES.bodySmall, color: COLORS.textMuted, fontWeight: isRecente ? "bold" : "normal" }}>
                                   +{venda.itens.length - 2} mais
                                 </Typography>
-                              )}
-                              {isRecente && (
-                                <Chip
-                                  label="Nova"
-                                  size="small"
-                                  sx={{
-                                    backgroundColor: COLORS.success,
-                                    color: "white",
-                                    fontSize: FONT_SIZES.chip,
-                                    height: { xs: '18px', sm: '20px' }
-                                  }}
-                                />
                               )}
                             </Box>
                           </TableCell>
@@ -389,7 +377,7 @@ const VendasPage = () => {
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25]}
-            labelRowsPerPage="Por página:"
+            labelRowsPerPage="Linhas por página:"
             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
             sx={{
               '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
