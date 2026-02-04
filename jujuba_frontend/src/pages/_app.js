@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import theme from "../theme";
+import { SidebarProvider } from "../contexts";
 
 const routeTitleMap = [
   { match: /^\/fornecedores/, title: "Jujuba - Fornecedoras" },
@@ -57,7 +58,9 @@ export default function App({ Component, pageProps }) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Component {...pageProps} />
+      <SidebarProvider>
+        <Component {...pageProps} />
+      </SidebarProvider>
     </ThemeProvider>
   );
 }

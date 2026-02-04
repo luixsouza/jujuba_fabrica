@@ -1,8 +1,15 @@
 // Constantes centralizadas do projeto Jujuba Fábrica
 
 // Layout
-export const SIDEBAR_WIDTH = 290;
+export const SIDEBAR_WIDTH = 260;
+export const SIDEBAR_WIDTH_COLLAPSED = 70;
 export const SIDEBAR_WIDTH_MOBILE = 0;
+
+// Fontes
+export const FONTS = {
+  title: '"Optima", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  body: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+};
 
 // Breakpoints (em px) - compatível com MUI
 export const BREAKPOINTS = {

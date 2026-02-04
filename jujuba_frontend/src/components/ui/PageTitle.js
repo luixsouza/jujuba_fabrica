@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
-import { COLORS, FONT_SIZES } from "../../constants";
+import { COLORS, FONT_SIZES, FONTS } from "../../constants";
 
 /**
  * Componente de título de página padronizado com responsividade
@@ -34,11 +34,13 @@ const PageTitle = ({ title, rightContent, sx = {}, small = false }) => {
         <Typography
           variant="h4"
           sx={{
+            fontFamily: FONTS.title,
             fontWeight: "bold",
             fontSize: small ? FONT_SIZES.pageTitleSmall : FONT_SIZES.pageTitle,
             color: COLORS.textPrimary,
             textAlign: "center",
             lineHeight: 1.2,
+            letterSpacing: '0.5px',
           }}
         >
           {title}

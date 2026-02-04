@@ -35,7 +35,8 @@
   --color-border-dark: #808080;
 
   /* Layout */
-  --sidebar-width: 290px;
+  --sidebar-width: 260px;
+  --sidebar-width-collapsed: 70px;
 
   /* Espaçamento */
   --spacing-page-padding-top: 3rem;
@@ -51,6 +52,7 @@
 
   /* Tipografia */
   --font-family-primary: 'Roboto', 'Arial', sans-serif;
+  --font-family-title: 'Optima', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-size-title: 50px;
   --font-size-subtitle: 1.5rem;
   --font-size-body: 16px;

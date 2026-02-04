@@ -262,7 +262,7 @@ export default function EstoquePage() {
         <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="Pesquisar produtos por ID, descrição, marca ou gênero"
+          placeholder="Pesquisar produtos..."
           useAutocomplete
           options={searchOptions}
         />

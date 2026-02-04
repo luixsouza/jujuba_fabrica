@@ -162,7 +162,7 @@ const LotePage = () => {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Pesquisar lote"
+          placeholder="Pesquisar lotes..."
           useAutocomplete
           options={searchOptions}
         />

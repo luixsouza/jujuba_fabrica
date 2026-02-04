@@ -301,6 +301,8 @@ export default function FornecedoresEdicao() {
                           fontSize: { xs: "35px", md: "45px" },
                           fontWeight: "bold",
                           textAlign: "center",
+                          fontFamily: '"Optima", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+                          letterSpacing: "0.5px",
                         }}
                       >
                         Edição de Fornecedor

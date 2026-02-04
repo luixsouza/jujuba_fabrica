@@ -548,6 +548,8 @@ export default function EditarLotePage() {
                 fontWeight: "bold",
                 fontSize: "50px",
                 color: "#000000",
+                fontFamily: '"Optima", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+                letterSpacing: "0.5px",
               }}
             >
               Editando Lote

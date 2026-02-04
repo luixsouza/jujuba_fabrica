@@ -304,7 +304,7 @@ export default function CarrinhoPage() {
         <SearchBar
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Pesquisar produto no carrinho"
+          placeholder="Pesquisar produtos..."
           useAutocomplete
           options={searchOptions}
         />

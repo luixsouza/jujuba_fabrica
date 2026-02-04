@@ -1,9 +1,16 @@
 "use client";
 
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import Head from "next/head";
 import Sidebar from "../sidebar";
-import { COLORS, SIDEBAR_WIDTH, SIDEBAR_WIDTH_MOBILE, SPACING } from "../../constants";
+import {
+  COLORS,
+  SIDEBAR_WIDTH,
+  SIDEBAR_WIDTH_COLLAPSED,
+  SIDEBAR_WIDTH_MOBILE,
+  SPACING,
+} from "../../constants";
+import { useSidebar } from "../../contexts";
 
 /**
  * Componente de layout de página padronizado
@@ -13,6 +20,16 @@ import { COLORS, SIDEBAR_WIDTH, SIDEBAR_WIDTH_MOBILE, SPACING } from "../../cons
  * @param {Object} props.sx - Estilos adicionais para o container principal
  */
 const PageLayout = ({ title, children, sx = {} }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { isCollapsed } = useSidebar();
+
+  const sidebarWidth = isMobile
+    ? SIDEBAR_WIDTH_MOBILE
+    : isCollapsed
+    ? SIDEBAR_WIDTH_COLLAPSED
+    : SIDEBAR_WIDTH;
+
   return (
     <Box
       sx={{
@@ -29,10 +46,10 @@ const PageLayout = ({ title, children, sx = {} }) => {
         component="main"
         sx={{
           flex: 1,
-          marginLeft: { xs: `${SIDEBAR_WIDTH_MOBILE}px`, sm: `${SIDEBAR_WIDTH}px` },
+          marginLeft: `${sidebarWidth}px`,
           overflow: "auto",
           backgroundColor: COLORS.background,
-          paddingTop: SPACING.pagePaddingTop,
+          paddingTop: isMobile ? "4rem" : SPACING.pagePaddingTop,
           paddingX: { xs: SPACING.pagePaddingXMobile, sm: SPACING.pagePaddingX },
           transition: "margin-left 0.3s ease",
           ...sx,

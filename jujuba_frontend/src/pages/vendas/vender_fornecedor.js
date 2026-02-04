@@ -490,7 +490,7 @@ export default function VenderFornecedorPage() {
         <SearchBar
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Pesquisar fornecedores"
+          placeholder="Pesquisar fornecedores..."
           useAutocomplete
           options={searchOptions}
         />
